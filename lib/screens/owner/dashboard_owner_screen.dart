@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kosan_euy/screens/makanan/makanan_screen.dart';
 import 'package:kosan_euy/screens/owner/penghuni_screen.dart';
 import 'package:kosan_euy/screens/reservasi_screen.dart';
 import 'package:kosan_euy/widgets/profile_section.dart';
@@ -133,12 +134,9 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       ),
                       child: InkWell(
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Menu Pemesanan Makanan tap"),
-                              duration: Duration(seconds: 1),
-                              showCloseIcon: true,
-                            ),
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const FoodListScreen())
                           );
                         },
                         child: Center(

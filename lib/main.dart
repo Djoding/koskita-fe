@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
+import 'package:kosan_euy/screens/makanan/makanan_screen.dart';
+import 'package:kosan_euy/screens/settings//notification_screen.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 
 
 void main() {
@@ -59,6 +62,9 @@ class MyApp extends StatelessWidget {
       ),
       home: Scaffold(
         body: HomeScreenPage(),
+        // body: NotificationScreen()
+        // body: SettingScreen(),
+        // body: FoodListScreen(),
       ),
     );
   }

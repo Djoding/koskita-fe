@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:kosan_euy/screens/settings//notification_screen.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 
 class TopBar extends StatelessWidget {
   const TopBar({super.key});
@@ -15,12 +17,9 @@ class TopBar extends StatelessWidget {
             enableFeedback: true,
             color: Colors.white,
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Notif tap"),
-                  duration: Duration(seconds: 1),
-                  showCloseIcon: true,
-                ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationScreen()),
               );
             },
           ),
@@ -29,12 +28,9 @@ class TopBar extends StatelessWidget {
             enableFeedback: true,
             color: Colors.white,
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Setting tap"),
-                  duration: Duration(seconds: 1),
-                  showCloseIcon: true,
-                ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingScreen()),
               );
             },
           ),
