@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:kosan_euy/screens/settings/password_success_screen.dart';
+import 'package:kosan_euy/widgets/success_screen.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -265,7 +265,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => const PasswordSuccessScreen(),
+                                                builder: (context) => const SuccessScreen(title: 'Password Berhasil Diubah', subtitle: '',),
                                               ),
                                             );
                                             ScaffoldMessenger.of(context).showSnackBar(

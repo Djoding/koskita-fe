@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kosan_euy/screens/home_screen.dart';
 import 'package:kosan_euy/screens/settings/edit_profile_screen.dart';
 import 'package:kosan_euy/screens/settings/security_screen.dart';
+import 'package:kosan_euy/services/auth_service.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -14,7 +16,6 @@ class _SettingScreenState extends State<SettingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF9EBFE4),
       body: SafeArea(
         child: Stack(
           children: [
@@ -281,6 +282,10 @@ Future<bool?> showLogoutConfirmationDialog(BuildContext context) {
 class LogoutConfirmationContent extends StatelessWidget {
   const LogoutConfirmationContent({super.key});
 
+  Future<void> _onLogout(BuildContext context) async {
+    await AuthService.logout();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -317,7 +322,13 @@ class LogoutConfirmationContent extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               // Return true to indicate user confirmed logout
-              Navigator.of(context).pop(true);
+              _onLogout(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HomeScreenPage(),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF5EBE8E),

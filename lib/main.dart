@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
 import 'package:kosan_euy/screens/makanan/makanan_screen.dart';
+import 'package:kosan_euy/screens/owner/add_penghuni_screen.dart';
+import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
+import 'package:kosan_euy/screens/owner/edit_penghuni_screen.dart';
+import 'package:kosan_euy/screens/owner/notification/notification_owner.dart';
+import 'package:kosan_euy/screens/owner/notification/notification_reservasi.dart';
+import 'package:kosan_euy/screens/owner/notification/notification_reservasi_detail.dart';
+import 'package:kosan_euy/screens/owner/penghuni_screen.dart';
+import 'package:kosan_euy/screens/owner/reservasi/reservasi_screen.dart';
 import 'package:kosan_euy/screens/settings//notification_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
+import 'package:kosan_euy/widgets/success_screen.dart';
 
 
 void main() {
@@ -60,9 +69,16 @@ class MyApp extends StatelessWidget {
           ),
         )
       ),
+      // initialRoute: '/',
+      // routes: {
+      //   '/': (context) => HomeScreenPage(),
+      //   '/'
+      // },
       home: Scaffold(
-        body: HomeScreenPage(),
-        // body: NotificationScreen()
+        // body: HomeScreenPage(),
+        // body: NotificationReservasiScreen()
+        // body: SuccessScreen(title: 'test', subtitle: 'test')
+        body: DashboardOwnerScreen()
         // body: SettingScreen(),
         // body: FoodListScreen(),
       ),

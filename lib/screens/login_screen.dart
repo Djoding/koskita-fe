@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:kosan_euy/screens/forgetpassword_screen.dart';
 import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
 import 'package:kosan_euy/screens/tenant/dashboard_tenant_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:kosan_euy/services/auth_service.dart';
+import 'package:kosan_euy/widgets/dialog_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   final String userRole;
@@ -16,6 +21,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    serverClientId: "597965256700-rnvu6hrqq0ucng2qbma4s56bcsl3jt0s.apps.googleusercontent.com"
+  );
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -48,24 +57,76 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Handle password submission
-  void _submitPassword() {
+  Future<void> _submitPassword() async {
     final password = _passwordController.text.trim();
     if (password.isNotEmpty) {
+      try {
+        DialogUtils.showLoadingDialog(context, true);
 
-      Widget targetScreen;
-      if (widget.userRole == "owner") {
-        targetScreen = const DashboardOwnerScreen();
-      } else if (widget.userRole == "tenant") {
-        targetScreen = const DashboardTenantScreen();
-      } else {
-        return;
+        var responLogin = await AuthService.login(_email, password);
+
+        if (!responLogin["status"]) {
+          if (!mounted) return;
+          DialogUtils.hideLoadingDialog(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar( // Create a SnackBar widget
+              content: Text(responLogin["message"]),
+              duration: const Duration(seconds: 2),
+              action: SnackBarAction(
+                label: 'Dismiss',
+                onPressed: () {
+                  // Code to execute when the action button is pressed
+                },
+              ),
+            ),
+          );
+          return;
+
+        }
+
+        Widget targetScreen;
+        var token = responLogin["token"];
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+        var role = decodedToken["role"];
+        if (widget.userRole == "Pengelola" && role == "Pengelola" ) {
+          targetScreen = const DashboardOwnerScreen();
+        } else if (widget.userRole == "Penghuni" && role == "Penghuni" ) {
+          targetScreen = const DashboardTenantScreen();
+        } else {
+          return;
+        }
+
+        if (!mounted) return;
+        DialogUtils.hideLoadingDialog(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(responLogin["message"]),
+            duration: const Duration(seconds: 2),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              onPressed: () {
+
+              },
+            ),
+          ),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => targetScreen),
+              (route) => false,
+        );
+
+      } catch (e) {
+        if (!mounted) return;
+        DialogUtils.hideLoadingDialog(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Terjadi kesalahan di Server.'),
+            backgroundColor: Colors.red, // Optional: change background color for errors
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => targetScreen),
-            (route) => false,
-      );
     }
   }
 
@@ -214,8 +275,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Google Sign In Button
         InkWell(
           onTap: () {
-            // Handle Google sign in
-            debugPrint('Google sign in pressed');
+            _signIn();
           },
           child: Container(
             width: 40,
@@ -518,5 +578,73 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _signIn() async {
+    try {
+      DialogUtils.showLoadingDialog(context, true);
+      await _googleSignIn.signOut();
+
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+
+      if (googleAuth == null || googleUser == null) {
+        throw Exception('Tidak bisa mendapatkan autentikasi dari Google');
+      }
+
+      final String? idToken = googleAuth.idToken;
+
+      var dataLogin = await AuthService.loginWithGoogle(
+          googleUser.displayName.toString(),
+          googleUser.email,
+          idToken!,
+          googleUser.photoUrl.toString(),
+          widget.userRole
+      );
+
+      if (!mounted) return;
+      if (dataLogin['status']) {
+        DialogUtils.hideLoadingDialog(context);
+        if (widget.userRole == "Pengelola") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardOwnerScreen()),
+          );
+        }
+
+        if (widget.userRole == "Penghuni") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const DashboardTenantScreen()),
+          );
+        }
+        return;
+      }
+      DialogUtils.hideLoadingDialog(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(dataLogin['message']),
+          duration: const Duration(seconds: 2),
+          action: SnackBarAction(
+            label: 'Dismiss',
+            onPressed: () {
+
+            },
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      DialogUtils.hideLoadingDialog(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan di Server.'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      print('Error sign in with Google: $error');
+    }
   }
 }

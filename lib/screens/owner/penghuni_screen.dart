@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kosan_euy/screens/owner/add_penghuni_screen.dart';
+import 'package:kosan_euy/screens/owner/edit_penghuni_screen.dart';
 import 'package:kosan_euy/widgets/profile_section.dart';
 import 'package:kosan_euy/widgets/top_bar.dart';
 
@@ -42,7 +44,26 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top Bar (Notification & Settings)
-              TopBar(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                  TopBar(),
+                ],
+              ),
               const SizedBox(height: 40),
               ProfileSection(),
               const SizedBox(height: 40),
@@ -60,6 +81,7 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
 
               // ListView Harus dalam Expanded biar nggak error
               Expanded(
+                // flex: 10,
                 child: ListView.builder(
                   itemCount: penghuni.length,
                   itemBuilder: (context, index) {
@@ -67,6 +89,33 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
                   },
                 ),
               ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AddPenghuniScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF26A69A),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: const Text(
+                    'Tambah Penghuni',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              )
             ],
           ),
         ),
@@ -105,13 +154,25 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
+              //Sunting button
               IconButton(
                 onPressed: () {
-                  // Aksi edit
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => EditPenghuniScreen(
+                      penghuniId: "test",
+                    )),
+                  );
                 },
                 icon: const Icon(Icons.edit, size: 24),
               ),
-              Expanded(child: Container()), // Spacer biar ikon tetap di kiri
+              IconButton(
+                //Delete button
+                onPressed: () {
+                  // delete
+                },
+                icon: const Icon(Icons.delete, size: 24, color: Colors.red,),
+              ),
             ],
           ),
         ],

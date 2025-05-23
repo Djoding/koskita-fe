@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/login_screen.dart';
+import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
+import 'package:kosan_euy/screens/tenant/dashboard_tenant_screen.dart';
+import 'package:kosan_euy/services/auth_service.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class HomeScreenPage extends StatelessWidget {
   const HomeScreenPage({super.key});
@@ -9,6 +13,7 @@ class HomeScreenPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final buttonWidth = size.width * 0.7 > 300 ? 300.0 : size.width * 0.7;
+    _checkIfLoggedIn(context);
 
     return Scaffold(
       body: SafeArea(
@@ -56,7 +61,7 @@ class HomeScreenPage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen(userRole: 'owner',)),
+                      MaterialPageRoute(builder: (context) => const LoginScreen(userRole: 'Pengelola',)),
                     );
                   },
                 ),
@@ -69,7 +74,7 @@ class HomeScreenPage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen(userRole: 'tenant',)),
+                      MaterialPageRoute(builder: (context) => const LoginScreen(userRole: 'Penghuni',)),
                     );
                   },
                 ),
@@ -142,5 +147,36 @@ class HomeScreenPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _checkIfLoggedIn (BuildContext context) async{
+    Future.microtask(() async {
+
+      final isLoggedIn = await AuthService.isLoggedIn();
+
+      if (isLoggedIn["isLoggedIn"]) {
+        var token = isLoggedIn["token"];
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+        var role = decodedToken["role"];
+
+        if (role == "Pengelola" || role == "Penghuni" || role == "Admin") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) {
+              if (role == "Pengelola") return const DashboardOwnerScreen();
+              if (role == "Penghuni") return const DashboardTenantScreen();
+              if (role == "Admin") return const DashboardOwnerScreen();
+              return Container(); // fallback aja biar gak error return-nya
+            }),
+          );
+        } else {
+          // Role gak dikenal atau null, tetap di halaman sekarang
+          debugPrint('Role tidak dikenal: $role');
+        }
+      }
+    });
+
+
+
   }
 }
