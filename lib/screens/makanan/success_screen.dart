@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kosan_euy/screens/makanan/makanan_screen.dart';
+import 'package:get/get.dart';
+import 'package:kosan_euy/routes/app_pages.dart';
 
 class SuccessScreen extends StatelessWidget {
   const SuccessScreen({super.key});
@@ -7,10 +9,7 @@ class SuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const FoodListScreen()),
-      );
+      Get.offNamed(Routes.foodList);
     });
 
     return Scaffold(
@@ -31,7 +30,9 @@ class SuccessScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => const FoodListScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const FoodListScreen(),
+                        ),
                       );
                     },
                   ),
@@ -45,11 +46,7 @@ class SuccessScreen extends StatelessWidget {
                   color: Colors.amber,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.green,
-                  size: 60,
-                ),
+                child: const Icon(Icons.check, color: Colors.green, size: 60),
               ),
               const SizedBox(height: 20),
               const Text(

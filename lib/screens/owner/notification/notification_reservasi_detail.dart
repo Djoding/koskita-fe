@@ -52,8 +52,11 @@ class _NotificationReservasiDetailState
 
     _dateFormatLong = DateFormat('EEEE, d MMMM yyyy', 'id_ID');
     _timeFormat = DateFormat('HH.mm', 'id_ID');
-    _currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp. ', decimalDigits: 0);
-
+    _currencyFormat = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp. ',
+      decimalDigits: 0,
+    );
 
     _fetchAndProcessData();
   }
@@ -82,9 +85,12 @@ class _NotificationReservasiDetailState
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : _buildContentLoaded(),
+        child:
+            _isLoading
+                ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+                : _buildContentLoaded(),
       ),
     );
   }
@@ -99,8 +105,14 @@ class _NotificationReservasiDetailState
       );
     }
 
-    return SingleChildScrollView( // Tambahkan SingleChildScrollView agar bisa di-scroll jika konten panjang
-      padding: const EdgeInsets.only(top: 20.0, left: 24.0, right: 24.0, bottom: 20.0),
+    return SingleChildScrollView(
+      // Tambahkan SingleChildScrollView agar bisa di-scroll jika konten panjang
+      padding: const EdgeInsets.only(
+        top: 20.0,
+        left: 24.0,
+        right: 24.0,
+        bottom: 20.0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -114,8 +126,11 @@ class _NotificationReservasiDetailState
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new,
-                      color: Colors.black, size: 20),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Colors.black,
+                    size: 20,
+                  ),
                   onPressed: () {
                     if (Navigator.canPop(context)) {
                       Navigator.pop(context);
@@ -137,7 +152,9 @@ class _NotificationReservasiDetailState
                   ),
                 ),
               ),
-              const SizedBox(width: 44 + 16), // Placeholder untuk menyeimbangkan tombol kembali
+              const SizedBox(
+                width: 44 + 16,
+              ), // Placeholder untuk menyeimbangkan tombol kembali
             ],
           ),
           const SizedBox(height: 35),
@@ -160,9 +177,18 @@ class _NotificationReservasiDetailState
             child: Column(
               children: [
                 _buildInfoRow('No Referensi', _detailPesanan!.noReferensi),
-                _buildInfoRow('Tanggal Masuk', _dateFormatLong.format(_detailPesanan!.tanggalMasuk)),
-                _buildInfoRow('Jam Pemesanan', '${_timeFormat.format(_detailPesanan!.jamPemesanan)} WIB'),
-                _buildInfoRow('Tanggal Keluar', _dateFormatLong.format(_detailPesanan!.tanggalKeluar)),
+                _buildInfoRow(
+                  'Tanggal Masuk',
+                  _dateFormatLong.format(_detailPesanan!.tanggalMasuk),
+                ),
+                _buildInfoRow(
+                  'Jam Pemesanan',
+                  '${_timeFormat.format(_detailPesanan!.jamPemesanan)} WIB',
+                ),
+                _buildInfoRow(
+                  'Tanggal Keluar',
+                  _dateFormatLong.format(_detailPesanan!.tanggalKeluar),
+                ),
               ],
             ),
           ),
@@ -179,11 +205,17 @@ class _NotificationReservasiDetailState
           ),
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 20.0,
+            ),
             decoration: BoxDecoration(
-                color: const Color(0xFFCFE8FA),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5)
+              color: const Color(0xFFCFE8FA),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withAlpha((0.5 * 255).toInt()),
+                width: 1.5,
+              ),
             ),
             child: Column(
               children: [
@@ -204,12 +236,19 @@ class _NotificationReservasiDetailState
                     return Container(
                       height: 120,
                       alignment: Alignment.center,
-                      child: Icon(Icons.broken_image_outlined, size: 50, color: Colors.grey[600]),
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        size: 50,
+                        color: Colors.grey[600],
+                      ),
                     );
                   },
                 ),
                 const SizedBox(height: 20),
-                Divider(color: Colors.white.withOpacity(0.8), thickness: 1),
+                Divider(
+                  color: Colors.white.withAlpha((0.8 * 255).toInt()),
+                  thickness: 1,
+                ),
                 const SizedBox(height: 15),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -249,10 +288,7 @@ class _NotificationReservasiDetailState
         children: [
           Text(
             label,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey[700],
-            ),
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[700]),
           ),
           Text(
             value,

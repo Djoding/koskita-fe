@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:kosan_euy/screens/makanan/makanan_screen.dart';
-import 'package:kosan_euy/screens/owner/daftar_kos_screen.dart';
-import 'package:kosan_euy/screens/owner/notification/notification_owner.dart';
-import 'package:kosan_euy/screens/owner/penghuni_screen.dart';
-import 'package:kosan_euy/screens/owner/reservasi/reservasi_screen.dart';
-import 'package:kosan_euy/screens/settings/notification_screen.dart';
-import 'package:kosan_euy/screens/settings/setting_screen.dart';
+
 import 'package:kosan_euy/services/kost_service.dart';
 import 'package:kosan_euy/widgets/profile_section.dart';
-import 'package:kosan_euy/widgets/top_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:get/get.dart';
 import '../../services/auth_service.dart';
-import '../home_screen.dart';
+
+import 'package:kosan_euy/routes/app_pages.dart';
 
 class DashboardOwnerScreen extends StatefulWidget {
   const DashboardOwnerScreen({super.key});
@@ -57,14 +51,12 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return _buildListKost();
   }
-  
-  Widget _buildMenuCard(){
+
+  Widget _buildMenuCard() {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -72,7 +64,6 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // Top Bar (Notification & Settings)
               Align(
                 alignment: Alignment.centerRight,
@@ -84,10 +75,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       enableFeedback: true,
                       color: Colors.white,
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const NotificationOwner()),
-                        );
+                        Get.toNamed(Routes.notificationOwner);
                       },
                     ),
                     IconButton(
@@ -95,10 +83,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       enableFeedback: true,
                       color: Colors.white,
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SettingScreen()),
-                        );
+                        Get.toNamed(Routes.setting);
                       },
                     ),
                   ],
@@ -107,7 +92,6 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
               const SizedBox(height: 40), // Spacing
               ProfileSection(),
               const SizedBox(height: 40), // Spacing
-
               // Menu (Expanded)
               Center(
                 child: Column(
@@ -123,40 +107,43 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       ),
                       child: InkWell(
                         onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const PenghuniScreen())
-                          );
+                          Get.toNamed(Routes.penghuni);
                         },
                         child: Center(
-                            child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text('Melihat Data Penghuni Kost', style: GoogleFonts.poppins(
-                                        fontSize: 20 ,
-                                        fontWeight: FontWeight.bold
-                                    ),),
-                                    Image.asset(
-                                      'assets/icon_penghuni.png',
-                                      width: 150,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Melihat Data Penghuni Kost',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Image.asset(
+                                  'assets/icon_penghuni.png',
+                                  width: 150,
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    'Lihat lebih lanjut >',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w300,
                                     ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text('Lihat lebih lanjut >', style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w300
-                                      ),),
-                                    )
-                                  ],
-                                )
-                            )
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
 
-                    SizedBox(height: 30,),
+                    SizedBox(height: 30),
 
                     //Menu Layanan Reservasi Kamar
                     Container(
@@ -168,40 +155,43 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       ),
                       child: InkWell(
                         onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const ReservasiScreen())
-                          );
+                          Get.toNamed(Routes.reservasi);
                         },
                         child: Center(
-                            child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text('Layanan Reservasi Kamar', style: GoogleFonts.poppins(
-                                        fontSize: 20 ,
-                                        fontWeight: FontWeight.bold
-                                    ),),
-                                    Image.asset(
-                                      'assets/icon_reservasi.png',
-                                      width: 150,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Layanan Reservasi Kamar',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Image.asset(
+                                  'assets/icon_reservasi.png',
+                                  width: 150,
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    'Lihat lebih lanjut >',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w300,
                                     ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text('Lihat lebih lanjut >', style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w300
-                                      ),),
-                                    )
-                                  ],
-                                )
-                            )
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
 
-                    SizedBox(height: 30,),
+                    SizedBox(height: 30),
 
                     //Menu Pemesanan Makanan
                     Container(
@@ -213,40 +203,43 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       ),
                       child: InkWell(
                         onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const FoodListScreen())
-                          );
+                          Get.toNamed(Routes.foodList);
                         },
                         child: Center(
-                            child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text('Layanan Pemesanan Makan', style: GoogleFonts.poppins(
-                                        fontSize: 20 ,
-                                        fontWeight: FontWeight.bold
-                                    ),),
-                                    Image.asset(
-                                      'assets/icon_makanan.png',
-                                      width: 150,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Layanan Pemesanan Makan',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Image.asset(
+                                  'assets/icon_makanan.png',
+                                  width: 150,
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    'Lihat lebih lanjut >',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w300,
                                     ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text('Lihat lebih lanjut >', style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w300
-                                      ),),
-                                    )
-                                  ],
-                                )
-                            )
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
 
-                    SizedBox(height: 30,),
+                    SizedBox(height: 30),
 
                     //Menu Layanan Laundry
                     Container(
@@ -267,36 +260,41 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                           );
                         },
                         child: Center(
-                            child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text('Layanan Laundry', style: GoogleFonts.poppins(
-                                        fontSize: 20 ,
-                                        fontWeight: FontWeight.bold
-                                    ),),
-                                    Image.asset(
-                                      'assets/icon_laundry.png',
-                                      width: 150,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Layanan Laundry',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Image.asset(
+                                  'assets/icon_laundry.png',
+                                  width: 150,
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    'Lihat lebih lanjut >',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w300,
                                     ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text('Lihat lebih lanjut >', style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w300
-                                      ),),
-                                    )
-                                  ],
-                                )
-                            )
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-
             ],
           ),
         ),
@@ -323,27 +321,26 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
-                      onPressed: () {
-                        _onLogout(context);
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const HomeScreenPage(),
-                          ),
-                        );
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.black,
+                        size: 20,
+                      ),
+                      onPressed: () async {
+                        await _onLogout(context);
+                        Get.offAllNamed(Routes.home);
                       },
                     ),
                   ),
 
                   IconButton(
-                    icon: Icon(Icons.notifications_none, color: Colors.black, size: 28),
+                    icon: Icon(
+                      Icons.notifications_none,
+                      color: Colors.black,
+                      size: 28,
+                    ),
                     onPressed: () {
-                      //
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const NotificationScreen()),
-                      );
+                      Get.toNamed(Routes.notification);
                     },
                   ),
                 ],
@@ -379,16 +376,13 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                     return InkWell(
                       onTap: () {
                         if (kost["ID_Pengguna"] == userId) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => _buildMenuCard(),
-                            ),
-                          );
+                          Get.to(_buildMenuCard());
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text("Anda tidak berhak untuk masuk kost ini"),
+                              content: Text(
+                                "Anda tidak berhak untuk masuk kost ini",
+                              ),
                               duration: const Duration(seconds: 2),
                               action: SnackBarAction(
                                 label: 'Dismiss',
@@ -399,14 +393,13 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                             ),
                           );
                         }
-
                       },
                       child: Container(
                         decoration: BoxDecoration(
                           color: Color(0xFF9EBFED),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.4),
+                            color: Colors.white.withAlpha((0.4 * 255).toInt()),
                             width: 1,
                           ),
                         ),
@@ -422,7 +415,9 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
                                   image: DecorationImage(
-                                    image: NetworkImage(kost["Thumbnail"] as String),
+                                    image: NetworkImage(
+                                      kost["Thumbnail"] as String,
+                                    ),
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -456,11 +451,10 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                             ],
                           ),
                         ),
-                      )
+                      ),
                     );
-
                   },
-                )
+                ),
               ),
 
               // Register button
@@ -470,7 +464,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                 decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withAlpha((0.3 * 255).toInt()),
                       width: 1,
                     ),
                   ),
@@ -482,10 +476,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       const Expanded(child: Divider(color: Colors.white60)),
                       InkWell(
                         onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const DaftarKosScreen())
-                          );
+                          Get.toNamed(Routes.daftarKos);
                         },
                         child: Text(
                           'Daftarkan Kost Anda',

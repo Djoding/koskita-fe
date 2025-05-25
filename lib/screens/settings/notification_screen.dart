@@ -18,7 +18,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 10.0,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -55,7 +58,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF2C3E50)),
+                      icon: const Icon(
+                        Icons.notifications_none_outlined,
+                        color: Color(0xFF2C3E50),
+                      ),
                       onPressed: () {},
                     ),
                   ),
@@ -80,7 +86,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     children: [
                       // Section header
                       Padding(
-                        padding: const EdgeInsets.only(left: 10.0, top: 10.0, bottom: 20.0),
+                        padding: const EdgeInsets.only(
+                          left: 10.0,
+                          top: 10.0,
+                          bottom: 20.0,
+                        ),
                         child: Text(
                           'Hari Ini',
                           style: GoogleFonts.poppins(
@@ -146,7 +156,7 @@ class NotificationItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha((0.05 * 255).toInt()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

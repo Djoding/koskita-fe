@@ -3,9 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'api_service.dart';
 
 class KostService {
-
   // Login
-  static Future<Map<String, dynamic>> createKost(Map<String, dynamic> formData) async {
+  static Future<Map<String, dynamic>> createKost(
+    Map<String, dynamic> formData,
+  ) async {
     try {
       final response = await ApiService.post('/kost/create', {
         'namaPemilik': formData['namaPemilik'],
@@ -22,50 +23,35 @@ class KostService {
         'informasiJarak': formData['informasiJarak'],
         'images': formData['imageUrls'],
       });
-      debugPrint("RESPONSE ${response}");
+      debugPrint("RESPONSE $response");
 
       if (response['status']) {
-        return {
-          'status' : true,
-          'message' : response['message']
-        };
+        return {'status': true, 'message': response['message']};
       }
 
-      return {
-        'status' : false,
-        'message' : response['message']
-      };
+      return {'status': false, 'message': response['message']};
     } catch (e) {
-      print('Error creating kost: $e');
-      return {
-        'status' : false,
-        'message' : e.toString()
-      };
+      debugPrint('Error creating kost: $e');
+      return {'status': false, 'message': e.toString()};
     }
   }
 
   static Future<Map<String, dynamic>> getDataKost() async {
     try {
       final response = await ApiService.get('/kost/');
-      debugPrint("RESPONSE GET DATA KOST ${response}");
+      debugPrint("RESPONSE GET DATA KOST $response");
       if (response['status']) {
         return {
-          'status' : true,
-          'data' : response['data'],
-          'message' : response['message']
+          'status': true,
+          'data': response['data'],
+          'message': response['message'],
         };
       }
 
-      return {
-        'status' : false,
-        'message' : response['message']
-      };
+      return {'status': false, 'message': response['message']};
     } catch (e) {
-      print("Error get data kost ${e}");
-      return {
-        'status' : false,
-        'message' : e.toString()
-      };
+      debugPrint("Error get data kost $e");
+      return {'status': false, 'message': e.toString()};
     }
   }
 }

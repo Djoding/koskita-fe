@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/login_screen.dart';
-import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
-import 'package:kosan_euy/screens/tenant/dashboard_tenant_screen.dart';
 import 'package:kosan_euy/services/auth_service.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:get/get.dart';
+import 'package:kosan_euy/routes/app_pages.dart';
 
 class HomeScreenPage extends StatelessWidget {
   const HomeScreenPage({super.key});
@@ -61,7 +61,11 @@ class HomeScreenPage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen(userRole: 'Pengelola',)),
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                const LoginScreen(userRole: 'Pengelola'),
+                      ),
                     );
                   },
                 ),
@@ -74,7 +78,11 @@ class HomeScreenPage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen(userRole: 'Penghuni',)),
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                const LoginScreen(userRole: 'Penghuni'),
+                      ),
                     );
                   },
                 ),
@@ -117,15 +125,12 @@ class HomeScreenPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha((0.1 * 255).toInt()),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(
-          color: Colors.deepPurple,
-          width: 1
-        )
+        border: Border.all(color: Colors.deepPurple, width: 1),
       ),
       child: ElevatedButton(
         onPressed: onPressed,
@@ -149,9 +154,8 @@ class HomeScreenPage extends StatelessWidget {
     );
   }
 
-  Future<void> _checkIfLoggedIn (BuildContext context) async{
+  Future<void> _checkIfLoggedIn(BuildContext context) async {
     Future.microtask(() async {
-
       final isLoggedIn = await AuthService.isLoggedIn();
 
       if (isLoggedIn["isLoggedIn"]) {
@@ -160,23 +164,18 @@ class HomeScreenPage extends StatelessWidget {
         var role = decodedToken["role"];
 
         if (role == "Pengelola" || role == "Penghuni" || role == "Admin") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) {
-              if (role == "Pengelola") return const DashboardOwnerScreen();
-              if (role == "Penghuni") return const DashboardTenantScreen();
-              if (role == "Admin") return const DashboardOwnerScreen();
-              return Container(); // fallback aja biar gak error return-nya
-            }),
-          );
+          if (role == "Pengelola") {
+            Get.offNamed(Routes.dashboardOwner);
+          } else if (role == "Penghuni") {
+            Get.offNamed(Routes.dashboardTenant);
+          } else if (role == "Admin") {
+            Get.offNamed(Routes.dashboardOwner);
+          }
         } else {
           // Role gak dikenal atau null, tetap di halaman sekarang
           debugPrint('Role tidak dikenal: $role');
         }
       }
     });
-
-
-
   }
 }

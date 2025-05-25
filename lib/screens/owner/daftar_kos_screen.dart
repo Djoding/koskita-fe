@@ -17,7 +17,7 @@ class DaftarKosScreen extends StatefulWidget {
 class _DaftarKosScreenState extends State<DaftarKosScreen> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
-  List<XFile> _imageFiles = [];
+  final List<XFile> _imageFiles = [];
   List<String> _uploadedImageUrls = [];
 
   final TextEditingController _namaPemilikController = TextEditingController();
@@ -26,12 +26,18 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
   final TextEditingController _jenisKostController = TextEditingController();
   final TextEditingController _jumlahKamarController = TextEditingController();
   final TextEditingController _hargaController = TextEditingController();
-  final TextEditingController _fasilitasKamarController = TextEditingController();
-  final TextEditingController _fasilitasKamarMandiController = TextEditingController();
-  final TextEditingController _kebijakanPropertiController = TextEditingController();
-  final TextEditingController _kebijakanFasilitasController = TextEditingController();
-  final TextEditingController _deskripsiPropertiController = TextEditingController();
-  final TextEditingController _informasiJarakController = TextEditingController();
+  final TextEditingController _fasilitasKamarController =
+      TextEditingController();
+  final TextEditingController _fasilitasKamarMandiController =
+      TextEditingController();
+  final TextEditingController _kebijakanPropertiController =
+      TextEditingController();
+  final TextEditingController _kebijakanFasilitasController =
+      TextEditingController();
+  final TextEditingController _deskripsiPropertiController =
+      TextEditingController();
+  final TextEditingController _informasiJarakController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -72,7 +78,11 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.black,
+                        size: 20,
+                      ),
                       onPressed: () {
                         Navigator.pop(context);
                       },
@@ -105,13 +115,25 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
                   const SizedBox(height: 12),
                   _buildTextField('Fasilitas Kamar', _fasilitasKamarController),
                   const SizedBox(height: 12),
-                  _buildTextField('Fasilitas Kamar Mandi', _fasilitasKamarMandiController),
+                  _buildTextField(
+                    'Fasilitas Kamar Mandi',
+                    _fasilitasKamarMandiController,
+                  ),
                   const SizedBox(height: 12),
-                  _buildTextField('Kebijakan Properti', _kebijakanPropertiController),
+                  _buildTextField(
+                    'Kebijakan Properti',
+                    _kebijakanPropertiController,
+                  ),
                   const SizedBox(height: 12),
-                  _buildTextField('Kebijakan Fasilitas', _kebijakanFasilitasController),
+                  _buildTextField(
+                    'Kebijakan Fasilitas',
+                    _kebijakanFasilitasController,
+                  ),
                   const SizedBox(height: 12),
-                  _buildTextField('Deskripsi Properti', _deskripsiPropertiController),
+                  _buildTextField(
+                    'Deskripsi Properti',
+                    _deskripsiPropertiController,
+                  ),
                   const SizedBox(height: 12),
                   _buildTextField('Informasi Jarak', _informasiJarakController),
                   const SizedBox(height: 12),
@@ -133,17 +155,17 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
-          color: Colors.black54,
-          fontSize: 14,
-        ),
+        labelStyle: const TextStyle(color: Colors.black54, fontSize: 14),
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
     );
   }
@@ -168,18 +190,12 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
                   padding: EdgeInsets.only(left: 16.0),
                   child: Text(
                     'Upload Bangunan Kost',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.black54, fontSize: 14),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(right: 16.0),
-                  child: Icon(
-                    Icons.upload,
-                    color: Colors.blue[700],
-                  ),
+                  child: Icon(Icons.upload, color: Colors.blue[700]),
                 ),
               ],
             ),
@@ -189,10 +205,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
           const SizedBox(height: 16),
           const Text(
             'Selected Images:',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -267,10 +280,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
         ),
         child: const Text(
           'Daftar',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -287,14 +297,16 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
     } catch (e) {
       // Handle any errors
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking images: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error picking images: $e')));
     }
   }
 
   Future<void> _uploadImagesAndForm() async {
-    final uploadThing = UploadThing("sk_live_08e0250b1aab76a8067be159691359dfb45a15f5fb0906fbacf6859866f1e199");
+    final uploadThing = UploadThing(
+      "sk_live_08e0250b1aab76a8067be159691359dfb45a15f5fb0906fbacf6859866f1e199",
+    );
 
     if (_imageFiles.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -323,7 +335,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
         await _sendFormDataToApi();
       } else {
         // Upload failed
-        if(!mounted) return;
+        if (!mounted) return;
         Navigator.of(context).pop();
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -332,13 +344,13 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       }
     } catch (e) {
       // Close loading dialog
-      if(!mounted) return;
+      if (!mounted) return;
       Navigator.of(context).pop();
 
       // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
     }
   }
 
@@ -363,12 +375,18 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
 
     try {
       final response = await KostService.createKost(formData);
-      if(!mounted) return;
+      if (!mounted) return;
       Navigator.of(context).pop();
       if (response['status']) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SuccessScreen(title: 'Kost Berhasil di Daftarkan', subtitle: 'Tunggu Persetujuan Dari Admin'))
+          MaterialPageRoute(
+            builder:
+                (context) => const SuccessScreen(
+                  title: 'Kost Berhasil di Daftarkan',
+                  subtitle: 'Tunggu Persetujuan Dari Admin',
+                ),
+          ),
         );
         return;
       }

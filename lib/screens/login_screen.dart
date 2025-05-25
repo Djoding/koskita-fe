@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:kosan_euy/screens/forgetpassword_screen.dart';
@@ -20,10 +19,12 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
-    serverClientId: "597965256700-rnvu6hrqq0ucng2qbma4s56bcsl3jt0s.apps.googleusercontent.com"
+    serverClientId:
+        "597965256700-rnvu6hrqq0ucng2qbma4s56bcsl3jt0s.apps.googleusercontent.com",
   );
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -69,7 +70,8 @@ class _LoginScreenState extends State<LoginScreen> {
           if (!mounted) return;
           DialogUtils.hideLoadingDialog(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar( // Create a SnackBar widget
+            SnackBar(
+              // Create a SnackBar widget
               content: Text(responLogin["message"]),
               duration: const Duration(seconds: 2),
               action: SnackBarAction(
@@ -81,16 +83,15 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
           return;
-
         }
 
         Widget targetScreen;
         var token = responLogin["token"];
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         var role = decodedToken["role"];
-        if (widget.userRole == "Pengelola" && role == "Pengelola" ) {
+        if (widget.userRole == "Pengelola" && role == "Pengelola") {
           targetScreen = const DashboardOwnerScreen();
-        } else if (widget.userRole == "Penghuni" && role == "Penghuni" ) {
+        } else if (widget.userRole == "Penghuni" && role == "Penghuni") {
           targetScreen = const DashboardTenantScreen();
         } else {
           return;
@@ -102,34 +103,28 @@ class _LoginScreenState extends State<LoginScreen> {
           SnackBar(
             content: Text(responLogin["message"]),
             duration: const Duration(seconds: 2),
-            action: SnackBarAction(
-              label: 'Dismiss',
-              onPressed: () {
-
-              },
-            ),
+            action: SnackBarAction(label: 'Dismiss', onPressed: () {}),
           ),
         );
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => targetScreen),
-              (route) => false,
+          (route) => false,
         );
-
       } catch (e) {
         if (!mounted) return;
         DialogUtils.hideLoadingDialog(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Terjadi kesalahan di Server.'),
-            backgroundColor: Colors.red, // Optional: change background color for errors
+            backgroundColor:
+                Colors.red, // Optional: change background color for errors
             duration: const Duration(seconds: 4),
           ),
         );
       }
     }
   }
-
 
   // Switch to registration mode
   void _goToRegistration() {
@@ -149,7 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -194,10 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 16),
 
         // House Image
-        Image.asset(
-          'assets/home.png',
-          height: 150,
-        ),
+        Image.asset('assets/home.png', height: 150),
         const SizedBox(height: 24),
 
         // Email Input
@@ -206,11 +197,13 @@ class _LoginScreenState extends State<LoginScreen> {
           hintText: 'Email',
           keyboardType: TextInputType.emailAddress,
           prefixIcon: Icons.email_outlined,
-          suffixIcon: _emailController.text.isNotEmpty ?
-          IconButton(
-            icon: const Icon(Icons.clear, color: Colors.grey),
-            onPressed: () => setState(() => _emailController.clear()),
-          ) : null,
+          suffixIcon:
+              _emailController.text.isNotEmpty
+                  ? IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.grey),
+                    onPressed: () => setState(() => _emailController.clear()),
+                  )
+                  : null,
         ),
         const SizedBox(height: 24),
 
@@ -239,16 +232,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
         //Register onclick
         TextButton(
-            onPressed: () => {
-              _goToRegistration()
-            },
-            child: Text(
-              'Belum daftar?',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
+          onPressed: () => {_goToRegistration()},
+          child: Text(
+            'Belum daftar?',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
             ),
+          ),
         ),
 
         // Divider
@@ -261,10 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   'atau lanjutkan dengan',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
                 ),
               ),
               const Expanded(child: Divider(color: Colors.white60)),
@@ -324,10 +312,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         Text(
           _email,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: Colors.white70,
-          ),
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white70),
         ),
         const SizedBox(height: 24),
 
@@ -342,7 +327,8 @@ class _LoginScreenState extends State<LoginScreen> {
               _obscurePassword ? Icons.visibility_off : Icons.visibility,
               color: Colors.grey,
             ),
-            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            onPressed:
+                () => setState(() => _obscurePassword = !_obscurePassword),
           ),
         ),
         const SizedBox(height: 24),
@@ -376,7 +362,9 @@ class _LoginScreenState extends State<LoginScreen> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ForgetPasswordScreen()),
+              MaterialPageRoute(
+                builder: (context) => const ForgetPasswordScreen(),
+              ),
             );
           },
           child: Text(
@@ -396,19 +384,20 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.arrow_back_ios_new, size: 12, color: Colors.white),
+                const Icon(
+                  Icons.arrow_back_ios_new,
+                  size: 12,
+                  color: Colors.white,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'kembali ke login',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
                 ),
               ],
             ),
           ),
-        )
+        ),
       ],
     );
   }
@@ -418,10 +407,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         //Image
-        Image.asset(
-          'assets/home.png',
-          width: 150,
-        ),
+        Image.asset('assets/home.png', width: 150),
         // Title
         Text(
           'Mendaftar',
@@ -434,10 +420,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 8),
         Text(
           'Silahkan buat Email dan Password',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: Colors.white,
-          ),
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
         ),
 
         const SizedBox(height: 24),
@@ -448,11 +431,13 @@ class _LoginScreenState extends State<LoginScreen> {
           hintText: 'Email',
           keyboardType: TextInputType.emailAddress,
           prefixIcon: Icons.email_outlined,
-          suffixIcon: _emailController.text.isNotEmpty ?
-          IconButton(
-            icon: const Icon(Icons.clear, color: Colors.grey),
-            onPressed: () => setState(() => _emailController.clear()),
-          ) : null,
+          suffixIcon:
+              _emailController.text.isNotEmpty
+                  ? IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.grey),
+                    onPressed: () => setState(() => _emailController.clear()),
+                  )
+                  : null,
         ),
         const SizedBox(height: 16),
 
@@ -467,7 +452,8 @@ class _LoginScreenState extends State<LoginScreen> {
               _obscurePassword ? Icons.visibility_off : Icons.visibility,
               color: Colors.grey,
             ),
-            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            onPressed:
+                () => setState(() => _obscurePassword = !_obscurePassword),
           ),
         ),
         const SizedBox(height: 16),
@@ -483,7 +469,10 @@ class _LoginScreenState extends State<LoginScreen> {
               _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
               color: Colors.grey,
             ),
-            onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+            onPressed:
+                () => setState(
+                  () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                ),
           ),
         ),
         const SizedBox(height: 24),
@@ -524,20 +513,20 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.arrow_back_ios_new, size: 12, color: Colors.white),
+                const Icon(
+                  Icons.arrow_back_ios_new,
+                  size: 12,
+                  color: Colors.white,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'kembali ke login',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
                 ),
               ],
             ),
           ),
-        )
-
+        ),
       ],
     );
   }
@@ -561,9 +550,13 @@ class _LoginScreenState extends State<LoginScreen> {
         fillColor: Colors.white,
         hintText: hintText,
         hintStyle: GoogleFonts.poppins(color: Colors.grey),
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey) : null,
+        prefixIcon:
+            prefixIcon != null ? Icon(prefixIcon, color: Colors.grey) : null,
         suffixIcon: suffixIcon,
-        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 12,
+          horizontal: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,
@@ -574,7 +567,10 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(25),
-          borderSide: const BorderSide(color: Color.fromRGBO(144, 122, 204, 1.0), width: 2),
+          borderSide: const BorderSide(
+            color: Color.fromRGBO(144, 122, 204, 1.0),
+            width: 2,
+          ),
         ),
       ),
     );
@@ -586,7 +582,8 @@ class _LoginScreenState extends State<LoginScreen> {
       await _googleSignIn.signOut();
 
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+      final GoogleSignInAuthentication? googleAuth =
+          await googleUser?.authentication;
 
       if (googleAuth == null || googleUser == null) {
         throw Exception('Tidak bisa mendapatkan autentikasi dari Google');
@@ -595,11 +592,11 @@ class _LoginScreenState extends State<LoginScreen> {
       final String? idToken = googleAuth.idToken;
 
       var dataLogin = await AuthService.loginWithGoogle(
-          googleUser.displayName.toString(),
-          googleUser.email,
-          idToken!,
-          googleUser.photoUrl.toString(),
-          widget.userRole
+        googleUser.displayName.toString(),
+        googleUser.email,
+        idToken!,
+        googleUser.photoUrl.toString(),
+        widget.userRole,
       );
 
       if (!mounted) return;
@@ -608,7 +605,9 @@ class _LoginScreenState extends State<LoginScreen> {
         if (widget.userRole == "Pengelola") {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const DashboardOwnerScreen()),
+            MaterialPageRoute(
+              builder: (context) => const DashboardOwnerScreen(),
+            ),
           );
         }
 
@@ -616,7 +615,8 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-                builder: (context) => const DashboardTenantScreen()),
+              builder: (context) => const DashboardTenantScreen(),
+            ),
           );
         }
         return;
@@ -626,12 +626,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(
           content: Text(dataLogin['message']),
           duration: const Duration(seconds: 2),
-          action: SnackBarAction(
-            label: 'Dismiss',
-            onPressed: () {
-
-            },
-          ),
+          action: SnackBarAction(label: 'Dismiss', onPressed: () {}),
         ),
       );
     } catch (error) {
@@ -644,7 +639,7 @@ class _LoginScreenState extends State<LoginScreen> {
           duration: const Duration(seconds: 4),
         ),
       );
-      print('Error sign in with Google: $error');
+      debugPrint('Error sign in with Google: $error');
     }
   }
 }

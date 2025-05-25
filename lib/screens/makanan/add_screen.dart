@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:kosan_euy/screens/makanan/success_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:get/get.dart';
 
 class AddFoodScreen extends StatefulWidget {
   const AddFoodScreen({super.key});
@@ -25,9 +26,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       }
     } catch (e) {
       // Handle any errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking image: $e')),
-      );
+      Get.snackbar('Error', 'Error picking image: $e');
     }
   }
 
@@ -78,7 +77,10 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.black),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_rounded,
+                        color: Colors.black,
+                      ),
                       onPressed: () {
                         Navigator.pop(context);
                       },
@@ -104,7 +106,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       decoration: InputDecoration(
                         hintText: 'Nama Makanan/Minuman',
                         hintStyle: TextStyle(color: Colors.grey[400]),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 15),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                        ),
                         border: InputBorder.none,
                       ),
                     ),
@@ -120,7 +124,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       decoration: InputDecoration(
                         hintText: 'Harga',
                         hintStyle: TextStyle(color: Colors.grey[400]),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 15),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                        ),
                         border: InputBorder.none,
                       ),
                     ),
@@ -146,7 +152,10 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                               'Upload Foto Makanan/Minuman',
                               style: TextStyle(color: Colors.grey[400]),
                             ),
-                            const Icon(Icons.file_download_outlined, color: Colors.black),
+                            const Icon(
+                              Icons.file_download_outlined,
+                              color: Colors.black,
+                            ),
                           ],
                         ),
                       ),
@@ -173,17 +182,25 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4D9DAB),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                       ),
                       onPressed: () {
                         if (_imageFile != null) {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const SuccessScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const SuccessScreen(),
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Harap pilih gambar terlebih dahulu')),
+                            const SnackBar(
+                              content: Text(
+                                'Harap pilih gambar terlebih dahulu',
+                              ),
+                            ),
                           );
                         }
                       },
@@ -196,7 +213,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                 ],
               ),
             ),
-
           ],
         ),
       ),

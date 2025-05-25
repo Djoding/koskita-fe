@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 
 class DialogUtils {
-  static const List<Color> _kDefaultRainbowColors = const [
+  static const List<Color> _kDefaultRainbowColors = [
     Colors.red,
     Colors.orange,
     Colors.yellow,
@@ -17,8 +17,9 @@ class DialogUtils {
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return WillPopScope(
-          onWillPop: () async => false,
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {},
           child: Center(
             child: Container(
               padding: const EdgeInsets.all(24),
@@ -33,7 +34,8 @@ class DialogUtils {
                   indicatorType: Indicator.pacman,
                   colors: _kDefaultRainbowColors,
                   strokeWidth: 3.0,
-                  pathBackgroundColor: showPathBackground ? Colors.black45 : null,
+                  pathBackgroundColor:
+                      showPathBackground ? Colors.black45 : null,
                 ),
               ),
             ),
@@ -42,8 +44,6 @@ class DialogUtils {
       },
     );
   }
-
-
 
   static void hideLoadingDialog(BuildContext context) {
     // Make sure the context is still valid before popping
@@ -54,19 +54,13 @@ class DialogUtils {
 
   static void showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
   static void showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 }

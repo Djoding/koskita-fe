@@ -5,11 +5,7 @@ class SuccessScreen extends StatefulWidget {
   final String title;
   final String subtitle;
 
-  const SuccessScreen({
-    Key? key,
-    required this.title,
-    this.subtitle = '',
-  }) : super(key: key);
+  const SuccessScreen({super.key, required this.title, this.subtitle = ''});
 
   @override
   State<SuccessScreen> createState() => _SuccessScreenState();
@@ -29,11 +25,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // House illustration
-                    Image.asset(
-                      'assets/yes.png',
-                      width: 200,
-                      height: 200,
-                    ),
+                    Image.asset('assets/yes.png', width: 200, height: 200),
 
                     const SizedBox(height: 20),
 
@@ -57,7 +49,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withAlpha((0.85 * 255).toInt()),
                           ),
                         ),
                       ),
@@ -75,7 +67,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withAlpha((0.1 * 255).toInt()),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -86,8 +78,9 @@ class _SuccessScreenState extends State<SuccessScreen> {
                   onPressed: () {
                     // Pop back to settings screen
                     Navigator.popUntil(
-                        context,
-                            (route) => route.isFirst || route.settings.name == '/settings'
+                      context,
+                      (route) =>
+                          route.isFirst || route.settings.name == '/settings',
                     );
                   },
                 ),

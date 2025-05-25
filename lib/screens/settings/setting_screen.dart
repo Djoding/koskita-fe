@@ -25,7 +25,10 @@ class _SettingScreenState extends State<SettingScreen> {
               left: 0,
               right: 0,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 10.0,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -38,7 +41,11 @@ class _SettingScreenState extends State<SettingScreen> {
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.black,
+                          size: 20,
+                        ),
                         onPressed: () {
                           Navigator.pop(context);
                         },
@@ -64,7 +71,10 @@ class _SettingScreenState extends State<SettingScreen> {
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.notifications_none_outlined, color: Colors.white),
+                        icon: const Icon(
+                          Icons.notifications_none_outlined,
+                          color: Colors.white,
+                        ),
                         onPressed: () {},
                       ),
                     ),
@@ -124,13 +134,17 @@ class _SettingScreenState extends State<SettingScreen> {
                               menuItem(
                                 icon: Icons.person_outline,
                                 iconColor: Colors.blue,
-                                iconBackground: Colors.blue.withOpacity(0.1),
+                                iconBackground: Colors.blue.withAlpha(
+                                  (0.1 * 255).toInt(),
+                                ),
                                 title: 'Edit Profil',
                                 onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const EditProfileScreen()
+                                      builder:
+                                          (context) =>
+                                              const EditProfileScreen(),
                                     ),
                                   );
                                 },
@@ -153,7 +167,9 @@ class _SettingScreenState extends State<SettingScreen> {
                           child: menuItem(
                             icon: Icons.shield_outlined,
                             iconColor: Colors.blue,
-                            iconBackground: Colors.blue.withOpacity(0.1),
+                            iconBackground: Colors.blue.withAlpha(
+                              (0.1 * 255).toInt(),
+                            ),
                             title: 'Keamanan',
                             onTap: () {
                               Navigator.push(
@@ -180,10 +196,13 @@ class _SettingScreenState extends State<SettingScreen> {
                           child: menuItem(
                             icon: Icons.logout,
                             iconColor: Colors.blue,
-                            iconBackground: Colors.blue.withOpacity(0.1),
+                            iconBackground: Colors.blue.withAlpha(
+                              (0.1 * 255).toInt(),
+                            ),
                             title: 'Keluar',
                             onTap: () async {
-                              final bool? confirmed = await showLogoutConfirmationDialog(context);
+                              final bool? confirmed =
+                                  await showLogoutConfirmationDialog(context);
                               if (confirmed == true) {
                                 // Add logout implementation
                               }
@@ -239,11 +258,7 @@ class _SettingScreenState extends State<SettingScreen> {
                 color: iconBackground,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 20,
-              ),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 16),
             Text(
@@ -260,7 +275,6 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 }
 
-
 // This function shows the logout confirmation dialog
 Future<bool?> showLogoutConfirmationDialog(BuildContext context) {
   return showDialog<bool>(
@@ -268,9 +282,7 @@ Future<bool?> showLogoutConfirmationDialog(BuildContext context) {
     barrierDismissible: false,
     builder: (BuildContext context) {
       return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         elevation: 0,
         backgroundColor: Colors.white,
         child: const LogoutConfirmationContent(),
@@ -325,9 +337,7 @@ class LogoutConfirmationContent extends StatelessWidget {
               _onLogout(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const HomeScreenPage(),
-                ),
+                MaterialPageRoute(builder: (context) => const HomeScreenPage()),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -380,9 +390,6 @@ class LogoutConfirmationContent extends StatelessWidget {
 
 // Example of how to use the dialog in your SettingScreen class
 // Add this to your MenuOption for Logout:
-
-
-
 
 // Update your SettingScreen with this implementation
 void updateLogoutFunctionality(BuildContext context) {

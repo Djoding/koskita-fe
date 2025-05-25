@@ -1,19 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:kosan_euy/screens/home_screen.dart';
-import 'package:kosan_euy/screens/makanan/makanan_screen.dart';
-import 'package:kosan_euy/screens/owner/add_penghuni_screen.dart';
-import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
-import 'package:kosan_euy/screens/owner/edit_penghuni_screen.dart';
-import 'package:kosan_euy/screens/owner/notification/notification_owner.dart';
-import 'package:kosan_euy/screens/owner/notification/notification_reservasi.dart';
-import 'package:kosan_euy/screens/owner/notification/notification_reservasi_detail.dart';
-import 'package:kosan_euy/screens/owner/penghuni_screen.dart';
-import 'package:kosan_euy/screens/owner/reservasi/reservasi_screen.dart';
-import 'package:kosan_euy/screens/settings//notification_screen.dart';
-import 'package:kosan_euy/screens/settings/setting_screen.dart';
-import 'package:kosan_euy/widgets/success_screen.dart';
-
+import 'package:get/get.dart';
+import 'routes/app_pages.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,7 +13,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'KostKita',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -39,7 +27,10 @@ class MyApp extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 12,
+            horizontal: 16,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(25),
             borderSide: BorderSide.none,
@@ -50,7 +41,10 @@ class MyApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(25),
-            borderSide: const BorderSide(color: Color.fromRGBO(144, 122, 204, 1.0), width: 2),
+            borderSide: const BorderSide(
+              color: Color.fromRGBO(144, 122, 204, 1.0),
+              width: 2,
+            ),
           ),
           hintStyle: GoogleFonts.poppins(color: Colors.grey),
         ),
@@ -67,22 +61,10 @@ class MyApp extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-        )
+        ),
       ),
-      // initialRoute: '/',
-      // routes: {
-      //   '/': (context) => HomeScreenPage(),
-      //   '/'
-      // },
-      home: Scaffold(
-        // body: HomeScreenPage(),
-        // body: NotificationReservasiScreen()
-        // body: SuccessScreen(title: 'test', subtitle: 'test')
-        body: DashboardOwnerScreen()
-        // body: SettingScreen(),
-        // body: FoodListScreen(),
-      ),
+      initialRoute: AppPages.initial,
+      getPages: AppPages.routes,
     );
   }
 }
-

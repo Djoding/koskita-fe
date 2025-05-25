@@ -3,6 +3,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:get/get.dart';
 
 class ReservasiScreen extends StatefulWidget {
   const ReservasiScreen({super.key});
@@ -13,13 +14,13 @@ class ReservasiScreen extends StatefulWidget {
 
 class _ReservasiScreenState extends State<ReservasiScreen> {
   int _currentIndex = 0;
-  final CarouselSliderController _carouselController = CarouselSliderController();
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
   final LatLng _kostLocation = LatLng(-6.9731, 107.6291);
   bool isLoved = false;
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
-
 
   final List<String> imageList = [
     "assets/unsplash1.jpg",
@@ -28,13 +29,12 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
   ];
 
   @override
-  void dispose(){
+  void dispose() {
     nameController.dispose();
     phoneController.dispose();
     dateController.dispose();
     super.dispose();
   }
-
 
   void _showPaymentMethods(BuildContext context) {
     showModalBottomSheet(
@@ -54,17 +54,32 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInputField("Nama Lengkap", nameController, keyboardType: TextInputType.text),
+                    _buildInputField(
+                      "Nama Lengkap",
+                      nameController,
+                      keyboardType: TextInputType.text,
+                    ),
                     SizedBox(height: 16),
-                    _buildInputField("Nomor Telepon", phoneController, keyboardType: TextInputType.phone),
+                    _buildInputField(
+                      "Nomor Telepon",
+                      phoneController,
+                      keyboardType: TextInputType.phone,
+                    ),
                     SizedBox(height: 16),
-                    _buildDatePickerField(context, "Tanggal Pemesanan", dateController),
+                    _buildDatePickerField(
+                      context,
+                      "Tanggal Pemesanan",
+                      dateController,
+                    ),
                     SizedBox(height: 16),
                     _buildPriceDetails(),
                     SizedBox(height: 16),
                     Text(
                       "Pilih Metode Pembayaran",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(height: 16),
                     ListView(
@@ -78,7 +93,7 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                       ],
                     ),
                     SizedBox(height: 16),
-                    _buildSubmitButton(context)
+                    _buildSubmitButton(context),
                   ],
                 ),
               ),
@@ -89,18 +104,20 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
     );
   }
 
-
   Widget _buildPaymentOption(BuildContext context, String method) {
     return ListTile(
       title: Text(method),
       onTap: () {
-        Navigator.pop(context);
-        // TODO: Lakukan sesuatu dengan pilihan yang dipilih
+        Get.back();
       },
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, {TextInputType? keyboardType}) {
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, {
+    TextInputType? keyboardType,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -119,7 +136,11 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
   }
 
   // Widget untuk Date Picker
-  Widget _buildDatePickerField(BuildContext context, String label, TextEditingController controller) {
+  Widget _buildDatePickerField(
+    BuildContext context,
+    String label,
+    TextEditingController controller,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -141,7 +162,8 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
             );
             if (pickedDate != null) {
               setState(() {
-                controller.text = "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
+                controller.text =
+                    "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
               });
             }
           },
@@ -167,7 +189,10 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Kost 1 Tahun"),
-              Text("Rp 12.000.000", style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                "Rp 12.000.000",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           SizedBox(height: 6),
@@ -175,7 +200,10 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Total Harga"),
-              Text("Rp 12.000.000", style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                "Rp 12.000.000",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ],
@@ -192,12 +220,13 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
           padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        onPressed: () {},
+        onPressed: () {
+          _showPaymentMethods(context);
+        },
         child: Text("Tambah/Edit", style: TextStyle(color: Colors.white)),
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -220,16 +249,17 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                       });
                     },
                   ),
-                  items: imageList.map((imageUrl) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(10.0),
-                      child: Image.asset(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ),
-                    );
-                  }).toList(),
+                  items:
+                      imageList.map((imageUrl) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(10.0),
+                          child: Image.asset(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ),
+                        );
+                      }).toList(),
                 ),
 
                 //Carousel slider/dot
@@ -250,7 +280,10 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                           margin: EdgeInsets.symmetric(horizontal: 4.0),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: _currentIndex == index ? Colors.black : Colors.grey,
+                            color:
+                                _currentIndex == index
+                                    ? Colors.black
+                                    : Colors.grey,
                           ),
                         ),
                       );
@@ -271,7 +304,7 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                         backgroundColor: Colors.white,
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => Get.back(),
                         ),
                       ),
 
@@ -293,18 +326,18 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                   child: CircleAvatar(
                     backgroundColor: Colors.white,
                     child: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            isLoved = !isLoved;
-                          });
-                        },
-                        icon: Icon(
-                          isLoved ? Icons.favorite : Icons.add,
-                          color: isLoved ? Colors.red : Colors.black,
-                        ),
+                      onPressed: () {
+                        setState(() {
+                          isLoved = !isLoved;
+                        });
+                      },
+                      icon: Icon(
+                        isLoved ? Icons.favorite : Icons.add,
+                        color: isLoved ? Colors.red : Colors.black,
+                      ),
                     ),
                   ),
-                )
+                ),
               ],
             ),
 
@@ -361,14 +394,18 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                     "Fasilitas Kamar:",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const Text("1. Meja\n2. Lemari baju\n3. Tempat tidur\n4. Kursi\n5. Cermin"),
+                  const Text(
+                    "1. Meja\n2. Lemari baju\n3. Tempat tidur\n4. Kursi\n5. Cermin",
+                  ),
                   const SizedBox(height: 10),
 
                   const Text(
                     "Fasilitas Kamar Mandi:",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const Text("1. Kamar mandi dalam\n2. Gayung\n3. Kloset jongkok\n4. Ember"),
+                  const Text(
+                    "1. Kamar mandi dalam\n2. Gayung\n3. Kloset jongkok\n4. Ember",
+                  ),
                   const SizedBox(height: 10),
 
                   // Kebijakan Properti
@@ -376,7 +413,9 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                     "Kebijakan Properti:",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const Text("1. Tipe ini hanya diisi 1 orang\n2. Teman menginap dikenakan biaya\n3. Tidak ada jam malam\n4. Sampah dibuang setiap pagi"),
+                  const Text(
+                    "1. Tipe ini hanya diisi 1 orang\n2. Teman menginap dikenakan biaya\n3. Tidak ada jam malam\n4. Sampah dibuang setiap pagi",
+                  ),
 
                   const SizedBox(height: 10),
 
@@ -385,7 +424,9 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                     "Kebijakan Fasilitas:",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const Text("1. Sumber air: PAM\n2. Kapasitas parkir: 10 motor\n3. Sudah termasuk listrik"),
+                  const Text(
+                    "1. Sumber air: PAM\n2. Kapasitas parkir: 10 motor\n3. Sudah termasuk listrik",
+                  ),
 
                   const SizedBox(height: 10),
 
@@ -403,7 +444,9 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                     "Detail Lokasi:",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const Text("Jalan hj Umayah II, kosan kapling40, kawasan STT Telkom, Dayeuh Kolot, Kabupaten Bandung, Jawa Barat, kode pos 40257"),
+                  const Text(
+                    "Jalan hj Umayah II, kosan kapling40, kawasan STT Telkom, Dayeuh Kolot, Kabupaten Bandung, Jawa Barat, kode pos 40257",
+                  ),
                   const SizedBox(height: 10),
 
                   // Map Dummy (Ganti dengan Google Maps API jika perlu)
@@ -420,11 +463,12 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                     child: FlutterMap(
                       options: MapOptions(
                         initialCenter: _kostLocation,
-                        initialZoom: 15.0
+                        initialZoom: 15.0,
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                          urlTemplate:
+                              "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                           subdomains: ['a', 'b', 'c'],
                         ),
                         MarkerLayer(
@@ -451,7 +495,9 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                     "Informasi Jarak:",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const Text("Kost ini 2 menit sampai ke Telkom University, dekat dengan Alfamart, Indomart."),
+                  const Text(
+                    "Kost ini 2 menit sampai ke Telkom University, dekat dengan Alfamart, Indomart.",
+                  ),
 
                   const SizedBox(height: 20),
 
@@ -478,9 +524,5 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
         ),
       ),
     );
-
   }
 }
-
-
-

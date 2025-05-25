@@ -11,9 +11,7 @@ class ApiService {
   static String? token;
 
   static Future<Map<String, String>> get headers async {
-    Map<String, String> header = {
-      'Content-Type': 'application/json',
-    };
+    Map<String, String> header = {'Content-Type': 'application/json'};
 
     final prefs = await SharedPreferences.getInstance();
     final tokenShared = prefs.getString('token');
@@ -26,15 +24,14 @@ class ApiService {
   }
 
   static Future<dynamic> get(
-        String endpoint,
-        {Map<String, String>? query}
-      ) async {
+    String endpoint, {
+    Map<String, String>? query,
+  }) async {
     try {
-      final uri = Uri.parse('$baseUrl$endpoint').replace(queryParameters: query);
-      final response = await http.get(
-        uri,
-        headers: await headers,
-      );
+      final uri = Uri.parse(
+        '$baseUrl$endpoint',
+      ).replace(queryParameters: query);
+      final response = await http.get(uri, headers: await headers);
 
       return _processResponse(response);
     } catch (e) {
@@ -42,8 +39,11 @@ class ApiService {
     }
   }
 
-  static Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
-    debugPrint("HEADER ${headers}");
+  static Future<dynamic> post(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
+    debugPrint("HEADER $headers");
     try {
       final response = await http.post(
         Uri.parse('$baseUrl$endpoint'),
@@ -61,7 +61,7 @@ class ApiService {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl$endpoint'),
-        headers: await headers
+        headers: await headers,
       );
 
       return _processResponse(response);
@@ -87,7 +87,9 @@ class ApiService {
     if (response.statusCode >= 200 && response.statusCode < 500) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Request gagal dengan status: ${response.statusCode}, message: ${response.body}');
+      throw Exception(
+        'Request gagal dengan status: ${response.statusCode}, message: ${response.body}',
+      );
     }
   }
 }

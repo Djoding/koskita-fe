@@ -32,10 +32,12 @@ class NotificationReservasiScreen extends StatefulWidget {
   const NotificationReservasiScreen({super.key});
 
   @override
-  State<NotificationReservasiScreen> createState() => _NotificationReservasiScreenState();
+  State<NotificationReservasiScreen> createState() =>
+      _NotificationReservasiScreenState();
 }
 
-class _NotificationReservasiScreenState extends State<NotificationReservasiScreen> {
+class _NotificationReservasiScreenState
+    extends State<NotificationReservasiScreen> {
   List<ReservationItem> _items = [];
   Map<String, List<ReservationItem>> _groupedItems = {};
   bool _isLoading = true;
@@ -93,8 +95,15 @@ class _NotificationReservasiScreenState extends State<NotificationReservasiScree
   }
 
   void _loadReservationItems() {
-    final List<dynamic> parsedJson = jsonDecode(dummyReservationsJson) as List<dynamic>;
-    _items = parsedJson.map((jsonItem) => ReservationItem.fromJson(jsonItem as Map<String, dynamic>)).toList();
+    final List<dynamic> parsedJson =
+        jsonDecode(dummyReservationsJson) as List<dynamic>;
+    _items =
+        parsedJson
+            .map(
+              (jsonItem) =>
+                  ReservationItem.fromJson(jsonItem as Map<String, dynamic>),
+            )
+            .toList();
 
     _items.sort((a, b) => b.date.compareTo(a.date));
 
@@ -138,22 +147,33 @@ class _NotificationReservasiScreenState extends State<NotificationReservasiScree
               _buildHeader(context),
               const SizedBox(height: 30),
               Expanded(
-                child: _groupedItems.isEmpty && !_isLoading
-                    ? Center(
-                  child: Text(
-                    'Tidak ada pesanan.',
-                    style: GoogleFonts.poppins(fontSize: 18, color: Colors.white70),
-                  ),
-                )
-                    : ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemCount: _groupedItems.keys.length,
-                  itemBuilder: (context, index) {
-                    String monthKey = _groupedItems.keys.elementAt(index);
-                    List<ReservationItem> itemsInMonth = _groupedItems[monthKey]!;
-                    return _buildMonthSection(context, monthKey, itemsInMonth);
-                  },
-                ),
+                child:
+                    _groupedItems.isEmpty && !_isLoading
+                        ? Center(
+                          child: Text(
+                            'Tidak ada pesanan.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        )
+                        : ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: _groupedItems.keys.length,
+                          itemBuilder: (context, index) {
+                            String monthKey = _groupedItems.keys.elementAt(
+                              index,
+                            );
+                            List<ReservationItem> itemsInMonth =
+                                _groupedItems[monthKey]!;
+                            return _buildMonthSection(
+                              context,
+                              monthKey,
+                              itemsInMonth,
+                            );
+                          },
+                        ),
               ),
             ],
           ),
@@ -173,7 +193,11 @@ class _NotificationReservasiScreenState extends State<NotificationReservasiScree
             borderRadius: BorderRadius.circular(14),
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.black,
+              size: 20,
+            ),
             onPressed: () {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
@@ -200,7 +224,11 @@ class _NotificationReservasiScreenState extends State<NotificationReservasiScree
     );
   }
 
-  Widget _buildMonthSection(BuildContext context, String monthName, List<ReservationItem> items) {
+  Widget _buildMonthSection(
+    BuildContext context,
+    String monthName,
+    List<ReservationItem> items,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
       child: Column(
@@ -218,11 +246,11 @@ class _NotificationReservasiScreenState extends State<NotificationReservasiScree
             '${items.length} item${items.length > 1 ? "" : ""}',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withAlpha((0.85 * 255).toInt()),
             ),
           ),
           const SizedBox(height: 12),
-          ...items.map((item) => _buildReservationCard(context, item)).toList(),
+          ...items.map((item) => _buildReservationCard(context, item)),
         ],
       ),
     );
@@ -232,14 +260,15 @@ class _NotificationReservasiScreenState extends State<NotificationReservasiScree
     final DateFormat itemDateFormat = DateFormat('d MMMM yyyy', 'id_ID');
     return InkWell(
       onTap: () {
-        print('Item ${item.name} diklik!');
+        debugPrint('Item \\${item.name} diklik!');
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => NotificationReservasiDetail(
-              detailNotifikasiId: item.id,
-            ),
-        ));
+            builder:
+                (context) =>
+                    NotificationReservasiDetail(detailNotifikasiId: item.id),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
@@ -249,7 +278,7 @@ class _NotificationReservasiScreenState extends State<NotificationReservasiScree
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withAlpha((0.03 * 255).toInt()),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

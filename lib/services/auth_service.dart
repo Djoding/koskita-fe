@@ -4,9 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 
 class AuthService {
-
   // Login
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<Map<String, dynamic>> login(
+    String email,
+    String password,
+  ) async {
     try {
       final response = await ApiService.post('/login', {
         'email': email,
@@ -25,30 +27,30 @@ class AuthService {
         await prefs.setString('token', response['token']);
 
         return {
-          'status' : true,
-          'token' : response['token'],
-          'message' : response['message']
+          'status': true,
+          'token': response['token'],
+          'message': response['message'],
         };
       }
 
-      return {
-        'status' : false,
-        'message' : response['message']
-      };
+      return {'status': false, 'message': response['message']};
     } catch (e) {
-      print('Login error: $e');
-      return {
-        'status' : false,
-        'message' : e.toString()
-      };
+      debugPrint('Login error: $e');
+      return {'status': false, 'message': e.toString()};
     }
   }
 
-  static Future<Map<String, dynamic>> loginWithGoogle(String name, String email, String token, String photoUrl, String userRole) async {
-    try{
+  static Future<Map<String, dynamic>> loginWithGoogle(
+    String name,
+    String email,
+    String token,
+    String photoUrl,
+    String userRole,
+  ) async {
+    try {
       final response = await ApiService.post('/auth/google', {
-        'token' : token,
-        'role' : userRole
+        'token': token,
+        'role': userRole,
       });
 
       debugPrint('Login with Google response: $response');
@@ -57,26 +59,21 @@ class AuthService {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', response['token']);
-        return {
-          'status' : true,
-          'message' : response['token']
-        };
+        return {'status': true, 'message': response['token']};
       }
-      return {
-        'status' : false,
-        'message' : response['message']
-      };
+      return {'status': false, 'message': response['message']};
     } catch (e) {
       debugPrint('Login with Google error: $e');
-      return {
-        'status' : false,
-        'message' : e.toString()
-      };
+      return {'status': false, 'message': e.toString()};
     }
   }
 
   // Register
-  static Future<bool> register(String name, String email, String password) async {
+  static Future<bool> register(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
       final response = await ApiService.post('/register', {
         'name': name,
@@ -86,7 +83,7 @@ class AuthService {
 
       return response['success'] == true;
     } catch (e) {
-      print('Register error: $e');
+      debugPrint('Register error: $e');
       return false;
     }
   }
