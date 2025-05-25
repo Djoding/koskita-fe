@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
 class EditPenghuniScreen extends StatefulWidget {
   final String penghuniId;
-  const EditPenghuniScreen({super.key, this.penghuniId=''});
+  const EditPenghuniScreen({super.key, this.penghuniId = ''});
 
   @override
   State<EditPenghuniScreen> createState() => _EditPenghuniScreenState();
@@ -46,7 +48,11 @@ class _EditPenghuniScreenState extends State<EditPenghuniScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.black,
+                        size: 20,
+                      ),
                       onPressed: () {
                         Navigator.pop(context);
                       },
@@ -54,7 +60,10 @@ class _EditPenghuniScreenState extends State<EditPenghuniScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  _buildTextField('Nama Penghuni Kost', _namaPenghuniController),
+                  _buildTextField(
+                    'Nama Penghuni Kost',
+                    _namaPenghuniController,
+                  ),
                   const SizedBox(height: 12),
                   _buildTextField('Nomor Kamar', _noKamarController),
                   const SizedBox(height: 12),
@@ -70,7 +79,17 @@ class _EditPenghuniScreenState extends State<EditPenghuniScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          // _uploadImagesAndForm();
+                          // Routing ke form_edit_penghuni.dart, parsing data dari field
+                          Get.toNamed(
+                            '/form-edit-penghuni',
+                            arguments: {
+                              'nama': _namaPenghuniController.text,
+                              'kamar': _noKamarController.text,
+                              'masuk': _masukKosController.text,
+                              'keluar': _keluarKosController.text,
+                              'alamat': _alamatKosController.text,
+                            },
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -88,7 +107,7 @@ class _EditPenghuniScreenState extends State<EditPenghuniScreen> {
                         ),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -103,17 +122,17 @@ class _EditPenghuniScreenState extends State<EditPenghuniScreen> {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
-          color: Colors.black54,
-          fontSize: 14,
-        ),
+        labelStyle: const TextStyle(color: Colors.black54, fontSize: 14),
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
     );
   }

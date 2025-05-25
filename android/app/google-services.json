@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1067729898527",
+    "project_id": "koskita-b9041",
+    "storage_bucket": "koskita-b9041.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1067729898527:android:7b2a73d2af28b2a6ca992a",
+        "android_client_info": {
+          "package_name": "com.kosan.euy.jaya.kosan_euy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDub09Lkmu-7jTUJMTwuKGZfr1hWtjLsy4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

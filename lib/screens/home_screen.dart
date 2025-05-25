@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/login_screen.dart';
-import 'package:kosan_euy/services/auth_service.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:get/get.dart';
-import 'package:kosan_euy/routes/app_pages.dart';
 
 class HomeScreenPage extends StatelessWidget {
   const HomeScreenPage({super.key});
@@ -13,7 +9,7 @@ class HomeScreenPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final buttonWidth = size.width * 0.7 > 300 ? 300.0 : size.width * 0.7;
-    _checkIfLoggedIn(context);
+    // _checkIfLoggedIn(context); // --- OFFLINE MODE: dikomentari agar tidak redirect otomatis ---
 
     return Scaffold(
       body: SafeArea(
@@ -154,28 +150,25 @@ class HomeScreenPage extends StatelessWidget {
     );
   }
 
-  Future<void> _checkIfLoggedIn(BuildContext context) async {
-    Future.microtask(() async {
-      final isLoggedIn = await AuthService.isLoggedIn();
-
-      if (isLoggedIn["isLoggedIn"]) {
-        var token = isLoggedIn["token"];
-        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-        var role = decodedToken["role"];
-
-        if (role == "Pengelola" || role == "Penghuni" || role == "Admin") {
-          if (role == "Pengelola") {
-            Get.offNamed(Routes.dashboardOwner);
-          } else if (role == "Penghuni") {
-            Get.offNamed(Routes.dashboardTenant);
-          } else if (role == "Admin") {
-            Get.offNamed(Routes.dashboardOwner);
-          }
-        } else {
-          // Role gak dikenal atau null, tetap di halaman sekarang
-          debugPrint('Role tidak dikenal: $role');
-        }
-      }
-    });
-  }
+  // Future<void> _checkIfLoggedIn(BuildContext context) async {
+  //   Future.microtask(() async {
+  //     final isLoggedIn = await AuthService.isLoggedIn();
+  //     if (isLoggedIn["isLoggedIn"]) {
+  //       var token = isLoggedIn["token"];
+  //       Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+  //       var role = decodedToken["role"];
+  //       if (role == "Pengelola" || role == "Penghuni" || role == "Admin") {
+  //         if (role == "Pengelola") {
+  //           Get.offNamed(Routes.dashboardOwner);
+  //         } else if (role == "Penghuni") {
+  //           Get.offNamed(Routes.dashboardTenant);
+  //         } else if (role == "Admin") {
+  //           Get.offNamed(Routes.dashboardOwner);
+  //         }
+  //       } else {
+  //         debugPrint('Role tidak dikenal: $role');
+  //       }
+  //     }
+  //   });
+  // }
 }

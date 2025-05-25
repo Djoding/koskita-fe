@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/owner/add_penghuni_screen.dart';
-import 'package:kosan_euy/screens/owner/edit_penghuni_screen.dart';
 import 'package:kosan_euy/widgets/profile_section.dart';
 import 'package:kosan_euy/widgets/top_bar.dart';
+import 'package:get/get.dart';
 
 class PenghuniScreen extends StatefulWidget {
   const PenghuniScreen({super.key});
@@ -18,19 +18,19 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
       "nama": "Nella Aprilia",
       "kamar": "Kamar No 10",
       "masuk": "1 Mei 2024",
-      "keluar": "1 Mei 2025"
+      "keluar": "1 Mei 2025",
     },
     {
-      "nama": "Rizky Ramadhan",
+      "nama": "Angelica Sharon",
       "kamar": "Kamar No 15",
       "masuk": "10 Juni 2023",
-      "keluar": "10 Juni 2024"
+      "keluar": "10 Juni 2024",
     },
     {
       "nama": "Putri Ayu",
       "kamar": "Kamar No 5",
       "masuk": "5 Maret 2024",
-      "keluar": "5 Maret 2025"
+      "keluar": "5 Maret 2025",
     },
   ];
 
@@ -55,7 +55,11 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.black,
+                        size: 20,
+                      ),
                       onPressed: () {
                         Navigator.pop(context);
                       },
@@ -97,7 +101,9 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => AddPenghuniScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => AddPenghuniScreen(),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -109,13 +115,10 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
                   ),
                   child: const Text(
                     'Tambah Penghuni',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -135,20 +138,27 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            data["nama"]!,
-            style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
+            data["nama"] ?? '',
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           Text(
-            data["kamar"]!,
-            style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w300, color: Colors.grey),
+            data["kamar"] ?? '',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w300,
+              color: Colors.grey,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            "Masuk: ${data["masuk"]}",
+            "Masuk: ${data["masuk"] ?? ''}",
             style: GoogleFonts.poppins(fontSize: 16),
           ),
           Text(
-            "Keluar: ${data["keluar"]}",
+            "Keluar: ${data["keluar"] ?? ''}",
             style: GoogleFonts.poppins(fontSize: 16),
           ),
           const SizedBox(height: 12),
@@ -157,11 +167,16 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
               //Sunting button
               IconButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => EditPenghuniScreen(
-                      penghuniId: "test",
-                    )),
+                  // Routing ke edit_user.dart, parsing data dari card
+                  Get.toNamed(
+                    '/edit-user',
+                    arguments: {
+                      'nama': data['nama'] ?? '',
+                      'kamar': data['kamar'] ?? '',
+                      'masuk': data['masuk'] ?? '',
+                      'keluar': data['keluar'] ?? '',
+                      'alamat': 'Jalan hj Umayah II, Citereup Bandung',
+                    },
                   );
                 },
                 icon: const Icon(Icons.edit, size: 24),
@@ -169,9 +184,37 @@ class _PenghuniScreenState extends State<PenghuniScreen> {
               IconButton(
                 //Delete button
                 onPressed: () {
-                  // delete
+                  showDialog(
+                    context: context,
+                    builder:
+                        (context) => AlertDialog(
+                          title: const Text('Konfirmasi'),
+                          content: Text(
+                            'Apakah Anda yakin ingin menghapus ${data["nama"]}?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text('Tidak'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                // Routing ke delete_user.dart pakai GetX, parsing nama dari data card
+                                Get.offAllNamed(
+                                  '/delete-user',
+                                  arguments: {'nama': data['nama'] ?? ''},
+                                );
+                              },
+                              child: const Text('Ya'),
+                            ),
+                          ],
+                        ),
+                  );
                 },
-                icon: const Icon(Icons.delete, size: 24, color: Colors.red,),
+                icon: const Icon(Icons.delete, size: 24, color: Colors.red),
               ),
             ],
           ),

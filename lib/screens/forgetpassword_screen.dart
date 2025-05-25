@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/login_screen.dart';
+import 'package:get/get.dart';
 
 class ForgetPasswordScreen extends StatefulWidget {
   const ForgetPasswordScreen({super.key});
@@ -10,11 +11,29 @@ class ForgetPasswordScreen extends StatefulWidget {
 }
 
 class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
-
-  final TextEditingController _forgetPasswordController = TextEditingController();
+  final TextEditingController _forgetPasswordController =
+      TextEditingController();
 
   void _submitEmail() {
-
+    // Tampilkan dialog sukses
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Berhasil'),
+            content: const Text('Password berhasil dirubah'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Routing ke LoginScreen pakai GetX
+                  Get.offAll(() => const LoginScreen());
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
@@ -28,22 +47,19 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 //Image Assets
-                Image.asset(
-                  'assets/home.png',
-                  width: 150,
-                ),
-                SizedBox(height: 8,),
+                Image.asset('assets/home.png', width: 150),
+                SizedBox(height: 8),
 
                 //Lupa password text
                 Text(
                   'Lupa Password',
                   style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 16,),
+                SizedBox(height: 16),
 
                 TextField(
                   controller: _forgetPasswordController,
@@ -57,12 +73,20 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                     hintText: 'johndoe@gmail.com',
                     hintStyle: GoogleFonts.poppins(color: Colors.grey),
                     prefixIcon: Icon(Icons.email_outlined, color: Colors.grey),
-                    suffixIcon: _forgetPasswordController.text.isNotEmpty ?
-                      IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () => setState(() => _forgetPasswordController.clear()),
-                      ) : null,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    suffixIcon:
+                        _forgetPasswordController.text.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.grey),
+                              onPressed:
+                                  () => setState(
+                                    () => _forgetPasswordController.clear(),
+                                  ),
+                            )
+                            : null,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide.none,
@@ -73,11 +97,14 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
-                      borderSide: const BorderSide(color: Color.fromRGBO(144, 122, 204, 1.0), width: 2),
+                      borderSide: const BorderSide(
+                        color: Color.fromRGBO(144, 122, 204, 1.0),
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
-                SizedBox(height: 16,),
+                SizedBox(height: 16),
 
                 //Button kirim
                 SizedBox(
@@ -106,17 +133,23 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: ()  {
+                    onPressed: () {
                       _forgetPasswordController.clear();
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
                       );
                     },
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.arrow_back_ios_new, size: 12, color: Colors.white),
+                        const Icon(
+                          Icons.arrow_back_ios_new,
+                          size: 12,
+                          color: Colors.white,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'kembali ke login',
@@ -128,11 +161,11 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                       ],
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
-        )
+        ),
       ),
     );
   }

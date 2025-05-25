@@ -9,9 +9,15 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final TextEditingController _nameController = TextEditingController(text: 'Kapling40');
-  final TextEditingController _phoneController = TextEditingController(text: '08123456789');
-  final TextEditingController _emailController = TextEditingController(text: 'kapling40@gmail.com');
+  final TextEditingController _nameController = TextEditingController(
+    text: 'Kapling40',
+  );
+  final TextEditingController _phoneController = TextEditingController(
+    text: '08123456789',
+  );
+  final TextEditingController _emailController = TextEditingController(
+    text: 'kapling40@gmail.com',
+  );
   bool _pushNotification = true;
 
   @override
@@ -34,7 +40,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               left: 0,
               right: 0,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 10.0,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -47,7 +56,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.black,
+                          size: 20,
+                        ),
                         onPressed: () {
                           Navigator.pop(context);
                         },
@@ -73,7 +86,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.notifications_none_outlined, color: Colors.white),
+                        icon: const Icon(
+                          Icons.notifications_none_outlined,
+                          color: Colors.white,
+                        ),
                         onPressed: () {},
                       ),
                     ),
@@ -101,20 +117,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   padding: const EdgeInsets.only(top: 50.0),
                   child: Column(
                     children: [
-                      // Username and role
-                      Text(
-                        'Kapling40',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Pengelola Kost Kapling40',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black54,
+                      // Profile Row: icon user di kiri, data user di kanan
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Icon user
+                            Container(
+                              width: 70,
+                              height: 70,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF3C4D82),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 40,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Data user
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Kapling40',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Pengelola Kost Kapling40',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -133,9 +180,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               children: [
                                 // Form fields
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20.0,
+                                  ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       // Name field
                                       Text(
@@ -152,13 +202,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           filled: true,
                                           fillColor: Colors.white,
                                           border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                             borderSide: BorderSide.none,
                                           ),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 14,
-                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 14,
+                                              ),
                                         ),
                                       ),
 
@@ -180,13 +233,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           filled: true,
                                           fillColor: Colors.white,
                                           border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                             borderSide: BorderSide.none,
                                           ),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 14,
-                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 14,
+                                              ),
                                         ),
                                       ),
 
@@ -203,18 +259,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       const SizedBox(height: 8),
                                       TextField(
                                         controller: _emailController,
-                                        keyboardType: TextInputType.emailAddress,
+                                        keyboardType:
+                                            TextInputType.emailAddress,
                                         decoration: InputDecoration(
                                           filled: true,
                                           fillColor: Colors.white,
                                           border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                             borderSide: BorderSide.none,
                                           ),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 14,
-                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 14,
+                                              ),
                                         ),
                                       ),
 
@@ -222,7 +282,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                                       // Push notification toggle
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
                                             'Pemberitahuan Push',
@@ -239,7 +300,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                               });
                                             },
                                             activeColor: Colors.white,
-                                            activeTrackColor: const Color(0xFF5EBE8E),
+                                            activeTrackColor: const Color(
+                                              0xFF5EBE8E,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -252,7 +315,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           onPressed: () {
                                             // Implement save profile logic
                                             Navigator.pop(context);
-                                            ScaffoldMessenger.of(context).showSnackBar(
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
                                               const SnackBar(
                                                 content: Text("Sukses"),
                                                 duration: Duration(seconds: 1),
@@ -261,10 +326,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF4A99BD),
+                                            backgroundColor: const Color(
+                                              0xFF4A99BD,
+                                            ),
                                             minimumSize: const Size(200, 50),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(25),
+                                              borderRadius:
+                                                  BorderRadius.circular(25),
                                             ),
                                           ),
                                           child: Text(
@@ -287,26 +355,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                       ),
-
                     ],
-                  ),
-                ),
-              ),
-            ),
-
-
-            // Profile picture that overlaps
-            Positioned(
-              top: 50,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  width: 70,
-                  height: 70,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF3C4D82),
-                    shape: BoxShape.circle,
                   ),
                 ),
               ),
@@ -314,7 +363,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ],
         ),
       ),
-
     );
   }
 }

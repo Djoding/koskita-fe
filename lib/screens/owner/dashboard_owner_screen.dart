@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
-import 'package:kosan_euy/services/kost_service.dart';
 import 'package:kosan_euy/widgets/profile_section.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
@@ -24,20 +23,29 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
 
   @override
   void initState() {
-    _fetchKostData();
+    // _fetchKostData(); // KOMEN: slicing UI, data dummy
     _getUserId();
+    // --- DATA DUMMY UNTUK SLICING UI ---
+    daftarKost = [
+      {
+        'Nama_Kost': 'Kost Mawar',
+        'Lokasi_Alamat': 'Jalan hj Umayah II, Citereup Bandung',
+        'jumlahKamar': 10,
+        'harga': 1000000,
+        'Thumbnail': 'assets/kapling40.png',
+        'ID_Pengguna': null,
+      },
+      {
+        'Nama_Kost': 'Kost Melati',
+        'Lokasi_Alamat': 'Jl. Melati No. 2',
+        'jumlahKamar': 8,
+        'harga': 900000,
+        'Thumbnail': 'assets/kapling40.png',
+        'ID_Pengguna': null,
+      },
+    ];
+    isExists = true;
     super.initState();
-  }
-
-  Future _fetchKostData() async {
-    var responseData = await KostService.getDataKost();
-    isExists = responseData['status'];
-    if (isExists) {
-      setState(() {
-        List<dynamic> rawData = responseData['data'];
-        daftarKost = List<Map<String, dynamic>>.from(rawData);
-      });
-    }
   }
 
   Future<void> _getUserId() async {
@@ -155,7 +163,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       ),
                       child: InkWell(
                         onTap: () {
-                          Get.toNamed(Routes.reservasi);
+                          Get.toNamed(Routes.homeReservasiOwner);
                         },
                         child: Center(
                           child: Padding(
@@ -415,7 +423,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
                                   image: DecorationImage(
-                                    image: NetworkImage(
+                                    image: AssetImage(
                                       kost["Thumbnail"] as String,
                                     ),
                                     fit: BoxFit.cover,

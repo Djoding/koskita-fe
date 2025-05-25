@@ -21,5 +21,10 @@ abstract class Routes {
   static const changePassword = '/change-password';
   static const success = '/success';
   static const dashboardTenant = '/dashboard-tenant';
+  static const deleteUser = '/delete-user';
+  static const editUser = '/edit-user';
+  static const formEditPenghuni = '/form-edit-penghuni';
+  static const homeReservasiOwner = '/home-reservasi-owner';
+  static const editKos = '/edit-kos';
   // Tambahkan route lain sesuai kebutuhan
 }

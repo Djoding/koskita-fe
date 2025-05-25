@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
+
 import 'package:kosan_euy/screens/forgetpassword_screen.dart';
 import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
 import 'package:kosan_euy/screens/tenant/dashboard_tenant_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kosan_euy/services/auth_service.dart';
-import 'package:kosan_euy/widgets/dialog_utils.dart';
+
+import 'package:get/get.dart';
+import 'package:kosan_euy/screens/login_with_google.dart';
 
 class LoginScreen extends StatefulWidget {
   final String userRole;
@@ -61,68 +62,66 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submitPassword() async {
     final password = _passwordController.text.trim();
     if (password.isNotEmpty) {
-      try {
-        DialogUtils.showLoadingDialog(context, true);
-
-        var responLogin = await AuthService.login(_email, password);
-
-        if (!responLogin["status"]) {
-          if (!mounted) return;
-          DialogUtils.hideLoadingDialog(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              // Create a SnackBar widget
-              content: Text(responLogin["message"]),
-              duration: const Duration(seconds: 2),
-              action: SnackBarAction(
-                label: 'Dismiss',
-                onPressed: () {
-                  // Code to execute when the action button is pressed
-                },
-              ),
-            ),
-          );
-          return;
-        }
-
-        Widget targetScreen;
-        var token = responLogin["token"];
-        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-        var role = decodedToken["role"];
-        if (widget.userRole == "Pengelola" && role == "Pengelola") {
-          targetScreen = const DashboardOwnerScreen();
-        } else if (widget.userRole == "Penghuni" && role == "Penghuni") {
-          targetScreen = const DashboardTenantScreen();
-        } else {
-          return;
-        }
-
-        if (!mounted) return;
-        DialogUtils.hideLoadingDialog(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(responLogin["message"]),
-            duration: const Duration(seconds: 2),
-            action: SnackBarAction(label: 'Dismiss', onPressed: () {}),
-          ),
-        );
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => targetScreen),
-          (route) => false,
-        );
-      } catch (e) {
-        if (!mounted) return;
-        DialogUtils.hideLoadingDialog(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Terjadi kesalahan di Server.'),
-            backgroundColor:
-                Colors.red, // Optional: change background color for errors
-            duration: const Duration(seconds: 4),
-          ),
-        );
+      // try {
+      //   DialogUtils.showLoadingDialog(context, true);
+      //   var responLogin = await AuthService.login(_email, password);
+      //   if (!responLogin["status"]) {
+      //     if (!mounted) return;
+      //     DialogUtils.hideLoadingDialog(context);
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       SnackBar(
+      //         content: Text(responLogin["message"]),
+      //         duration: const Duration(seconds: 2),
+      //         action: SnackBarAction(
+      //           label: 'Dismiss',
+      //           onPressed: () {},
+      //         ),
+      //       ),
+      //     );
+      //     return;
+      //   }
+      //   Widget targetScreen;
+      //   var token = responLogin["token"];
+      //   Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      //   var role = decodedToken["role"];
+      //   if (widget.userRole == "Pengelola" && role == "Pengelola") {
+      //     targetScreen = const DashboardOwnerScreen();
+      //   } else if (widget.userRole == "Penghuni" && role == "Penghuni") {
+      //     targetScreen = const DashboardTenantScreen();
+      //   } else {
+      //     return;
+      //   }
+      //   if (!mounted) return;
+      //   DialogUtils.hideLoadingDialog(context);
+      //   Navigator.pushReplacement(
+      //     context,
+      //     MaterialPageRoute(builder: (context) => targetScreen),
+      //   );
+      // } catch (e) {
+      //   if (!mounted) return;
+      //   DialogUtils.hideLoadingDialog(context);
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(
+      //       content: Text('Terjadi kesalahan di Server.'),
+      //       backgroundColor: Colors.red,
+      //       duration: const Duration(seconds: 4),
+      //     ),
+      //   );
+      // }
+      // --- OFFLINE MODE: langsung navigasi tanpa cek backend ---
+      Widget targetScreen;
+      if (widget.userRole == "Pengelola") {
+        targetScreen = const DashboardOwnerScreen();
+      } else if (widget.userRole == "Penghuni") {
+        targetScreen = const DashboardTenantScreen();
+      } else {
+        return;
       }
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => targetScreen),
+      );
     }
   }
 
@@ -263,7 +262,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // Google Sign In Button
         InkWell(
           onTap: () {
-            _signIn();
+            // Routing ke halaman login_with_google.dart pakai GetX
+            Get.to(() => const LoginWithGoogleScreen());
           },
           child: Container(
             width: 40,
@@ -483,8 +483,8 @@ class _LoginScreenState extends State<LoginScreen> {
           height: 50,
           child: ElevatedButton(
             onPressed: () {
-              // Handle registration logic
-              debugPrint('Registration submitted');
+              // Routing ke dashboard owner pakai GetX
+              Get.offAllNamed('/dashboard-owner');
             },
             style: ElevatedButton.styleFrom(
               foregroundColor: Colors.white,
@@ -576,70 +576,73 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> _signIn() async {
-    try {
-      DialogUtils.showLoadingDialog(context, true);
-      await _googleSignIn.signOut();
-
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      final GoogleSignInAuthentication? googleAuth =
-          await googleUser?.authentication;
-
-      if (googleAuth == null || googleUser == null) {
-        throw Exception('Tidak bisa mendapatkan autentikasi dari Google');
-      }
-
-      final String? idToken = googleAuth.idToken;
-
-      var dataLogin = await AuthService.loginWithGoogle(
-        googleUser.displayName.toString(),
-        googleUser.email,
-        idToken!,
-        googleUser.photoUrl.toString(),
-        widget.userRole,
-      );
-
-      if (!mounted) return;
-      if (dataLogin['status']) {
-        DialogUtils.hideLoadingDialog(context);
-        if (widget.userRole == "Pengelola") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const DashboardOwnerScreen(),
-            ),
-          );
-        }
-
-        if (widget.userRole == "Penghuni") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const DashboardTenantScreen(),
-            ),
-          );
-        }
-        return;
-      }
-      DialogUtils.hideLoadingDialog(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(dataLogin['message']),
-          duration: const Duration(seconds: 2),
-          action: SnackBarAction(label: 'Dismiss', onPressed: () {}),
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      DialogUtils.hideLoadingDialog(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Terjadi kesalahan di Server.'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-      debugPrint('Error sign in with Google: $error');
-    }
-  }
+  // Future<void> _signIn() async {
+  //   try {
+  //     DialogUtils.showLoadingDialog(context, true);
+  //     await _googleSignIn.signOut();
+  //     final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+  //     final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+  //     if (googleAuth == null || googleUser == null) {
+  //       throw Exception('Tidak bisa mendapatkan autentikasi dari Google');
+  //     }
+  //     final String? idToken = googleAuth.idToken;
+  //     var dataLogin = await AuthService.loginWithGoogle(
+  //       googleUser.displayName.toString(),
+  //       googleUser.email,
+  //       idToken!,
+  //       googleUser.photoUrl.toString(),
+  //       widget.userRole,
+  //     );
+  //     if (!mounted) return;
+  //     if (dataLogin['status']) {
+  //       DialogUtils.hideLoadingDialog(context);
+  //       if (widget.userRole == "Pengelola") {
+  //         Navigator.pushReplacement(
+  //           context,
+  //           MaterialPageRoute(
+  //             builder: (context) => const DashboardOwnerScreen(),
+  //           ),
+  //         );
+  //       }
+  //       if (widget.userRole == "Penghuni") {
+  //         Navigator.pushReplacement(
+  //           context,
+  //           MaterialPageRoute(
+  //             builder: (context) => const DashboardTenantScreen(),
+  //           ),
+  //         );
+  //       }
+  //       return;
+  //     }
+  //     DialogUtils.hideLoadingDialog(context);
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text(dataLogin['message']),
+  //         duration: const Duration(seconds: 2),
+  //         action: SnackBarAction(label: 'Dismiss', onPressed: () {}),
+  //       ),
+  //     );
+  //     if (!mounted) return;
+  //     DialogUtils.hideLoadingDialog(context);
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Terjadi kesalahan di Server.'),
+  //         backgroundColor: Colors.red,
+  //         duration: const Duration(seconds: 4),
+  //       ),
+  //     );
+  //     debugPrint('Error sign in with Google: $error');
+  //   } catch (error) {
+  //     if (!mounted) return;
+  //     DialogUtils.hideLoadingDialog(context);
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Terjadi kesalahan di Server.'),
+  //         backgroundColor: Colors.red,
+  //         duration: const Duration(seconds: 4),
+  //       ),
+  //     );
+  //     debugPrint('Error sign in with Google: $error');
+  //   }
+  // }
 }

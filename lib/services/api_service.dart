@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,60 +27,64 @@ class ApiService {
     String endpoint, {
     Map<String, String>? query,
   }) async {
-    try {
-      final uri = Uri.parse(
-        '$baseUrl$endpoint',
-      ).replace(queryParameters: query);
-      final response = await http.get(uri, headers: await headers);
-
-      return _processResponse(response);
-    } catch (e) {
-      throw Exception('Terjadi kesalahan: $e');
-    }
+    // try {
+    //   final uri = Uri.parse(
+    //     '$baseUrl$endpoint',
+    //   ).replace(queryParameters: query);
+    //   final response = await http.get(uri, headers: await headers);
+    //   return _processResponse(response);
+    // } catch (e) {
+    //   throw Exception('Terjadi kesalahan: $e');
+    // }
+    // --- OFFLINE MODE: return dummy data ---
+    return {'status': true, 'data': [], 'message': 'Offline dummy get'};
   }
 
   static Future<dynamic> post(
     String endpoint,
     Map<String, dynamic> body,
   ) async {
-    debugPrint("HEADER $headers");
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: await headers,
-        body: jsonEncode(body),
-      );
-
-      return _processResponse(response);
-    } catch (e) {
-      throw Exception('Terjadi kesalahan: $e');
-    }
+    // debugPrint("HEADER $headers");
+    // try {
+    //   final response = await http.post(
+    //     Uri.parse('$baseUrl$endpoint'),
+    //     headers: await headers,
+    //     body: jsonEncode(body),
+    //   );
+    //   return _processResponse(response);
+    // } catch (e) {
+    //   throw Exception('Terjadi kesalahan: $e');
+    // }
+    // --- OFFLINE MODE: return dummy data ---
+    return {'status': true, 'message': 'Offline dummy post'};
   }
 
   static Future<dynamic> put(String endpoint, Map<String, String> query) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: await headers,
-      );
-
-      return _processResponse(response);
-    } catch (e) {
-      throw Exception('Terjadi kesalahan: $e');
-    }
+    // try {
+    //   final response = await http.put(
+    //     Uri.parse('$baseUrl$endpoint'),
+    //     headers: await headers,
+    //   );
+    //   return _processResponse(response);
+    // } catch (e) {
+    //   throw Exception('Terjadi kesalahan: $e');
+    // }
+    // --- OFFLINE MODE: return dummy data ---
+    return {'status': true, 'message': 'Offline dummy put'};
   }
 
   static Future<dynamic> delete(String endpoint) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: await headers,
-      );
-
-      return _processResponse(response);
-    } catch (e) {
-      throw Exception('Terjadi kesalahan: $e');
-    }
+    // try {
+    //   final response = await http.delete(
+    //     Uri.parse('$baseUrl$endpoint'),
+    //     headers: await headers,
+    //   );
+    //   return _processResponse(response);
+    // } catch (e) {
+    //   throw Exception('Terjadi kesalahan: $e');
+    // }
+    // --- OFFLINE MODE: return dummy data ---
+    return {'status': true, 'message': 'Offline dummy delete'};
   }
 
   static dynamic _processResponse(http.Response response) {

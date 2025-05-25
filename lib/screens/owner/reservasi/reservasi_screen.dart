@@ -223,7 +223,7 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
         onPressed: () {
           _showPaymentMethods(context);
         },
-        child: Text("Tambah/Edit", style: TextStyle(color: Colors.white)),
+        child: Text("Edit", style: TextStyle(color: Colors.white)),
       ),
     );
   }
@@ -510,10 +510,10 @@ class _ReservasiScreenState extends State<ReservasiScreen> {
                       ),
                     ),
                     onPressed: () {
-                      _showPaymentMethods(context);
+                      Get.toNamed('/edit-kos');
                     },
                     child: const Text(
-                      "Tambah/Edit",
+                      "Edit",
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
 class AddPenghuniScreen extends StatefulWidget {
   final String penghuniId;
-  const AddPenghuniScreen({super.key, this.penghuniId=''});
+  const AddPenghuniScreen({super.key, this.penghuniId = ''});
 
   @override
   State<AddPenghuniScreen> createState() => _AddPenghuniScreenState();
@@ -46,7 +48,11 @@ class _AddPenghuniScreenState extends State<AddPenghuniScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.black,
+                        size: 20,
+                      ),
                       onPressed: () {
                         Navigator.pop(context);
                       },
@@ -54,7 +60,10 @@ class _AddPenghuniScreenState extends State<AddPenghuniScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  _buildTextField('Nama Penghuni Kost', _namaPenghuniController),
+                  _buildTextField(
+                    'Nama Penghuni Kost',
+                    _namaPenghuniController,
+                  ),
                   const SizedBox(height: 12),
                   _buildTextField('Nomor Kamar', _noKamarController),
                   const SizedBox(height: 12),
@@ -70,7 +79,12 @@ class _AddPenghuniScreenState extends State<AddPenghuniScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          // _uploadImagesAndForm();
+                          // Tampilkan screen add success
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const AddSuccessScreen(),
+                            ),
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -88,7 +102,7 @@ class _AddPenghuniScreenState extends State<AddPenghuniScreen> {
                         ),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -103,17 +117,85 @@ class _AddPenghuniScreenState extends State<AddPenghuniScreen> {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
-          color: Colors.black54,
-          fontSize: 14,
-        ),
+        labelStyle: const TextStyle(color: Colors.black54, fontSize: 14),
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+      ),
+    );
+  }
+}
+
+// Screen AddSuccessScreen
+class AddSuccessScreen extends StatelessWidget {
+  const AddSuccessScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF9EBFED),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 180,
+                    height: 180,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFFE066), Color(0xFFFFC300)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.check, color: Colors.green, size: 120),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Data Penghuni Kost Berhasil Ditambah',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.black, size: 28),
+                  onPressed: () {
+                    Get.offAllNamed('/dashboard-owner');
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
