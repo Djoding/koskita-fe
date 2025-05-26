@@ -26,5 +26,6 @@ abstract class Routes {
   static const formEditPenghuni = '/form-edit-penghuni';
   static const homeReservasiOwner = '/home-reservasi-owner';
   static const editKos = '/edit-kos';
+  static const notifikasiLaundry = '/notifikasi-laundry';
   // Tambahkan route lain sesuai kebutuhan
 }

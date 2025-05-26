@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:kosan_euy/screens/makanan/success_screen.dart';
+import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/success_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:get/get.dart';
 

@@ -8,10 +8,10 @@ import 'package:kosan_euy/screens/owner/penghuni_screen.dart';
 import 'package:kosan_euy/screens/owner/add_penghuni_screen.dart';
 import 'package:kosan_euy/screens/owner/edit_penghuni_screen.dart';
 import 'package:kosan_euy/screens/owner/notification/notification_owner.dart';
-import 'package:kosan_euy/screens/owner/notification/notification_reservasi.dart';
-import 'package:kosan_euy/screens/owner/notification/notification_reservasi_detail.dart';
+import 'package:kosan_euy/screens/owner/notification/notifikasi_reservasi/notification_reservasi.dart';
+import 'package:kosan_euy/screens/owner/notification/notifikasi_reservasi/notification_reservasi_detail.dart';
 import 'package:kosan_euy/screens/owner/reservasi/reservasi_screen.dart';
-import 'package:kosan_euy/screens/makanan/makanan_screen.dart';
+import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/makanan_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/screens/settings/notification_screen.dart';
 import 'package:kosan_euy/screens/settings/edit_profile_screen.dart';
@@ -22,6 +22,7 @@ import 'package:kosan_euy/screens/owner/reservasi/edit_user.dart';
 import 'package:kosan_euy/screens/owner/reservasi/form_edit_penghuni.dart';
 import 'package:kosan_euy/screens/owner/reservasi/home_reservasi_owner.dart';
 import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
+import 'package:kosan_euy/screens/owner/notification/notifikasi_laundry/notifikasi_laundry.dart';
 
 part 'app_routes.dart';
 
@@ -70,6 +71,10 @@ class AppPages {
     ),
     GetPage(name: Routes.homeReservasiOwner, page: () => HomeReservasiOwner()),
     GetPage(name: Routes.editKos, page: () => EditKosScreen()),
+    GetPage(
+      name: Routes.notifikasiLaundry,
+      page: () => NotifikasiLaundryScreen(),
+    ),
     // Tambahkan GetPage lain sesuai kebutuhan
   ];
 }

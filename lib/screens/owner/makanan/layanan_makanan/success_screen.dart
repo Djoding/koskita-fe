@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kosan_euy/screens/makanan/makanan_screen.dart';
+import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/makanan_screen.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/routes/app_pages.dart';
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:kosan_euy/screens/owner/laundry/dashboard_laundry.dart';
+import 'package:kosan_euy/screens/owner/makanan/layanan_screen.dart';
 
 import 'package:kosan_euy/widgets/profile_section.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -211,7 +213,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       ),
                       child: InkWell(
                         onTap: () {
-                          Get.toNamed(Routes.foodList);
+                          Get.to(() => const LayananMakananScreen());
                         },
                         child: Center(
                           child: Padding(
@@ -259,13 +261,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       ),
                       child: InkWell(
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Menu Layanan Laundry tap"),
-                              duration: Duration(seconds: 1),
-                              showCloseIcon: true,
-                            ),
-                          );
+                          Get.to(() => const DashboardLaundryScreen());
                         },
                         child: Center(
                           child: Padding(

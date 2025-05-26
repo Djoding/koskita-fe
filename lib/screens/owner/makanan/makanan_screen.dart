@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:kosan_euy/screens/makanan/add_screen.dart';
+import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/add_screen.dart';
+import 'package:get/get.dart';
+import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/edit_screen.dart';
 
 class FoodListScreen extends StatefulWidget {
   const FoodListScreen({super.key});
@@ -8,7 +10,8 @@ class FoodListScreen extends StatefulWidget {
   State<FoodListScreen> createState() => _FoodListScreenState();
 }
 
-class _FoodListScreenState extends State<FoodListScreen> with SingleTickerProviderStateMixin {
+class _FoodListScreenState extends State<FoodListScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _showFoodTab = true;
 
@@ -42,7 +45,10 @@ class _FoodListScreenState extends State<FoodListScreen> with SingleTickerProvid
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.black),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_rounded,
+                        color: Colors.black,
+                      ),
                       onPressed: () {
                         // Go back action
                         Navigator.pop(context);
@@ -59,7 +65,9 @@ class _FoodListScreenState extends State<FoodListScreen> with SingleTickerProvid
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const AddFoodScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const AddFoodScreen(),
+                          ),
                         );
                       },
                     ),
@@ -107,16 +115,25 @@ class _FoodListScreenState extends State<FoodListScreen> with SingleTickerProvid
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: _showFoodTab ? const Color(0xFFE0BFFF) : Colors.white,
+                        color:
+                            _showFoodTab
+                                ? const Color(0xFFE0BFFF)
+                                : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         'Makanan',
                         style: TextStyle(
                           color: Colors.black,
-                          fontWeight: _showFoodTab ? FontWeight.bold : FontWeight.normal,
+                          fontWeight:
+                              _showFoodTab
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                         ),
                       ),
                     ),
@@ -129,16 +146,25 @@ class _FoodListScreenState extends State<FoodListScreen> with SingleTickerProvid
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: !_showFoodTab ? const Color(0xFFE0BFFF) : Colors.white,
+                        color:
+                            !_showFoodTab
+                                ? const Color(0xFFE0BFFF)
+                                : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         'Minuman',
                         style: TextStyle(
                           color: Colors.black,
-                          fontWeight: !_showFoodTab ? FontWeight.bold : FontWeight.normal,
+                          fontWeight:
+                              !_showFoodTab
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                         ),
                       ),
                     ),
@@ -147,7 +173,8 @@ class _FoodListScreenState extends State<FoodListScreen> with SingleTickerProvid
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: _showFoodTab ? const FoodGridView() : const DrinkGridView(),
+                child:
+                    _showFoodTab ? const FoodGridView() : const DrinkGridView(),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -157,10 +184,12 @@ class _FoodListScreenState extends State<FoodListScreen> with SingleTickerProvid
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4D9DAB),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
                     ),
                     onPressed: () {
-                      // Edit action
+                      Get.to(() => const EditFoodScreen());
                     },
                     child: const Text(
                       'Edit',
@@ -193,26 +222,14 @@ class FoodGridView extends StatelessWidget {
         'price': 'RP 12.000',
         'image': 'assets/food5.png',
       },
-      {
-        'name': 'Telur Dadar',
-        'price': 'RP 6.000',
-        'image': 'assets/food4.png',
-      },
+      {'name': 'Telur Dadar', 'price': 'RP 6.000', 'image': 'assets/food4.png'},
       {
         'name': 'Telur Ceplok',
         'price': 'RP 7.000',
         'image': 'assets/food3.png',
       },
-      {
-        'name': 'Nasi Putih',
-        'price': 'RP 5.000',
-        'image': 'assets/food2.png',
-      },
-      {
-        'name': 'Midog',
-        'price': 'RP 5.000',
-        'image': 'assets/food1.png',
-      },
+      {'name': 'Nasi Putih', 'price': 'RP 5.000', 'image': 'assets/food2.png'},
+      {'name': 'Midog', 'price': 'RP 5.000', 'image': 'assets/food1.png'},
     ];
 
     return GridView.builder(
@@ -255,21 +272,9 @@ class DrinkGridView extends StatelessWidget {
         'price': 'RP 5.000',
         'image': 'assets/drink3.png',
       },
-      {
-        'name': 'Es Milo',
-        'price': 'RP 7.000',
-        'image': 'assets/drink4.png',
-      },
-      {
-        'name': 'Es Sirsir',
-        'price': 'RP 5.000',
-        'image': 'assets/drink5.png',
-      },
-      {
-        'name': 'Es Dancow',
-        'price': 'RP 7.000',
-        'image': 'assets/drink6.png',
-      },
+      {'name': 'Es Milo', 'price': 'RP 7.000', 'image': 'assets/drink4.png'},
+      {'name': 'Es Sirsir', 'price': 'RP 5.000', 'image': 'assets/drink5.png'},
+      {'name': 'Es Dancow', 'price': 'RP 7.000', 'image': 'assets/drink6.png'},
     ];
 
     return GridView.builder(
@@ -314,10 +319,7 @@ class FoodItemCard extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        Text(
-          price,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
-        ),
+        Text(price, style: const TextStyle(color: Colors.white, fontSize: 12)),
         const SizedBox(height: 5),
         Expanded(
           child: Stack(
@@ -336,9 +338,12 @@ class FoodItemCard extends StatelessWidget {
                 right: 0,
                 bottom: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: const BoxDecoration(
-                    color: Color(0xFF4D9DAB),
+                    color: Colors.red,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(10),
                       bottomRight: Radius.circular(10),
@@ -346,19 +351,47 @@ class FoodItemCard extends StatelessWidget {
                   ),
                   child: InkWell(
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Tambah Menu"),
-                          duration: Duration(seconds: 1),
-                          showCloseIcon: true,
-                        ),
+                      showDialog(
+                        context: context,
+                        builder:
+                            (context) => AlertDialog(
+                              title: const Text('Konfirmasi'),
+                              content: Text(
+                                'Apakah anda yakin ingin menghapus menu $name?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text('Tidak'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) =>
+                                                const DeleteSuccessScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('Ya'),
+                                ),
+                              ],
+                            ),
                       );
                     },
-                    child: const Text(
-                      'Tambah',
-                      style: TextStyle(color: Colors.white, fontSize: 10),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.delete, color: Colors.white, size: 14),
+                        SizedBox(width: 4),
+                        Text(
+                          'Hapus',
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                        ),
+                      ],
                     ),
-                  )
+                  ),
                 ),
               ),
             ],
@@ -369,5 +402,63 @@ class FoodItemCard extends StatelessWidget {
   }
 }
 
+class DeleteSuccessScreen extends StatelessWidget {
+  const DeleteSuccessScreen({super.key});
 
-
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF89B3DE),
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 180,
+                height: 180,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFA51C1C),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(Icons.close, color: Colors.white, size: 120),
+                ),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                'Menu Midog Berhasil Dihapus',
+                style: TextStyle(
+                  color: Color(0xFFA51C1C),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: 240,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFA51C1C),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    'Kembali',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

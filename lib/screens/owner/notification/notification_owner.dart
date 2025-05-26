@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:kosan_euy/screens/owner/notification/notification_reservasi.dart';
+import 'package:kosan_euy/routes/app_pages.dart';
+import 'package:kosan_euy/screens/owner/notification/notifikasi_reservasi/notification_reservasi.dart';
+import 'notifikasi_makanan/views/notifikasi_makanan_screen.dart';
 
 class NotificationOwner extends StatefulWidget {
   const NotificationOwner({super.key});
@@ -14,122 +17,122 @@ class _NotificationOwnerState extends State<NotificationOwner> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-          child: Column( // Changed SingleChildScrollView to Column here
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Back button
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
+        child: Column(
+          // Changed SingleChildScrollView to Column here
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 10.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Back button
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.black,
+                        size: 20,
                       ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
-                        onPressed: () {
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          }
+                      onPressed: () {
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        }
+                      },
+                    ),
+                  ),
+
+                  // Title
+                  Text(
+                    'Pemberitahuan',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+
+                  SizedBox(width: 50, height: 50),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Color.fromRGBO(241, 255, 243, 1.0),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      //Menu Layanan Reservasi Kamar
+                      _buildMenuItem(
+                        context: context,
+                        title: 'Layanan Reservasi Kamar',
+                        iconPath: 'assets/icon_reservasi.png',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const NotificationReservasiScreen(),
+                            ),
+                          );
                         },
                       ),
-                    ),
 
-                    // Title
-                    Text(
-                      'Pemberitahuan',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                      const SizedBox(height: 30),
+
+                      //Menu Pemesanan Makanan
+                      _buildMenuItem(
+                        context: context,
+                        title: 'Layanan Pemesanan Makan',
+                        iconPath: 'assets/icon_makanan.png',
+                        onTap: () {
+                          Get.to(() => const NotifikasiMakananScreen());
+                          // Navigator.push(
+                          //     context,
+                          //     // MaterialPageRoute(builder: (context) => const FoodListScreen())
+                          // );
+                        },
                       ),
-                    ),
 
-                    SizedBox(
-                      width: 50,
-                      height: 50,
-                    ),
-                  ],
-                ),
-              ),
+                      const SizedBox(height: 30),
 
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color.fromRGBO(241, 255, 243, 1.0),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-
-                          //Menu Layanan Reservasi Kamar
-                          _buildMenuItem(
-                            context: context,
-                            title: 'Layanan Reservasi Kamar',
-                            iconPath: 'assets/icon_reservasi.png',
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const NotificationReservasiScreen())
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 30,),
-
-                          //Menu Pemesanan Makanan
-                          _buildMenuItem(
-                            context: context,
-                            title: 'Layanan Pemesanan Makan',
-                            iconPath: 'assets/icon_makanan.png',
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Pemesanan Makanan Tapped")),
-                              );
-                              // Navigator.push(
-                              //     context,
-                              //     // MaterialPageRoute(builder: (context) => const FoodListScreen())
-                              // );
-                            },
-                          ),
-
-                          const SizedBox(height: 30,),
-
-                          //Menu Layanan Laundry
-                          _buildMenuItem(
-                            context: context,
-                            title: 'Layanan Laundry',
-                            iconPath: 'assets/icon_laundry.png',
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Menu Layanan Laundry tap"),
-                                  duration: Duration(seconds: 1),
-                                  showCloseIcon: true,
-                                ),
-                              );
-                            },
-                          ),
-                        ]
-                    ),
+                      //Menu Layanan Laundry
+                      _buildMenuItem(
+                        context: context,
+                        title: 'Layanan Laundry',
+                        iconPath: 'assets/icon_laundry.png',
+                        onTap: () {
+                          Get.toNamed(Routes.notifikasiLaundry);
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          )
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -145,12 +148,22 @@ class _NotificationOwnerState extends State<NotificationOwner> {
       imageWidget = Image.asset(
         iconPath,
         width: 150,
-        errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+        errorBuilder: (
+          BuildContext context,
+          Object exception,
+          StackTrace? stackTrace,
+        ) {
           return Container(
             width: 150,
             height: 100, // Give some height to the placeholder
             color: Colors.grey[300],
-            child: Center(child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey[600])),
+            child: Center(
+              child: Icon(
+                Icons.image_not_supported,
+                size: 50,
+                color: Colors.grey[600],
+              ),
+            ),
           );
         },
       );
@@ -159,10 +172,11 @@ class _NotificationOwnerState extends State<NotificationOwner> {
         width: 150,
         height: 100,
         color: Colors.grey[300],
-        child: Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600])),
+        child: Center(
+          child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600]),
+        ),
       );
     }
-
 
     return Container(
       width: MediaQuery.of(context).size.width * 0.8,
@@ -174,22 +188,20 @@ class _NotificationOwnerState extends State<NotificationOwner> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-            padding: const EdgeInsets.all(3),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                imageWidget,
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                      fontSize: 16,
-                  ),
-                ),
-              ],
-            )
+          padding: const EdgeInsets.all(3),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              imageWidget,
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(fontSize: 16),
+              ),
+            ],
+          ),
         ),
       ),
     );
