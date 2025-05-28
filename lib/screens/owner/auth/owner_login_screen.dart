@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kosan_euy/screens/owner/auth/owner_forgetpassword_screen.dart';
+import 'package:kosan_euy/screens/owner/auth/owner_login_with_google.dart';
 
-import 'package:kosan_euy/screens/forgetpassword_screen.dart';
 import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
-import 'package:kosan_euy/screens/tenant/dashboard_tenant_screen.dart';
+import 'package:kosan_euy/screens/penghuni/dashboard_tenant_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:get/get.dart';
-import 'package:kosan_euy/screens/login_with_google.dart';
 
-class LoginScreen extends StatefulWidget {
+class OwnerLoginScreen extends StatefulWidget {
   final String userRole;
-  const LoginScreen({super.key, this.userRole = ''});
+  const OwnerLoginScreen({super.key, this.userRole = ''});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<OwnerLoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<OwnerLoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -263,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
         InkWell(
           onTap: () {
             // Routing ke halaman login_with_google.dart pakai GetX
-            Get.to(() => const LoginWithGoogleScreen());
+            Get.to(() => const OwnerLoginWithGoogle());
           },
           child: Container(
             width: 40,
@@ -363,7 +363,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ForgetPasswordScreen(),
+                builder: (context) => const OwnerForgetpasswordScreen(),
               ),
             );
           },

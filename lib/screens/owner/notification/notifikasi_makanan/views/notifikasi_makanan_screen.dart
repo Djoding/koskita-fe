@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/notifikasi_makanan_controller.dart';
 import 'pesanan_masuk.dart';
 import 'konfirmasi_pesanan.dart';
 import 'resi_pesanan.dart';
@@ -10,7 +9,6 @@ class NotifikasiMakananScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(NotifikasiMakananController());
     return Scaffold(
       backgroundColor: const Color(0xFF9EBFED),
       body: SafeArea(

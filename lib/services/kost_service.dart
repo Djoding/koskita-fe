@@ -1,7 +1,3 @@
-import 'package:flutter/cupertino.dart';
-
-import 'api_service.dart';
-
 class KostService {
   // Login
   static Future<Map<String, dynamic>> createKost(

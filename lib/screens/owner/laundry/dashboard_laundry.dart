@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/laundry/cek_semua_pesanan/cek_pesanan_laundry.dart';
 import 'package:kosan_euy/screens/owner/laundry/cek_status_laundry/cek_status_laundry.dart';
 import 'package:kosan_euy/screens/owner/laundry/layanan_laundry/layanan_laundry.dart';
+import 'package:kosan_euy/screens/owner/pembayaran/add_pembayaran.dart';
 
 class DashboardLaundryScreen extends StatelessWidget {
   const DashboardLaundryScreen({super.key});
@@ -20,7 +21,9 @@ class DashboardLaundryScreen extends StatelessWidget {
       _MenuItem(
         label: 'Edit Pembayaran',
         image: 'assets/icon_pembayaran.png',
-        onTap: () {},
+        onTap: () {
+          Get.to(() => const AddPembayaran());
+        },
       ),
       _MenuItem(
         label: 'Edit Status Pesanan',
@@ -111,7 +114,7 @@ class _MenuCard extends StatelessWidget {
       onTap: item.onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.7),
+          color: Colors.white.withAlpha((0.7 * 255).toInt()),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(

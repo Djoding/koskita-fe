@@ -1,63 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kosan_euy/screens/owner/notification/notifikasi_laundry/pesanan_dibuat.dart';
+import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/detail_pesanan_owner.dart';
+import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/status_pesanan_makanan.dart';
 
-class PesananLaundryMasuk extends StatelessWidget {
-  const PesananLaundryMasuk({super.key});
+class OwnerCekPesanan extends StatelessWidget {
+  const OwnerCekPesanan({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF9EBFED),
+      backgroundColor: const Color(0xFF91B7DE),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.only(top: 16.0, left: 20.0, right: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.black,
-                        size: 20,
-                      ),
-                      onPressed: () => Get.back(),
-                    ),
+              const SizedBox(height: 16),
+              // Tombol back
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Colors.black,
                   ),
-                  const Spacer(),
-                  const Text(
-                    'Pesanan Masuk',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                  onPressed: () => Get.back(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Center(
+                child: Text(
+                  'Pesanan Masuk',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
-                  const Spacer(flex: 2),
-                ],
+                ),
               ),
               const SizedBox(height: 32),
-              // Section Bulan
               const Text(
                 'Desember',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontSize: 18,
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
+              const Text(
                 '1 item',
                 style: TextStyle(
                   color: Colors.white70,
@@ -69,6 +66,7 @@ class PesananLaundryMasuk extends StatelessWidget {
               // Card Pesanan
               Container(
                 width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -110,7 +108,7 @@ class PesananLaundryMasuk extends StatelessWidget {
                     size: 28,
                   ),
                   onTap: () {
-                    Get.to(() => const PesananDibuat());
+                    Get.to(() => const DetailPesananOwner());
                   },
                 ),
               ),
@@ -120,8 +118,4 @@ class PesananLaundryMasuk extends StatelessWidget {
       ),
     );
   }
-}
-
-class DetailPesananLaundryScreen {
-  const DetailPesananLaundryScreen();
 }

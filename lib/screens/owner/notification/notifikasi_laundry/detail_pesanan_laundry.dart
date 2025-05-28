@@ -90,7 +90,9 @@ class DetailPesananLaundryScreen extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withAlpha(
+                                (0.3 * 255).toInt(),
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(

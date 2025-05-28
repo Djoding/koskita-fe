@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:kosan_euy/screens/login_screen.dart';
 import 'package:get/get.dart';
+import 'package:kosan_euy/screens/tamu/auth/tamu_login_screen.dart';
 
-class ForgetPasswordScreen extends StatefulWidget {
-  const ForgetPasswordScreen({super.key});
+class TamuForgetpasswordScreen extends StatefulWidget {
+  const TamuForgetpasswordScreen({super.key});
 
   @override
-  State<ForgetPasswordScreen> createState() => _ForgetPasswordScreenState();
+  State<TamuForgetpasswordScreen> createState() => _ForgetPasswordScreenState();
 }
 
-class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
+class _ForgetPasswordScreenState extends State<TamuForgetpasswordScreen> {
   final TextEditingController _forgetPasswordController =
       TextEditingController();
 
@@ -27,7 +27,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                 onPressed: () {
                   Navigator.of(context).pop();
                   // Routing ke LoginScreen pakai GetX
-                  Get.offAll(() => const LoginScreen());
+                  Get.offAll(() => const TamuLoginScreen());
                 },
                 child: const Text('OK'),
               ),
@@ -138,7 +138,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
+                          builder: (context) => const TamuLoginScreen(),
                         ),
                       );
                     },

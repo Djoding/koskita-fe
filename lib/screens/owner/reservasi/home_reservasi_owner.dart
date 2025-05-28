@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kosan_euy/screens/owner/pembayaran/add_pembayaran.dart';
 
 class HomeReservasiOwner extends StatelessWidget {
   const HomeReservasiOwner({super.key});
@@ -65,6 +66,7 @@ class HomeReservasiOwner extends StatelessWidget {
                         _MenuCard(
                           iconPath: 'assets/icon_pembayaran.png',
                           label: 'Edit Pembayaran',
+                          onTap: () => Get.to(() => const AddPembayaran()),
                         ),
                         _MenuCard(
                           iconPath: 'assets/icon_order.png',

@@ -34,10 +34,7 @@ class ProfileSection extends StatelessWidget {
             ),
             Text(
               "Pengelola Kost Kapling40",
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.white,
-              ),
+              style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
             ),
           ],
         ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/owner_cek_pesanan.dart';
 import 'package:kosan_euy/screens/owner/makanan/pembayaran/metode_pembayaran.dart';
 import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/user_pesanan_masuk.dart';
+import 'package:kosan_euy/screens/owner/pembayaran/add_pembayaran.dart';
 
 class LayananMakananScreen extends StatelessWidget {
   const LayananMakananScreen({super.key});
@@ -20,7 +22,7 @@ class LayananMakananScreen extends StatelessWidget {
         label: 'Edit Pembayaran',
         image: 'assets/icon_pembayaran.png',
         onTap: () {
-          Get.to(() => const MetodePembayaranScreen());
+          Get.to(() => const AddPembayaran());
         },
       ),
       _MenuItem(
@@ -33,7 +35,9 @@ class LayananMakananScreen extends StatelessWidget {
       _MenuItem(
         label: 'Cek semua Pesanan',
         image: 'assets/icon_order.png',
-        onTap: () {},
+        onTap: () {
+          Get.to(() => const OwnerCekPesanan());
+        },
       ),
     ];
 
@@ -110,7 +114,7 @@ class _MenuCard extends StatelessWidget {
       onTap: item.onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.7),
+          color: Colors.white.withAlpha((0.7 * 255).toInt()),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(

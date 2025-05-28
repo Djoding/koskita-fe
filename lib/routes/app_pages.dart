@@ -1,8 +1,6 @@
 import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
-import 'package:kosan_euy/screens/login_screen.dart';
-import 'package:kosan_euy/screens/forgetpassword_screen.dart';
 import 'package:kosan_euy/screens/owner/daftar_kos_screen.dart';
 import 'package:kosan_euy/screens/owner/penghuni_screen.dart';
 import 'package:kosan_euy/screens/owner/add_penghuni_screen.dart';
@@ -34,8 +32,6 @@ class AppPages {
   static final routes = [
     GetPage(name: Routes.dashboardOwner, page: () => DashboardOwnerScreen()),
     GetPage(name: Routes.home, page: () => HomeScreenPage()),
-    GetPage(name: Routes.login, page: () => LoginScreen()),
-    GetPage(name: Routes.forgetPassword, page: () => ForgetPasswordScreen()),
     GetPage(name: Routes.daftarKos, page: () => DaftarKosScreen()),
     GetPage(name: Routes.penghuni, page: () => PenghuniScreen()),
     GetPage(name: Routes.addPenghuni, page: () => AddPenghuniScreen()),

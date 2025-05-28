@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:kosan_euy/screens/login_screen.dart';
+import 'package:kosan_euy/screens/admin/auth/admin_login_screen.dart';
+import 'package:kosan_euy/screens/owner/auth/owner_login_screen.dart';
+import 'package:kosan_euy/screens/penghuni/auth/penghuni_login_screen.dart';
+import 'package:kosan_euy/screens/tamu/auth/tamu_login_screen.dart';
 
 class HomeScreenPage extends StatelessWidget {
   const HomeScreenPage({super.key});
@@ -55,14 +59,7 @@ class HomeScreenPage extends StatelessWidget {
                   width: buttonWidth,
                   label: 'Pengelola Kost',
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) =>
-                                const LoginScreen(userRole: 'Pengelola'),
-                      ),
-                    );
+                    Get.to(() => const OwnerLoginScreen());
                   },
                 ),
                 const SizedBox(height: 12),
@@ -72,14 +69,7 @@ class HomeScreenPage extends StatelessWidget {
                   width: buttonWidth,
                   label: 'Penghuni Kost',
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) =>
-                                const LoginScreen(userRole: 'Penghuni'),
-                      ),
-                    );
+                    Get.to(() => const PenghuniLoginScreen());
                   },
                 ),
                 const SizedBox(height: 12),
@@ -89,8 +79,18 @@ class HomeScreenPage extends StatelessWidget {
                   width: buttonWidth,
                   label: 'Tamu',
                   onPressed: () {
-                    // Navigate to guest access
-                    debugPrint("Tamu button pressed");
+                    Get.to(() => const TamuLoginScreen());
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                _buildGradientButton(
+                  context: context,
+                  width: buttonWidth,
+                  label: 'Admin',
+                  onPressed: () {
+                    Get.to(() => const AdminLoginScreen());
                   },
                 ),
               ],
