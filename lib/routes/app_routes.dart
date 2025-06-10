@@ -27,5 +27,10 @@ abstract class Routes {
   static const homeReservasiOwner = '/home-reservasi-owner';
   static const editKos = '/edit-kos';
   static const notifikasiLaundry = '/notifikasi-laundry';
+
+  // Admin routes
+  static const dashboardAdmin = '/dashboard-admin';
+  static const penggelolaDetail = '/pengelola-detail';
+  
   // Tambahkan route lain sesuai kebutuhan
 }

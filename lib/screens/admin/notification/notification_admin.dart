@@ -1,6 +1,8 @@
+// lib/screens/admin/notification/notification_admin.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
+import 'package:kosan_euy/screens/admin/pengelola_detail_screen.dart';
 import 'package:kosan_euy/screens/admin/notification/tamu_success_screen.dart';
 
 class NotificationAdminScreen extends StatelessWidget {
@@ -41,7 +43,7 @@ class NotificationAdminScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Pemberitahuan',
+                    'Pemberitahuan Admin',
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -79,84 +81,89 @@ class NotificationAdminScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Hari Ini',
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
                         ),
                       ),
                       const SizedBox(height: 18),
-                      // Notifikasi 1
-                      _NotifItem(
-                        icon: Icons.logout,
-                        iconBg: const Color(0xFF2196F3),
-                        title: 'Pengguna Kost Kapling 40 Berhasil Dihapus',
-                        time: '12:30 - 10 Desember 2024',
-                        isBlue: true,
-                        showArrow: false,
-                      ),
-                      const SizedBox(height: 16),
-                      // Notifikasi 2
+                      // Notifikasi 1 - Pengguna baru mendaftar
                       GestureDetector(
                         onTap: () {
-                          showDialog(
-                            context: context,
-                            builder:
-                                (context) => AlertDialog(
-                                  backgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  title: const Text(
-                                    'Konfirmasi',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  content: const Text(
-                                    'Setujui Calon Pengguna kost ini?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed:
-                                          () => Navigator.of(context).pop(),
-                                      child: const Text('Batal'),
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Color(0xFF119DB1),
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        Get.to(
-                                          () => TamuSuccessScreen(
-                                            title:
-                                                'Pengguna kost berhasil ditambahkan',
-                                          ),
-                                        );
-                                      },
-                                      child: const Text('Yes'),
-                                    ),
-                                  ],
-                                ),
+                          Get.to(
+                            () => PenggelolaDetailScreen(
+                              pengelola: {
+                                'id': '1',
+                                'nama': 'John Doe',
+                                'email': 'john@example.com',
+                                'namaKost': 'Kost Kapling 40',
+                                'lokasi': 'Jl. Kapling No. 40',
+                                'tanggalDaftar': '2024-06-10',
+                                'status': 'pending',
+                                'phone': '08123456789',
+                                'alamat': 'Jl. Contoh No. 123, Semarang',
+                                'nik': '3374123456789012',
+                                'jumlahKamar': 10,
+                                'harga': '1000000',
+                                'jenisKost': 'Putra',
+                              },
+                            ),
                           );
                         },
                         child: _NotifItem(
                           icon: Icons.person_add_alt_1,
                           iconBg: const Color(0xFF29B6F6),
-                          title: 'Terdapat Pengguna Baru',
-                          time: '17:00 - 10 Desember 2024',
+                          title: 'Pengelola Baru Mendaftar',
+                          subtitle: 'John Doe - Kost Kapling 40',
+                          time: '17:00 - 10 Juni 2024',
                           isBlue: true,
                           showArrow: true,
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Notifikasi 2 - Pengguna berhasil diverifikasi
+                      _NotifItem(
+                        icon: Icons.verified_user,
+                        iconBg: const Color(0xFF4CAF50),
+                        title: 'Pengelola Berhasil Diverifikasi',
+                        subtitle: 'Ahmad Sari - Kost Mawar',
+                        time: '14:30 - 10 Juni 2024',
+                        isBlue: false,
+                        showArrow: false,
+                      ),
+                      const SizedBox(height: 16),
+                      // Notifikasi 3 - Pengguna dihapus
+                      _NotifItem(
+                        icon: Icons.person_remove,
+                        iconBg: const Color(0xFFF44336),
+                        title: 'Pengelola Dihapus dari Sistem',
+                        subtitle: 'Data spam telah dibersihkan',
+                        time: '12:30 - 10 Juni 2024',
+                        isBlue: false,
+                        showArrow: false,
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Kemarin',
+                        style: GoogleFonts.poppins(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      // Notifikasi 4 - Laporan harian
+                      _NotifItem(
+                        icon: Icons.analytics,
+                        iconBg: const Color(0xFF9C27B0),
+                        title: 'Laporan Harian Sistem',
+                        subtitle: '5 pengelola baru, 3 diverifikasi',
+                        time: '23:59 - 9 Juni 2024',
+                        isBlue: false,
+                        showArrow: false,
                       ),
                     ],
                   ),
@@ -174,13 +181,16 @@ class _NotifItem extends StatelessWidget {
   final IconData icon;
   final Color iconBg;
   final String title;
+  final String subtitle;
   final String time;
   final bool isBlue;
   final bool showArrow;
+
   const _NotifItem({
     required this.icon,
     required this.iconBg,
     required this.title,
+    required this.subtitle,
     required this.time,
     this.isBlue = false,
     this.showArrow = false,
@@ -188,61 +198,76 @@ class _NotifItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: iconBg,
-            borderRadius: BorderRadius.circular(22),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Icon(icon, color: Colors.white, size: 26),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  color: isBlue ? const Color(0xFF1976D2) : Colors.black87,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                  decoration: isBlue ? TextDecoration.underline : null,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                time,
-                style: GoogleFonts.poppins(color: Colors.black54, fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-        if (showArrow)
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Container(
-            margin: const EdgeInsets.only(left: 8, top: 6),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+              color: iconBg,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    color: isBlue ? const Color(0xFF1976D2) : Colors.black87,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.poppins(
+                    color: Colors.black54,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  time,
+                  style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 18,
-              color: Colors.black54,
-            ),
           ),
-      ],
+          if (showArrow)
+            Container(
+              margin: const EdgeInsets.only(left: 8, top: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Colors.black54,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
