@@ -1,3 +1,4 @@
+// lib/routes/app_pages.dart
 import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
@@ -21,6 +22,9 @@ import 'package:kosan_euy/screens/owner/reservasi/form_edit_penghuni.dart';
 import 'package:kosan_euy/screens/owner/reservasi/home_reservasi_owner.dart';
 import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
 import 'package:kosan_euy/screens/owner/notification/notifikasi_laundry/notifikasi_laundry.dart';
+// Admin imports
+import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
+import 'package:kosan_euy/screens/admin/pengelola_detail_screen.dart';
 
 part 'app_routes.dart';
 
@@ -70,6 +74,13 @@ class AppPages {
     GetPage(
       name: Routes.notifikasiLaundry,
       page: () => NotifikasiLaundryScreen(),
+    ),
+
+    // Admin routes
+    GetPage(name: Routes.dashboardAdmin, page: () => DashboardAdminScreen()),
+    GetPage(
+      name: Routes.penggelolaDetail,
+      page: () => PenggelolaDetailScreen(pengelola: Get.arguments ?? {}),
     ),
     // Tambahkan GetPage lain sesuai kebutuhan
   ];
