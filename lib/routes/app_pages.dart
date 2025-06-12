@@ -22,6 +22,9 @@ import 'package:kosan_euy/screens/owner/reservasi/form_edit_penghuni.dart';
 import 'package:kosan_euy/screens/owner/reservasi/home_reservasi_owner.dart';
 import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
 import 'package:kosan_euy/screens/owner/notification/notifikasi_laundry/notifikasi_laundry.dart';
+import 'package:kosan_euy/screens/owner/reservasi/validasi_reservasi_screen.dart'; // NEW
+import 'package:kosan_euy/screens/owner/pembayaran/qris_payment_screen.dart'; // NEW
+import 'package:kosan_euy/screens/owner/laundry/layanan_laundry_screen.dart';
 // Admin imports
 import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
 import 'package:kosan_euy/screens/admin/pengelola_detail_screen.dart';
@@ -75,6 +78,13 @@ class AppPages {
       name: Routes.notifikasiLaundry,
       page: () => NotifikasiLaundryScreen(),
     ),
+    // NEW ROUTES
+    GetPage(
+      name: Routes.validasiReservasi,
+      page: () => ValidasiReservasiScreen(),
+    ),
+    GetPage(name: Routes.qrisPayment, page: () => QrisPaymentScreen()),
+    GetPage(name: Routes.layananLaundry, page: () => LayananLaundryScreen()),
 
     // Admin routes
     GetPage(name: Routes.dashboardAdmin, page: () => DashboardAdminScreen()),
@@ -82,6 +92,5 @@ class AppPages {
       name: Routes.penggelolaDetail,
       page: () => PenggelolaDetailScreen(pengelola: Get.arguments ?? {}),
     ),
-    // Tambahkan GetPage lain sesuai kebutuhan
   ];
 }

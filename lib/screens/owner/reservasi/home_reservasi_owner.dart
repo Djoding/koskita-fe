@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/pembayaran/add_pembayaran.dart';
+import 'package:kosan_euy/screens/owner/reservasi/validasi_reservasi_screen.dart';
 
 class HomeReservasiOwner extends StatelessWidget {
   const HomeReservasiOwner({super.key});
@@ -71,6 +72,7 @@ class HomeReservasiOwner extends StatelessWidget {
                         _MenuCard(
                           iconPath: 'assets/icon_order.png',
                           label: 'Cek semua  Pesanan',
+                          onTap: () => Get.to(() => const ValidasiReservasiScreen()),
                         ),
                       ],
                     ),
