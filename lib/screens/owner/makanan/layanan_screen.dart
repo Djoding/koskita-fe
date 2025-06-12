@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/owner_cek_pesanan.dart';
-import 'package:kosan_euy/screens/owner/makanan/pembayaran/metode_pembayaran.dart';
-import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/user_pesanan_masuk.dart';
-import 'package:kosan_euy/screens/owner/pembayaran/add_pembayaran.dart';
+import 'package:kosan_euy/screens/owner/makanan/status_pesanan/pesanan_masuk_makanan.dart';
 
 class LayananMakananScreen extends StatelessWidget {
   const LayananMakananScreen({super.key});
@@ -19,26 +16,13 @@ class LayananMakananScreen extends StatelessWidget {
         },
       ),
       _MenuItem(
-        label: 'Edit Pembayaran',
-        image: 'assets/icon_pembayaran.png',
-        onTap: () {
-          Get.to(() => const AddPembayaran());
-        },
-      ),
-      _MenuItem(
-        label: 'Edit Status Pesanan',
-        image: 'assets/icon_status_pesanan.png',
-        onTap: () {
-          Get.to(() => const UserPesananMasuk());
-        },
-      ),
-      _MenuItem(
-        label: 'Cek semua Pesanan',
+        label: 'Pesanan Masuk',
         image: 'assets/icon_order.png',
         onTap: () {
-          Get.to(() => const OwnerCekPesanan());
+          Get.to(() => const FoodListScreen());
         },
       ),
+      
     ];
 
     return Scaffold(
@@ -68,7 +52,7 @@ class LayananMakananScreen extends StatelessWidget {
             const SizedBox(height: 24),
             const Center(
               child: Text(
-                'Layanan  Pemesanan  Makanan/Minuman',
+                'Layanan Pemesanan Makanan/Minuman',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
