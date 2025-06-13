@@ -505,6 +505,6 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
   }
 
   Future<void> _onLogout(BuildContext context) async {
-    await AuthService.logout();
+    // await AuthService.logout();
   }
 }

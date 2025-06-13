@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
-import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
+import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
 
-class PenghuniLoginWithGoogle extends StatelessWidget {
-  const PenghuniLoginWithGoogle({super.key});
+class LoginWithGoogle extends StatelessWidget {
+  const LoginWithGoogle({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,7 @@ class PenghuniLoginWithGoogle extends StatelessWidget {
                 InkWell(
                   onTap: () {
                     // Routing ke dashboard owner
-                    Get.off(() => KosScreen());
+                    Get.off(() => DashboardAdminScreen());
                   },
                   child: Container(
                     width: double.infinity,
@@ -95,7 +95,7 @@ class PenghuniLoginWithGoogle extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'yenaanggraeni@gmail.com',
+                              'akuadmin@gmail.com',
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 color: Colors.grey[700],

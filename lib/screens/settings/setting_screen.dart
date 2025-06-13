@@ -13,124 +13,150 @@ class SettingScreen extends StatefulWidget {
 }
 
 class _SettingScreenState extends State<SettingScreen> {
+  final AuthService _authService = AuthService();
+  String _fullName = 'Memuat...';
+  String _userRole = 'Memuat...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await _authService.getStoredUserData();
+      if (userData != null) {
+        setState(() {
+          _fullName = userData['full_name'] ?? 'Nama Pengguna';
+          _userRole = userData['role'] ?? 'Peran Pengguna';
+          if (_userRole == 'ADMIN' || _userRole == 'PENGELOLA') {
+            _userRole = 'Pengelola Kost';
+          } else if (_userRole == 'PENGHUNI') {
+            _userRole = 'Penghuni Kost';
+          }
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _fullName = 'Error';
+        _userRole = 'Error';
+      });
+      // Optionally, show a SnackBar or other error indication to the user
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Failed to load user data: ${e.toString()}')),
+      // );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Header
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 10.0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Back button
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.black,
-                          size: 20,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF3C4D82), Color(0xFF6A82FB)],
+          ),
+        ),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 10.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(15),
                         ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        ),
                       ),
-                    ),
-
-                    // Title
-                    Text(
-                      'Pengaturan',
-                      style: GoogleFonts.poppins(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-
-                    // Notification icon
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.notifications_none_outlined,
+                      Text(
+                        'Pengaturan',
+                        style: GoogleFonts.poppins(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
-                        onPressed: () {},
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content area with curved container
-            Positioned(
-              top: 80,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color.fromRGBO(241, 255, 243, 1.0),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.notifications_none_outlined,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {},
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 50.0),
-                  child: Column(
-                    children: [
-                      // Username and role
-                      Text(
-                        'Kapling40',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Pengelola Kost Kapling40',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-
-                      // Menu options
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Container(
+              ),
+              Positioned(
+                top: 100,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color.fromRGBO(241, 255, 243, 1.0),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0,
+                      vertical: 30.0,
+                    ),
+                    child: Column(
+                      children: [
+                        _buildProfileInfo(),
+                        const SizedBox(height: 30),
+                        Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
                           child: Column(
                             children: [
-                              // Edit Profile option
                               menuItem(
                                 icon: Icons.person_outline,
                                 iconColor: Colors.blue,
@@ -149,92 +175,87 @@ class _SettingScreenState extends State<SettingScreen> {
                                   );
                                 },
                               ),
+                              Divider(height: 1, color: Colors.grey[200]),
+                              menuItem(
+                                icon: Icons.shield_outlined,
+                                iconColor: Colors.blue,
+                                iconBackground: Colors.blue.withAlpha(
+                                  (0.1 * 255).toInt(),
+                                ),
+                                title: 'Keamanan',
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => const SecurityScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              Divider(height: 1, color: Colors.grey[200]),
+                              menuItem(
+                                icon: Icons.logout,
+                                iconColor: Colors.redAccent,
+                                iconBackground: Colors.redAccent.withAlpha(
+                                  (0.1 * 255).toInt(),
+                                ),
+                                title: 'Keluar',
+                                onTap: () async {
+                                  final bool? confirmed =
+                                      await showLogoutConfirmationDialog(
+                                        context,
+                                      );
+                                  if (confirmed == true) {
+                                    await _authService.logout();
+                                    if (mounted) {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  const HomeScreenPage(),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                              ),
                             ],
                           ),
                         ),
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      // Security option
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: menuItem(
-                            icon: Icons.shield_outlined,
-                            iconColor: Colors.blue,
-                            iconBackground: Colors.blue.withAlpha(
-                              (0.1 * 255).toInt(),
-                            ),
-                            title: 'Keamanan',
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const SecurityScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      // Logout option
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: menuItem(
-                            icon: Icons.logout,
-                            iconColor: Colors.blue,
-                            iconBackground: Colors.blue.withAlpha(
-                              (0.1 * 255).toInt(),
-                            ),
-                            title: 'Keluar',
-                            onTap: () async {
-                              final bool? confirmed =
-                                  await showLogoutConfirmationDialog(context);
-                              if (confirmed == true) {
-                                // Add logout implementation
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-
-            // Profile picture that overlaps
-            Positioned(
-              top: 50,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  width: 70,
-                  height: 70,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF3C4D82),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileInfo() {
+    return Column(
+      children: [
+        Text(
+          _fullName,
+          style: GoogleFonts.poppins(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
+          ),
+        ),
+        Text(
+          _userRole,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.black54,
+          ),
+        ),
+      ],
     );
   }
 
@@ -275,7 +296,6 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 }
 
-// This function shows the logout confirmation dialog
 Future<bool?> showLogoutConfirmationDialog(BuildContext context) {
   return showDialog<bool>(
     context: context,
@@ -294,10 +314,6 @@ Future<bool?> showLogoutConfirmationDialog(BuildContext context) {
 class LogoutConfirmationContent extends StatelessWidget {
   const LogoutConfirmationContent({super.key});
 
-  Future<void> _onLogout(BuildContext context) async {
-    await AuthService.logout();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -305,7 +321,6 @@ class LogoutConfirmationContent extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Title
           Text(
             'Sesi Akhir',
             style: GoogleFonts.poppins(
@@ -314,10 +329,7 @@ class LogoutConfirmationContent extends StatelessWidget {
               color: const Color(0xFF1E3F4C),
             ),
           ),
-
           const SizedBox(height: 24),
-
-          // Confirmation message
           Text(
             'Apakah Anda yakin ingin keluar?',
             style: GoogleFonts.poppins(
@@ -327,18 +339,10 @@ class LogoutConfirmationContent extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-
           const SizedBox(height: 40),
-
-          // Yes button
           ElevatedButton(
             onPressed: () {
-              // Return true to indicate user confirmed logout
-              _onLogout(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const HomeScreenPage()),
-              );
+              Navigator.of(context).pop(true);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF5EBE8E),
@@ -357,13 +361,9 @@ class LogoutConfirmationContent extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
-          // No button
           TextButton(
             onPressed: () {
-              // Return false to indicate user canceled logout
               Navigator.of(context).pop(false);
             },
             style: TextButton.styleFrom(
@@ -386,21 +386,4 @@ class LogoutConfirmationContent extends StatelessWidget {
       ),
     );
   }
-}
-
-// Example of how to use the dialog in your SettingScreen class
-// Add this to your MenuOption for Logout:
-
-// Update your SettingScreen with this implementation
-void updateLogoutFunctionality(BuildContext context) {
-  // Show the logout confirmation dialog
-  showLogoutConfirmationDialog(context).then((confirmed) {
-    if (confirmed == true) {
-      // Implement logout logic here
-      debugPrint('User confirmed logout');
-      // Navigate to login screen or perform logout actions
-    } else {
-      debugPrint('User canceled logout');
-    }
-  });
 }
