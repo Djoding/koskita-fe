@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:kosan_euy/screens/penghuni/auth/kos_screen.dart';
 import 'package:kosan_euy/screens/penghuni/auth/penghuni_forgetpassword_screen.dart';
 import 'package:kosan_euy/screens/penghuni/auth/penghuni_login_with_google.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:get/get.dart';
+import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
 
 class PenghuniLoginScreen extends StatefulWidget {
   final String userRole;
