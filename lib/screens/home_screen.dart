@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:google_sign_in/google_sign_in.dart'; // Uncomment if using Google Sign-In
 import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
-// import 'package:kosan_euy/screens/auth/forget_password_screen.dart';
-import 'package:kosan_euy/screens/auth/login_with_google.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
 import 'package:kosan_euy/services/auth_service.dart';
 
@@ -21,6 +18,8 @@ class _LoginScreenState extends State<HomeScreenPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _fullNameController =
+      TextEditingController();
   final AuthService _authService = AuthService();
 
   bool _obscurePassword = true;
@@ -30,13 +29,24 @@ class _LoginScreenState extends State<HomeScreenPage> {
   int _currentStep = 0;
   String _username = "";
   String _email = "";
-  String? _selectedRole;
+  String? _selectedRole; 
+
+  final Map<String, String> _roleMap = {
+    'Pengelola Kos': 'PENGELOLA',
+    'Penghuni Kos': 'PENGHUNI',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _fullNameController.dispose(); 
     super.dispose();
   }
 
@@ -73,35 +83,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
           _isLoading = false;
         });
 
-        Widget targetScreen;
-        final String? role = userData['role'];
-
-        if (role == "ADMIN" || role == "PENGELOLA") {
-          targetScreen = const DashboardAdminScreen();
-        } else if (role == "PENGHUNI") {
-          targetScreen = const KosScreen();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Peran pengguna tidak dikenali.'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-          return;
-        }
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => targetScreen),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Login berhasil!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        _handleLoginSuccess(userData);
       } catch (e) {
         if (!mounted) return;
         setState(() {
@@ -125,11 +107,74 @@ class _LoginScreenState extends State<HomeScreenPage> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final userData = await _authService.signInWithGoogle();
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      _handleLoginSuccess(userData);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void _handleLoginSuccess(Map<String, dynamic> userData) {
+    Widget targetScreen;
+    final String? role = userData['role'];
+
+    if (role == "ADMIN" || role == "PENGELOLA") {
+      targetScreen = const DashboardAdminScreen();
+    } else if (role == "PENGHUNI") {
+      targetScreen = const KosScreen();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Peran pengguna tidak dikenali.'),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => targetScreen),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Login berhasil!'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _goToRegistration() {
     setState(() {
       _currentStep = 2;
       _emailController.clear();
       _passwordController.clear();
+      _confirmPasswordController.clear();
+      _fullNameController.clear(); 
       _selectedRole = null;
     });
   }
@@ -140,15 +185,26 @@ class _LoginScreenState extends State<HomeScreenPage> {
       _passwordController.clear();
       _confirmPasswordController.clear();
       _emailController.clear();
+      _fullNameController.clear(); 
       _selectedRole = null;
     });
   }
 
-  void _submitRegistration() {
+  Future<void> _submitRegistration() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
+    final fullName = _fullNameController.text.trim(); 
 
+    if (fullName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nama lengkap tidak boleh kosong.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
     if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -186,13 +242,52 @@ class _LoginScreenState extends State<HomeScreenPage> {
       return;
     }
 
-    Get.off(() => DashboardAdminScreen());
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Pendaftaran berhasil sebagai $_selectedRole!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final String? backendRole = _roleMap[_selectedRole];
+      if (backendRole == null) {
+        throw Exception('Invalid role selected.');
+      }
+
+      await _authService.register(
+        email.split('@')[0], 
+        fullName,
+        email,
+        password,
+        role: backendRole,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Registrasi berhasil! Silakan login.'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      _backToLogin();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   @override
@@ -327,9 +422,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
         ),
 
         InkWell(
-          onTap: () {
-            Get.to(() => const LoginWithGoogle());
-          },
+          onTap: _isLoading ? null : _signInWithGoogle,
           child: Container(
             width: 55,
             height: 55,
@@ -345,7 +438,12 @@ class _LoginScreenState extends State<HomeScreenPage> {
               ],
             ),
             child: Center(
-              child: Image.asset('assets/google_logo.png', height: 30),
+              child:
+                  _isLoading
+                      ? const CircularProgressIndicator(
+                        color: Color.fromRGBO(144, 122, 204, 1.0),
+                      )
+                      : Image.asset('assets/google_logo.png', height: 30),
             ),
           ),
         ),
@@ -369,19 +467,24 @@ class _LoginScreenState extends State<HomeScreenPage> {
 
   Widget _buildPasswordScreen() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        CircleAvatar(
-          radius: 50,
-          backgroundColor: const Color.fromRGBO(144, 122, 204, 1.0),
-          child: Text(
-            _username.isNotEmpty ? _username[0].toUpperCase() : "U",
-            style: GoogleFonts.poppins(
-              fontSize: 40,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+        Text(
+          'Selamat Datang Kembali!',
+          style: GoogleFonts.poppins(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
+          textAlign: TextAlign.center,
         ),
+        const SizedBox(height: 10),
+        Text(
+          'Silakan masukkan kata sandi Anda untuk melanjutkan.',
+          style: GoogleFonts.poppins(fontSize: 15, color: Colors.white70),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 30),
         const SizedBox(height: 16),
         Text(
           _username,
@@ -439,21 +542,6 @@ class _LoginScreenState extends State<HomeScreenPage> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // Forgot Password link
-        // TextButton(
-        //   onPressed: () {
-        //     Get.to(() => const ForgetpasswordScreen());
-        //   },
-        //   child: Text(
-        //     'Lupa Password?',
-        //     style: GoogleFonts.poppins(
-        //       color: Colors.white,
-        //       fontWeight: FontWeight.w500,
-        //       fontSize: 14,
-        //     ),
-        //   ),
-        // ),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
@@ -498,6 +586,22 @@ class _LoginScreenState extends State<HomeScreenPage> {
         ),
 
         const SizedBox(height: 30),
+
+        _buildInputField(
+          controller: _fullNameController,
+          hintText: 'Nama Lengkap',
+          keyboardType: TextInputType.text,
+          prefixIcon: Icons.person_outline,
+          suffixIcon:
+              _fullNameController.text.isNotEmpty
+                  ? IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.grey),
+                    onPressed:
+                        () => setState(() => _fullNameController.clear()),
+                  )
+                  : null,
+        ),
+        const SizedBox(height: 16),
 
         _buildInputField(
           controller: _emailController,
@@ -595,7 +699,10 @@ class _LoginScreenState extends State<HomeScreenPage> {
           width: double.infinity,
           height: 55,
           child: ElevatedButton(
-            onPressed: _submitRegistration,
+            onPressed:
+                _isLoading
+                    ? null
+                    : _submitRegistration,
             style: ElevatedButton.styleFrom(
               foregroundColor: Colors.white,
               backgroundColor: const Color.fromRGBO(144, 122, 204, 1.0),
@@ -604,13 +711,18 @@ class _LoginScreenState extends State<HomeScreenPage> {
               ),
               elevation: 5,
             ),
-            child: Text(
-              'Daftar',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child:
+                _isLoading
+                    ? const CircularProgressIndicator(
+                      color: Colors.white,
+                    ) // Show loading indicator
+                    : Text(
+                      'Daftar',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
           ),
         ),
 
