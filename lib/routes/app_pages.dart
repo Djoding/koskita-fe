@@ -6,9 +6,6 @@ import 'package:kosan_euy/screens/owner/daftar_kos_screen.dart';
 import 'package:kosan_euy/screens/owner/penghuni_screen.dart';
 import 'package:kosan_euy/screens/owner/add_penghuni_screen.dart';
 import 'package:kosan_euy/screens/owner/edit_penghuni_screen.dart';
-import 'package:kosan_euy/screens/owner/notification/notification_owner.dart';
-import 'package:kosan_euy/screens/owner/notification/notifikasi_reservasi/notification_reservasi.dart';
-import 'package:kosan_euy/screens/owner/notification/notifikasi_reservasi/notification_reservasi_detail.dart';
 import 'package:kosan_euy/screens/owner/reservasi/reservasi_screen.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/makanan_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
@@ -21,7 +18,6 @@ import 'package:kosan_euy/screens/owner/reservasi/edit_user.dart';
 import 'package:kosan_euy/screens/owner/reservasi/form_edit_penghuni.dart';
 import 'package:kosan_euy/screens/owner/reservasi/home_reservasi_owner.dart';
 import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
-import 'package:kosan_euy/screens/owner/notification/notifikasi_laundry/notifikasi_laundry.dart';
 import 'package:kosan_euy/screens/owner/reservasi/validasi_reservasi_screen.dart'; // NEW
 import 'package:kosan_euy/screens/owner/pembayaran/qris_payment_screen.dart'; // NEW
 import 'package:kosan_euy/screens/owner/laundry/layanan_laundry_screen.dart';
@@ -43,15 +39,6 @@ class AppPages {
     GetPage(name: Routes.penghuni, page: () => PenghuniScreen()),
     GetPage(name: Routes.addPenghuni, page: () => AddPenghuniScreen()),
     GetPage(name: Routes.editPenghuni, page: () => EditPenghuniScreen()),
-    GetPage(name: Routes.notificationOwner, page: () => NotificationOwner()),
-    GetPage(
-      name: Routes.notificationReservasi,
-      page: () => NotificationReservasiScreen(),
-    ),
-    GetPage(
-      name: Routes.notificationReservasiDetail,
-      page: () => NotificationReservasiDetail(),
-    ),
     GetPage(name: Routes.reservasi, page: () => ReservasiScreen()),
     GetPage(name: Routes.foodList, page: () => FoodListScreen()),
     GetPage(name: Routes.setting, page: () => SettingScreen()),
@@ -74,10 +61,6 @@ class AppPages {
     ),
     GetPage(name: Routes.homeReservasiOwner, page: () => HomeReservasiOwner()),
     GetPage(name: Routes.editKos, page: () => EditKosScreen()),
-    GetPage(
-      name: Routes.notifikasiLaundry,
-      page: () => NotifikasiLaundryScreen(),
-    ),
     // NEW ROUTES
     GetPage(
       name: Routes.validasiReservasi,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
+import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
 import 'package:kosan_euy/services/auth_service.dart';
 
@@ -140,8 +141,10 @@ class _LoginScreenState extends State<HomeScreenPage> {
     Widget targetScreen;
     final String? role = userData['role'];
 
-    if (role == "ADMIN" || role == "PENGELOLA") {
+    if (role == "ADMIN") {
       targetScreen = const DashboardAdminScreen();
+    } else if (role == "PENGELOLA") {
+      targetScreen = const DashboardOwnerScreen();
     } else if (role == "PENGHUNI") {
       targetScreen = const KosScreen();
     } else {
