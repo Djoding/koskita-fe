@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class OrderHistoryScreen extends StatelessWidget {
+class OrderHistoryScreen extends StatefulWidget {
   const OrderHistoryScreen({super.key});
 
-  // Mock data for Order History
-  // In a real application, this data would come from a database or API
+  @override
+  State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
+}
+
+class _OrderHistoryScreenState extends State<OrderHistoryScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   final List<Map<String, dynamic>> _orderHistory = const [
     {
       'orderId': 'ORD001',
@@ -35,8 +41,8 @@ class OrderHistoryScreen extends StatelessWidget {
         {'name': 'Nasi Putih', 'qty': 2, 'price': 5000},
         {'name': 'Telur Dadar', 'qty': 1, 'price': 6000},
       ],
-      'totalPrice': 16000, // Corrected total for 2 Nasi Putih
-      'status': 'Dibatalkan',
+      'totalPrice': 16000,
+      'status': 'Diterima',
     },
     {
       'orderId': 'ORD004',
@@ -46,9 +52,48 @@ class OrderHistoryScreen extends StatelessWidget {
         {'name': 'Es Kopi Good Day', 'qty': 1, 'price': 5000},
       ],
       'totalPrice': 10000,
-      'status': 'Selesai',
+      'status': 'Pending',
+    },
+    {
+      'orderId': 'ORD005',
+      'date': '24 Mei 2024',
+      'items': [
+        {'name': 'Ayam Geprek', 'qty': 1, 'price': 18000},
+      ],
+      'totalPrice': 18000,
+      'status': 'Pending',
+    },
+    {
+      'orderId': 'ORD006',
+      'date': '23 Mei 2024',
+      'items': [
+        {'name': 'Sate Ayam', 'qty': 1, 'price': 25000},
+      ],
+      'totalPrice': 25000,
+      'status': 'Diterima',
     },
   ];
+
+  List<Map<String, dynamic>> get _pendingOrders =>
+      _orderHistory.where((order) => order['status'] == 'Pending').toList();
+
+  List<Map<String, dynamic>> get _acceptedOrders =>
+      _orderHistory.where((order) => order['status'] == 'Diterima').toList();
+
+  List<Map<String, dynamic>> get _completedOrders =>
+      _orderHistory.where((order) => order['status'] == 'Selesai').toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,10 +103,7 @@ class OrderHistoryScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF89B3DE), // Lighter blue
-              Color(0xFF6B9EDD), // Deeper blue
-            ],
+            colors: [Color(0xFF89B3DE), Color(0xFF6B9EDD)],
           ),
         ),
         child: SafeArea(
@@ -70,24 +112,16 @@ class OrderHistoryScreen extends StatelessWidget {
             children: [
               _buildHeader(),
               _buildTitle(),
+              _buildTabBar(),
               Expanded(
-                child:
-                    _orderHistory.isEmpty
-                        ? _buildEmptyState(
-                          'Belum ada riwayat pemesanan makanan.',
-                        )
-                        : ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                          itemCount: _orderHistory.length,
-                          itemBuilder: (context, index) {
-                            return _OrderHistoryCard(
-                              order: _orderHistory[index],
-                            );
-                          },
-                        ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildOrderList(_pendingOrders, 'pending'),
+                    _buildOrderList(_acceptedOrders, 'diterima'),
+                    _buildOrderList(_completedOrders, 'selesai'),
+                  ],
+                ),
               ),
             ],
           ),
@@ -95,8 +129,6 @@ class OrderHistoryScreen extends StatelessWidget {
       ),
     );
   }
-
-  // --- UI Building Methods ---
 
   Widget _buildHeader() {
     return Padding(
@@ -124,7 +156,6 @@ class OrderHistoryScreen extends StatelessWidget {
               onPressed: () => Get.back(),
             ),
           ),
-          // You can add more icons here if needed, e.g., filter, search
         ],
       ),
     );
@@ -151,6 +182,60 @@ class OrderHistoryScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildTabBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicator: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        labelColor: const Color(0xFF4A99BD),
+        unselectedLabelColor: Colors.white.withOpacity(0.8),
+        labelStyle: GoogleFonts.poppins(
+          fontWeight: FontWeight.w600,
+          fontSize: 15,
+        ),
+        unselectedLabelStyle: GoogleFonts.poppins(
+          fontWeight: FontWeight.w500,
+          fontSize: 15,
+        ),
+        tabs: const [
+          Tab(text: 'Pending'),
+          Tab(text: 'Diterima'),
+          Tab(text: 'Selesai'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderList(List<Map<String, dynamic>> orders, String statusName) {
+    if (orders.isEmpty) {
+      return _buildEmptyState('Tidak ada pesanan $statusName.');
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+        return _OrderHistoryCard(order: orders[index]);
+      },
+    );
+  }
+
   Widget _buildEmptyState(String message) {
     return Center(
       child: Padding(
@@ -162,7 +247,7 @@ class OrderHistoryScreen extends StatelessWidget {
               Icons.history_toggle_off,
               size: 80,
               color: Colors.white.withOpacity(0.6),
-            ), // History icon
+            ),
             const SizedBox(height: 20),
             Text(
               message,
@@ -187,7 +272,6 @@ class OrderHistoryScreen extends StatelessWidget {
   }
 }
 
-// --- Order History Card Widget ---
 class _OrderHistoryCard extends StatelessWidget {
   final Map<String, dynamic> order;
 
@@ -195,7 +279,6 @@ class _OrderHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine status color
     Color statusColor;
     Color statusBgColor;
     switch (order['status']) {
@@ -203,11 +286,11 @@ class _OrderHistoryCard extends StatelessWidget {
         statusColor = Colors.green[800]!;
         statusBgColor = Colors.green.withOpacity(0.2);
         break;
-      case 'Dibatalkan':
-        statusColor = Colors.red[800]!;
-        statusBgColor = Colors.red.withOpacity(0.2);
+      case 'Diterima':
+        statusColor = const Color(0xFF4A99BD); // A shade of blue
+        statusBgColor = const Color(0xFF4A99BD).withOpacity(0.2);
         break;
-      case 'Diproses': // Example of another status
+      case 'Pending':
         statusColor = Colors.orange[800]!;
         statusBgColor = Colors.orange.withOpacity(0.2);
         break;
@@ -220,8 +303,8 @@ class _OrderHistoryCard extends StatelessWidget {
       elevation: 6,
       shadowColor: Colors.black.withOpacity(0.2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      margin: const EdgeInsets.only(bottom: 15), // Spacing between cards
-      color: Colors.white, // White card background
+      margin: const EdgeInsets.only(bottom: 15),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -247,12 +330,7 @@ class _OrderHistoryCard extends StatelessWidget {
                 ),
               ],
             ),
-            const Divider(
-              height: 16,
-              thickness: 1,
-              color: Colors.grey,
-            ), // Divider for clarity
-            // List of ordered items
+            const Divider(height: 16, thickness: 0.8, color: Colors.grey),
             ...(order['items'] as List<Map<String, dynamic>>).map((item) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 4.0),
@@ -280,7 +358,7 @@ class _OrderHistoryCard extends StatelessWidget {
                 ),
               );
             }).toList(),
-            const Divider(height: 16, thickness: 1, color: Colors.grey),
+            const Divider(height: 16, thickness: 0.8, color: Colors.grey),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -295,7 +373,7 @@ class _OrderHistoryCard extends StatelessWidget {
                 Text(
                   'Rp ${order['totalPrice']}',
                   style: GoogleFonts.poppins(
-                    color: const Color(0xFF4D9DAB), // Accent color
+                    color: const Color(0xFF4D9DAB),
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),

@@ -17,6 +17,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   String _fullName = 'Memuat...';
   String _userRole = 'Memuat...';
+  String? _avatarUrl;
 
   @override
   void initState() {
@@ -31,6 +32,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         setState(() {
           _fullName = userData['full_name'] ?? 'Nama Lengkap';
           _userRole = userData['role'] ?? 'Peran Pengguna';
+          _avatarUrl = userData['avatar'];
+
           if (_userRole == 'ADMIN' || _userRole == 'PENGELOLA') {
             _userRole = 'Pengelola Kost';
           } else if (_userRole == 'PENGHUNI') {
@@ -46,6 +49,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         _fullName = 'Error';
         _userRole = 'Error';
+        _avatarUrl = null;
         _nameController.text = 'Error';
         _emailController.text = 'Error';
         _phoneController.text = 'Error';
@@ -214,6 +218,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Center(
+          child: CircleAvatar(
+            radius: 50,
+            backgroundColor: Colors.grey[200],
+            backgroundImage:
+                (_avatarUrl != null && _avatarUrl!.isNotEmpty)
+                    ? NetworkImage(_avatarUrl!) as ImageProvider<Object>?
+                    : null,
+            child:
+                (_avatarUrl == null || _avatarUrl!.isEmpty)
+                    ? Icon(Icons.person, size: 60, color: Colors.grey[600])
+                    : null,
+          ),
+        ),
+        const SizedBox(height: 16),
         Text(
           _fullName,
           style: GoogleFonts.poppins(

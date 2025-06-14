@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class LaundryOrderHistoryScreen extends StatelessWidget {
+class LaundryOrderHistoryScreen extends StatefulWidget {
   const LaundryOrderHistoryScreen({super.key});
 
-  // Mock data for Laundry Order History
-  // In a real application, this data would come from a database or API
+  @override
+  State<LaundryOrderHistoryScreen> createState() =>
+      _LaundryOrderHistoryScreenState();
+}
+
+class _LaundryOrderHistoryScreenState extends State<LaundryOrderHistoryScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   final List<Map<String, dynamic>> _laundryOrderHistory = const [
     {
       'orderId': 'LAUNDRY001',
@@ -28,7 +35,7 @@ class LaundryOrderHistoryScreen extends StatelessWidget {
       'deliveryTime': '14.00 WIB',
       'items': '5 Kg (Cuci & Gosok), 1 Sprei',
       'totalPrice': 45000,
-      'status': 'Diproses', // Example of a 'processing' status
+      'status': 'Diproses',
     },
     {
       'orderId': 'LAUNDRY003',
@@ -39,9 +46,58 @@ class LaundryOrderHistoryScreen extends StatelessWidget {
       'deliveryTime': '17.00 WIB',
       'items': '10 Kg (Cuci & Gosok)',
       'totalPrice': 60000,
-      'status': 'Dibatalkan',
+      'status': 'Pending', // Changed status for 'Pending' tab example
+    },
+    {
+      'orderId': 'LAUNDRY004',
+      'datePlaced': '30 Mei 2024',
+      'pickupDate': '31 Mei 2024',
+      'pickupTime': '13.00 WIB',
+      'deliveryDate': '02 Juni 2024',
+      'deliveryTime': '16.00 WIB',
+      'items': '2 Kg (Cuci Kering)',
+      'totalPrice': 12000,
+      'status': 'Diproses',
+    },
+    {
+      'orderId': 'LAUNDRY005',
+      'datePlaced': '28 Mei 2024',
+      'pickupDate': '29 Mei 2024',
+      'pickupTime': '08.00 WIB',
+      'deliveryDate': '30 Mei 2024',
+      'deliveryTime': '10.00 WIB',
+      'items': '4 Kg (Setrika Saja)',
+      'totalPrice': 20000,
+      'status': 'Selesai',
     },
   ];
+
+  List<Map<String, dynamic>> get _pendingLaundryOrders =>
+      _laundryOrderHistory
+          .where((order) => order['status'] == 'Pending')
+          .toList();
+
+  List<Map<String, dynamic>> get _processedLaundryOrders =>
+      _laundryOrderHistory
+          .where((order) => order['status'] == 'Diproses')
+          .toList();
+
+  List<Map<String, dynamic>> get _completedLaundryOrders =>
+      _laundryOrderHistory
+          .where((order) => order['status'] == 'Selesai')
+          .toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,10 +107,7 @@ class LaundryOrderHistoryScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF89B3DE), // Lighter blue
-              Color(0xFF6B9EDD), // Deeper blue
-            ],
+            colors: [Color(0xFF89B3DE), Color(0xFF6B9EDD)],
           ),
         ),
         child: SafeArea(
@@ -63,22 +116,16 @@ class LaundryOrderHistoryScreen extends StatelessWidget {
             children: [
               _buildHeader(),
               _buildTitle(),
+              _buildTabBar(),
               Expanded(
-                child:
-                    _laundryOrderHistory.isEmpty
-                        ? _buildEmptyState('Belum ada riwayat pesanan laundry.')
-                        : ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                          itemCount: _laundryOrderHistory.length,
-                          itemBuilder: (context, index) {
-                            return _LaundryOrderHistoryCard(
-                              order: _laundryOrderHistory[index],
-                            );
-                          },
-                        ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildOrderList(_pendingLaundryOrders, 'pending'),
+                    _buildOrderList(_processedLaundryOrders, 'diproses'),
+                    _buildOrderList(_completedLaundryOrders, 'selesai'),
+                  ],
+                ),
               ),
             ],
           ),
@@ -86,8 +133,6 @@ class LaundryOrderHistoryScreen extends StatelessWidget {
       ),
     );
   }
-
-  // --- UI Building Methods ---
 
   Widget _buildHeader() {
     return Padding(
@@ -143,6 +188,60 @@ class LaundryOrderHistoryScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildTabBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicator: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        labelColor: const Color(0xFF4A99BD),
+        unselectedLabelColor: Colors.white.withOpacity(0.8),
+        labelStyle: GoogleFonts.poppins(
+          fontWeight: FontWeight.w600,
+          fontSize: 15,
+        ),
+        unselectedLabelStyle: GoogleFonts.poppins(
+          fontWeight: FontWeight.w500,
+          fontSize: 15,
+        ),
+        tabs: const [
+          Tab(text: 'Pending'),
+          Tab(text: 'Diproses'),
+          Tab(text: 'Selesai'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderList(List<Map<String, dynamic>> orders, String statusName) {
+    if (orders.isEmpty) {
+      return _buildEmptyState('Tidak ada pesanan $statusName.');
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+        return _LaundryOrderHistoryCard(order: orders[index]);
+      },
+    );
+  }
+
   Widget _buildEmptyState(String message) {
     return Center(
       child: Padding(
@@ -154,7 +253,7 @@ class LaundryOrderHistoryScreen extends StatelessWidget {
               Icons.local_laundry_service,
               size: 80,
               color: Colors.white.withOpacity(0.6),
-            ), // Laundry icon
+            ),
             const SizedBox(height: 20),
             Text(
               message,
@@ -179,7 +278,6 @@ class LaundryOrderHistoryScreen extends StatelessWidget {
   }
 }
 
-// --- Laundry Order History Card Widget ---
 class _LaundryOrderHistoryCard extends StatelessWidget {
   final Map<String, dynamic> order;
 
@@ -187,7 +285,6 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine status color
     Color statusColor;
     Color statusBgColor;
     switch (order['status']) {
@@ -196,10 +293,16 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
         statusBgColor = Colors.green.withOpacity(0.2);
         break;
       case 'Diproses':
+        statusColor = const Color(
+          0xFF4A99BD,
+        ); // Adjusted to blue for 'Diproses'
+        statusBgColor = const Color(0xFF4A99BD).withOpacity(0.2);
+        break;
+      case 'Pending': // Assuming a 'Pending' status
         statusColor = Colors.orange[800]!;
         statusBgColor = Colors.orange.withOpacity(0.2);
         break;
-      case 'Dibatalkan':
+      case 'Dibatalkan': // Added 'Dibatalkan' status for completeness
         statusColor = Colors.red[800]!;
         statusBgColor = Colors.red.withOpacity(0.2);
         break;
@@ -212,8 +315,8 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
       elevation: 6,
       shadowColor: Colors.black.withOpacity(0.2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      margin: const EdgeInsets.only(bottom: 15), // Spacing between cards
-      color: Colors.white, // White card background
+      margin: const EdgeInsets.only(bottom: 15),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -239,28 +342,25 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
                 ),
               ],
             ),
-            const Divider(height: 16, thickness: 1, color: Colors.grey),
-            // Pickup details
+            const Divider(height: 16, thickness: 0.8, color: Colors.grey),
             _buildDetailRow(
               icon: Icons.calendar_today,
               label: 'Penjemputan:',
               value: '${order['pickupDate']} (${order['pickupTime']})',
             ),
             const SizedBox(height: 8),
-            // Delivery details
             _buildDetailRow(
               icon: Icons.delivery_dining,
               label: 'Pengembalian:',
               value: '${order['deliveryDate']} (${order['deliveryTime']})',
             ),
             const SizedBox(height: 8),
-            // Items
             _buildDetailRow(
               icon: Icons.local_laundry_service,
               label: 'Layanan:',
               value: order['items'],
             ),
-            const Divider(height: 16, thickness: 1, color: Colors.grey),
+            const Divider(height: 16, thickness: 0.8, color: Colors.grey),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -275,7 +375,7 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
                 Text(
                   'Rp ${order['totalPrice']}',
                   style: GoogleFonts.poppins(
-                    color: const Color(0xFF4D9DAB), // Accent color
+                    color: const Color(0xFF4D9DAB),
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -298,7 +398,7 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
                   order['status'],
                   style: GoogleFonts.poppins(
                     color: statusColor,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700, // Make status text bolder
                     fontSize: 13,
                   ),
                 ),
@@ -310,7 +410,6 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
     );
   }
 
-  // Helper method to build a row with icon, label, and value
   Widget _buildDetailRow({
     required IconData icon,
     required String label,

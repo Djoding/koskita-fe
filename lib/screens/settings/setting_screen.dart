@@ -16,6 +16,7 @@ class _SettingScreenState extends State<SettingScreen> {
   final AuthService _authService = AuthService();
   String _fullName = 'Memuat...';
   String _userRole = 'Memuat...';
+  String? _avatarUrl;
 
   @override
   void initState() {
@@ -30,7 +31,11 @@ class _SettingScreenState extends State<SettingScreen> {
         setState(() {
           _fullName = userData['full_name'] ?? 'Nama Pengguna';
           _userRole = userData['role'] ?? 'Peran Pengguna';
-          if (_userRole == 'ADMIN' || _userRole == 'PENGELOLA') {
+          _avatarUrl = userData['avatar'];
+
+          if (_userRole == 'ADMIN') {
+            _userRole = 'Admin';
+          } else if (_userRole == 'PENGELOLA') {
             _userRole = 'Pengelola Kost';
           } else if (_userRole == 'PENGHUNI') {
             _userRole = 'Penghuni Kost';
@@ -41,11 +46,8 @@ class _SettingScreenState extends State<SettingScreen> {
       setState(() {
         _fullName = 'Error';
         _userRole = 'Error';
+        _avatarUrl = null;
       });
-      // Optionally, show a SnackBar or other error indication to the user
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(content: Text('Failed to load user data: ${e.toString()}')),
-      // );
     }
   }
 
@@ -107,13 +109,6 @@ class _SettingScreenState extends State<SettingScreen> {
                         decoration: BoxDecoration(
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.notifications_none_outlined,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {},
                         ),
                       ),
                     ],
@@ -239,6 +234,19 @@ class _SettingScreenState extends State<SettingScreen> {
   Widget _buildProfileInfo() {
     return Column(
       children: [
+        CircleAvatar(
+          radius: 50,
+          backgroundColor: Colors.grey[200],
+          backgroundImage:
+              (_avatarUrl != null && _avatarUrl!.isNotEmpty)
+                  ? NetworkImage(_avatarUrl!) as ImageProvider<Object>?
+                  : null,
+          child:
+              (_avatarUrl == null || _avatarUrl!.isEmpty)
+                  ? Icon(Icons.person, size: 60, color: Colors.grey[600])
+                  : null,
+        ),
+        const SizedBox(height: 16),
         Text(
           _fullName,
           style: GoogleFonts.poppins(

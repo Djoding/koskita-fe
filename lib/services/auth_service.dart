@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// import 'package:url_launcher/url_launcher.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   static const String _baseUrl = 'http://localhost:3000/api/v1/auth';
@@ -9,6 +11,76 @@ class AuthService {
   static const String _accessTokenKey = 'accessToken';
   static const String _refreshTokenKey = 'refreshToken';
   static const String _userDataKey = 'userData';
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+
+  Future<Map<String, dynamic>> register(
+    String username,
+    String fullName,
+    String email,
+    String password, {
+    String? role,
+    String? phone,
+    String? whatsappNumber,
+  }) async {
+    final url = Uri.parse('$_baseUrl/register');
+
+    try {
+      final Map<String, dynamic> body = {
+        'username': username,
+        'full_name': fullName,
+        'email': email,
+        'password': password,
+      };
+
+      if (role != null) body['role'] = role;
+      if (phone != null) body['phone'] = phone;
+      if (whatsappNumber != null) body['whatsapp_number'] = whatsappNumber;
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+        if (responseBody['success'] == true && responseBody['data'] != null) {
+          final data = responseBody['data'] as Map<String, dynamic>;
+          final String? accessToken = data['accessToken'];
+          final String? refreshToken = data['refreshToken'];
+          final Map<String, dynamic>? user =
+              data['user'] as Map<String, dynamic>?;
+
+          if (accessToken != null && refreshToken != null) {
+            await _saveTokens(accessToken, refreshToken);
+            if (user != null) {
+              await _storage.write(key: _userDataKey, value: jsonEncode(user));
+            }
+            return user ?? {};
+          } else {
+            throw Exception(
+              'Failed to retrieve tokens from registration response.',
+            );
+          }
+        } else {
+          throw Exception(
+            responseBody['message'] ??
+                'Registration failed due to unexpected response.',
+          );
+        }
+      } else {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(
+          errorBody['message'] ??
+              'Registration failed with status: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to the server for registration: $e');
+    }
+  }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final url = Uri.parse('$_baseUrl/login');
@@ -54,6 +126,66 @@ class AuthService {
       }
     } catch (e) {
       throw Exception('Failed to connect to the server: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        throw Exception('Google Sign-In dibatalkan oleh pengguna.');
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw Exception('Gagal mendapatkan ID Token dari Google.');
+      }
+
+      final url = Uri.parse('$_baseUrl/google/mobile');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'idToken': idToken}),
+      );
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+        if (responseBody['success'] == true && responseBody['data'] != null) {
+          final data = responseBody['data'] as Map<String, dynamic>;
+
+          final String? accessToken = data['accessToken'];
+          final String? refreshToken = data['refreshToken'];
+          final Map<String, dynamic>? user =
+              data['user'] as Map<String, dynamic>?;
+
+          if (accessToken != null && refreshToken != null) {
+            await _saveTokens(accessToken, refreshToken);
+            if (user != null) {
+              await _storage.write(key: _userDataKey, value: jsonEncode(user));
+            }
+            return user ?? {};
+          } else {
+            throw Exception('Gagal mendapatkan token dari respons backend.');
+          }
+        } else {
+          throw Exception(
+            responseBody['message'] ?? 'Otentikasi Google gagal di backend.',
+          );
+        }
+      } else {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(
+          errorBody['message'] ?? 'Kesalahan backend: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      await _googleSignIn.signOut();
+      throw Exception('Gagal melakukan login Google: $e');
     }
   }
 
@@ -115,6 +247,7 @@ class AuthService {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
     await _storage.delete(key: _userDataKey);
+    await _googleSignIn.signOut();
   }
 
   Future<bool> isLoggedIn() async {
