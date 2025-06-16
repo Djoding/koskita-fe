@@ -45,16 +45,22 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleURLName</key>
+			<string>google-oauth</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com</string>
+				<string>com.googleusercontent.apps.493320600420-86og9e4gofabhq4lrsoscgnt9s0de946</string>
 			</array>
 		</dict>
 	</array>
+	
+	<key>GIDClientID</key>
+	<string>493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com</string>
 </dict>
 </plist>
