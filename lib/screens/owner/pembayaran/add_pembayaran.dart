@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
-import 'package:kosan_euy/screens/tamu/pembayaran/pembayaran_tamu_selesai.dart';
+// import 'package:kosan_euy/screens/tamu/pembayaran/pembayaran_tamu_selesai.dart';
 import 'package:kosan_euy/widgets/success_delete_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_tenant_screen.dart';
-import 'package:kosan_euy/screens/tamu/pembayaran/pembayaran_tamu_selesai.dart';
+// import 'package:kosan_euy/screens/tamu/pembayaran/pembayaran_tamu_selesai.dart';
 
 class MenuPembayaranPenghuni extends StatelessWidget {
   const MenuPembayaranPenghuni({super.key});
