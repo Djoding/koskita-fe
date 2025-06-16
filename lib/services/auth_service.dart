@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-// import 'package:url_launcher/url_launcher.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
@@ -12,7 +11,11 @@ class AuthService {
   static const String _refreshTokenKey = 'refreshToken';
   static const String _userDataKey = 'userData';
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId:
+        '493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com',
+    scopes: ['email', 'profile'],
+  );
 
   Future<Map<String, dynamic>> register(
     String username,
