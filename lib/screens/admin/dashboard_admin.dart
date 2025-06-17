@@ -1,3 +1,4 @@
+// lib/screens/admin/dashboard_admin.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
@@ -5,6 +6,8 @@ import 'package:kosan_euy/screens/admin/pengelola_detail_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/widgets/success_delete_screen.dart';
 import 'package:kosan_euy/widgets/success_screen.dart';
+import 'package:kosan_euy/services/admin_service.dart';
+import 'package:kosan_euy/widgets/dialog_utils.dart';
 
 class DashboardAdminScreen extends StatefulWidget {
   const DashboardAdminScreen({super.key});
@@ -17,64 +20,27 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Dummy data - replace with actual API calls
-  final List<Map<String, dynamic>> _pendingPengelola = [
-    {
-      'id': '1',
-      'nama': 'John Doe',
-      'email': 'john@example.com',
-      'namaKost': 'Kost Kapling 40',
-      'lokasi': 'Jl. Kapling No. 40',
-      'tanggalDaftar': '2024-06-10',
-      'status': 'pending',
-    },
-    {
-      'id': '2',
-      'nama': 'Jane Smith',
-      'email': 'jane@example.com',
-      'namaKost': 'Kost Melati',
-      'lokasi': 'Jl. Melati No. 15',
-      'tanggalDaftar': '2024-06-09',
-      'status': 'pending',
-    },
-  ];
-
-  final List<Map<String, dynamic>> _verifiedPengelola = [
-    {
-      'id': '3',
-      'nama': 'Ahmad Sari',
-      'email': 'ahmad@example.com',
-      'namaKost': 'Kost Mawar',
-      'lokasi': 'Jl. Mawar No. 20',
-      'tanggalDaftar': '2024-06-01',
-      'tanggalVerifikasi': '2024-06-02',
-      'status': 'verified',
-    },
-  ];
-
-  List<Map<String, dynamic>> _filterPengelola(List<Map<String, dynamic>> data) {
-    if (_searchQuery.isEmpty) return data;
-
-    return data.where((pengelola) {
-      final nama = pengelola['nama'].toString().toLowerCase();
-      final namaKost = pengelola['namaKost'].toString().toLowerCase();
-      final lokasi = pengelola['lokasi'].toString().toLowerCase();
-      final query = _searchQuery.toLowerCase();
-
-      return nama.contains(query) ||
-          namaKost.contains(query) ||
-          lokasi.contains(query);
-    }).toList();
-  }
+  List<Map<String, dynamic>> _pendingPengelola = [];
+  List<Map<String, dynamic>> _verifiedPengelola = [];
+  Map<String, dynamic>? _statistics;
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isLoading = false;
+  String? _errorMessage;
 
+  int _pendingPage = 1;
+  int _verifiedPage = 1;
+  bool _hasMorePending = true;
+  bool _hasMoreVerified = true;
+  final int _limit = 10;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    _loadInitialData();
   }
 
   @override
@@ -84,6 +50,187 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
     super.dispose();
   }
 
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) {
+      _searchController.clear();
+      _searchQuery = '';
+      setState(() {});
+    }
+  }
+
+  Future<void> _loadInitialData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await Future.wait([
+        _loadPendingUsers(refresh: true),
+        _loadVerifiedUsers(refresh: true),
+        _loadStatistics(),
+      ]);
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadPendingUsers({bool refresh = false}) async {
+    try {
+      if (refresh) {
+        _pendingPage = 1;
+        _hasMorePending = true;
+      }
+
+      final result = await AdminService.getPendingUsers(
+        page: _pendingPage,
+        limit: _limit,
+      );
+
+      if (result['status']) {
+        final List<dynamic> users = result['data'] ?? [];
+        final pagination = result['pagination'];
+
+        setState(() {
+          if (refresh) {
+            _pendingPengelola = users.cast<Map<String, dynamic>>();
+          } else {
+            _pendingPengelola.addAll(users.cast<Map<String, dynamic>>());
+          }
+          _hasMorePending = pagination['hasNext'] ?? false;
+          if (!refresh) _pendingPage++;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading pending users: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadVerifiedUsers({bool refresh = false}) async {
+    try {
+      if (refresh) {
+        _verifiedPage = 1;
+        _hasMoreVerified = true;
+      }
+
+      final result = await AdminService.getVerifiedUsers(
+        page: _verifiedPage,
+        limit: _limit,
+      );
+
+      if (result['status']) {
+        final List<dynamic> users = result['data'] ?? [];
+        final pagination = result['pagination'];
+
+        setState(() {
+          if (refresh) {
+            _verifiedPengelola = users.cast<Map<String, dynamic>>();
+          } else {
+            _verifiedPengelola.addAll(users.cast<Map<String, dynamic>>());
+          }
+          _hasMoreVerified = pagination['hasNext'] ?? false;
+          if (!refresh) _verifiedPage++;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading verified users: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadStatistics() async {
+    try {
+      final result = await AdminService.getUserStats();
+      if (result['status']) {
+        setState(() {
+          _statistics = result['data'];
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading statistics: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _searchUsers(String query) async {
+    if (query.trim().length < 2) {
+      setState(() {
+        _searchQuery = '';
+      });
+      await _loadInitialData();
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _searchQuery = query.trim();
+    });
+
+    try {
+      final result = await AdminService.searchUsers(_searchQuery);
+      if (result['status']) {
+        final List<dynamic> users = result['data'] ?? [];
+        setState(() {
+          // Filter by approval status based on current tab
+          if (_tabController.index == 0) {
+            // Pending tab
+            _pendingPengelola = users
+                .where((user) => user['is_approved'] == false)
+                .cast<Map<String, dynamic>>()
+                .toList();
+          } else {
+            // Verified tab
+            _verifiedPengelola = users
+                .where((user) => user['is_approved'] == true)
+                .cast<Map<String, dynamic>>()
+                .toList();
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Search error: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> _getFilteredUsers(List<Map<String, dynamic>> users) {
+    if (_searchQuery.isEmpty) return users;
+
+    return users.where((user) {
+      final name = (user['full_name'] ?? '').toString().toLowerCase();
+      final email = (user['email'] ?? '').toString().toLowerCase();
+      final username = (user['username'] ?? '').toString().toLowerCase();
+      final query = _searchQuery.toLowerCase();
+
+      return name.contains(query) || 
+             email.contains(query) || 
+             username.contains(query);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,11 +238,8 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             _buildHeader(),
-            // Tab Bar
             _buildTabBar(),
-            // Tab Bar View
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -109,11 +253,15 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
   }
 
   Widget _buildHeader() {
+    final stats = _statistics;
+    final totalUsers = stats?['totalUsers'] ?? 0;
+    final pendingCount = stats?['byStatus']?['pending'] ?? 0;
+    final approvedCount = stats?['byStatus']?['approved'] ?? 0;
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          // Top row with back button and stats
           Row(
             children: [
               Container(
@@ -124,32 +272,26 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Colors.black,
-                  ),
+                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
                   onPressed: () => Get.back(),
                 ),
               ),
               const Spacer(),
-              // Statistics
-              Row(
-                children: [
-                  
-                  IconButton(
-                    icon: const Icon(
-                      Icons.settings,
-                      color: Colors.black,
-                      size: 28,
-                    ),
-                    onPressed: () => Get.to(() => SettingScreen()),
-                  ),
-                ],
+              if (stats != null) ...[
+                _buildStatItem('Total', totalUsers.toString(), Colors.blue),
+                const SizedBox(width: 20),
+                _buildStatItem('Pending', pendingCount.toString(), Colors.orange),
+                const SizedBox(width: 20),
+                _buildStatItem('Approved', approvedCount.toString(), Colors.green),
+              ],
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.black, size: 28),
+                onPressed: () => Get.to(() => SettingScreen()),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          // Greeting and icons
           Row(
             children: [
               Expanded(
@@ -176,7 +318,6 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
                   ],
                 ),
               ),
-              
             ],
           ),
         ],
@@ -246,12 +387,12 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
       child: TextField(
         controller: _searchController,
         onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
+          if (value.trim().length >= 2 || value.trim().isEmpty) {
+            _searchUsers(value);
+          }
         },
         decoration: InputDecoration(
-          hintText: 'Cari pengelola, kost, atau lokasi...',
+          hintText: 'Cari pengelola, nama, atau email...',
           prefixIcon: const Icon(Icons.search),
           filled: true,
           fillColor: Colors.white,
@@ -269,7 +410,7 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
   }
 
   Widget _buildPendingList() {
-    final filteredData = _filterPengelola(_pendingPengelola);
+    final filteredData = _getFilteredUsers(_pendingPengelola);
 
     return Container(
       margin: const EdgeInsets.only(top: 20),
@@ -277,24 +418,96 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
         children: [
           _buildSearchBar(),
           Expanded(
-            child:
-                filteredData.isEmpty
-                    ? _buildEmptyState(
-                      'Tidak ada pengelola pending yang ditemukan',
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: filteredData.length,
-                      itemBuilder: (context, index) {
-                        return _PenggelolaCard(
-                          pengelola: filteredData[index],
-                          isPending: true,
-                          onTap: () => _goToDetail(filteredData[index]),
-                          onVerify: () => _verifyPengelola(filteredData[index]),
-                          onDelete: () => _deletePengelola(filteredData[index]),
-                        );
-                      },
-                    ),
+            child: _isLoading && _pendingPengelola.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                    ? _buildErrorState(_errorMessage!)
+                    : filteredData.isEmpty
+                        ? _buildEmptyState('Tidak ada pengelola pending yang ditemukan')
+                        : NotificationListener<ScrollNotification>(
+                            onNotification: (ScrollNotification scrollInfo) {
+                              if (!_isLoading &&
+                                  _hasMorePending &&
+                                  _searchQuery.isEmpty &&
+                                  scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+                                _loadPendingUsers();
+                              }
+                              return false;
+                            },
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: filteredData.length + (_hasMorePending && _searchQuery.isEmpty ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index == filteredData.length) {
+                                  return const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+                                return _PenggelolaCard(
+                                  pengelola: filteredData[index],
+                                  isPending: true,
+                                  onTap: () => _goToDetail(filteredData[index]),
+                                  onVerify: () => _verifyPengelola(filteredData[index]),
+                                  onDelete: () => _deletePengelola(filteredData[index]),
+                                );
+                              },
+                            ),
+                          ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerifiedList() {
+    final filteredData = _getFilteredUsers(_verifiedPengelola);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 20),
+      child: Column(
+        children: [
+          _buildSearchBar(),
+          Expanded(
+            child: _isLoading && _verifiedPengelola.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                    ? _buildErrorState(_errorMessage!)
+                    : filteredData.isEmpty
+                        ? _buildEmptyState('Tidak ada pengelola verified yang ditemukan')
+                        : NotificationListener<ScrollNotification>(
+                            onNotification: (ScrollNotification scrollInfo) {
+                              if (!_isLoading &&
+                                  _hasMoreVerified &&
+                                  _searchQuery.isEmpty &&
+                                  scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+                                _loadVerifiedUsers();
+                              }
+                              return false;
+                            },
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: filteredData.length + (_hasMoreVerified && _searchQuery.isEmpty ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index == filteredData.length) {
+                                  return const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+                                return _PenggelolaCard(
+                                  pengelola: filteredData[index],
+                                  isPending: false,
+                                  onTap: () => _goToDetail(filteredData[index]),
+                                  onDelete: () => _deletePengelola(filteredData[index]),
+                                );
+                              },
+                            ),
+                          ),
           ),
         ],
       ),
@@ -318,111 +531,157 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
     );
   }
 
-  Widget _buildVerifiedList() {
-    return Container(
-      margin: const EdgeInsets.only(top: 20),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: _verifiedPengelola.length,
-        itemBuilder: (context, index) {
-          return _PenggelolaCard(
-            pengelola: _verifiedPengelola[index],
-            isPending: false,
-            onTap: () => _goToDetail(_verifiedPengelola[index]),
-            onDelete: () => _deletePengelola(_verifiedPengelola[index]),
-          );
-        },
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+          const SizedBox(height: 16),
+          Text(
+            'Error: $message',
+            style: GoogleFonts.poppins(color: Colors.red[600], fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadInitialData,
+            child: const Text('Coba Lagi'),
+          ),
+        ],
       ),
     );
   }
 
-  void _goToDetail(Map<String, dynamic> pengelola) {
-    Get.to(() => PenggelolaDetailScreen(pengelola: pengelola));
+  void _goToDetail(Map<String, dynamic> pengelola) async {
+    final result = await Get.to(() => PenggelolaDetailScreen(pengelola: pengelola));
+    
+    // Refresh data if user was updated or deleted
+    if (result != null) {
+      if (result == 'deleted') {
+        _loadInitialData();
+      } else if (result is Map<String, dynamic>) {
+        // User was updated, refresh the lists
+        _loadInitialData();
+      }
+    }
   }
 
-  void _verifyPengelola(Map<String, dynamic> pengelola) {
+  void _verifyPengelola(Map<String, dynamic> pengelola) async {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(
-              'Verifikasi Pengelola',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-            ),
-            content: Text(
-              'Apakah Anda yakin ingin memverifikasi ${pengelola['nama']}?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                onPressed: () {
-                  Navigator.pop(context);
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Verifikasi Pengelola',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin memverifikasi ${pengelola['full_name']}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              DialogUtils.showLoadingDialog(context, false);
+              
+              try {
+                final result = await AdminService.approveUser(
+                  pengelola['user_id'],
+                  true,
+                );
+                
+                DialogUtils.hideLoadingDialog(context);
+                
+                if (result['status']) {
+                  // Remove from pending list and add to verified list
                   setState(() {
-                    pengelola['status'] = 'verified';
-                    pengelola['tanggalVerifikasi'] =
-                        DateTime.now().toString().split(' ')[0];
-                    _verifiedPengelola.add(pengelola);
-                    _pendingPengelola.remove(pengelola);
+                    _pendingPengelola.removeWhere((p) => p['user_id'] == pengelola['user_id']);
+                    _verifiedPengelola.insert(0, result['data']);
                   });
+                  
+                  await _loadStatistics(); // Refresh statistics
+                  
                   Get.to(
                     () => SuccessScreen(
                       title: 'Pengelola berhasil diverifikasi',
-                      subtitle: '${pengelola['nama']} telah diverifikasi.',
+                      subtitle: '${pengelola['full_name']} telah diverifikasi.',
                     ),
                   );
-                },
-                child: const Text(
-                  'Verifikasi',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
+                }
+              } catch (e) {
+                DialogUtils.hideLoadingDialog(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: $e')),
+                );
+              }
+            },
+            child: const Text('Verifikasi', style: TextStyle(color: Colors.white)),
           ),
+        ],
+      ),
     );
   }
 
-  void _deletePengelola(Map<String, dynamic> pengelola) {
+  void _deletePengelola(Map<String, dynamic> pengelola) async {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(
-              'Hapus Pengelola',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-            ),
-            content: Text(
-              'Apakah Anda yakin ingin menghapus ${pengelola['nama']}?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () {
-                  Navigator.pop(context);
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Hapus Pengelola',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus ${pengelola['full_name']}? Tindakan ini tidak dapat dibatalkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              DialogUtils.showLoadingDialog(context, false);
+              
+              try {
+                final result = await AdminService.deleteUser(pengelola['user_id']);
+                
+                DialogUtils.hideLoadingDialog(context);
+                
+                if (result['status']) {
+                  // Remove from both lists
                   setState(() {
-                    _pendingPengelola.remove(pengelola);
-                    _verifiedPengelola.remove(pengelola);
+                    _pendingPengelola.removeWhere((p) => p['user_id'] == pengelola['user_id']);
+                    _verifiedPengelola.removeWhere((p) => p['user_id'] == pengelola['user_id']);
                   });
+                  
+                  await _loadStatistics(); // Refresh statistics
+                  
                   Get.to(
                     () => SuccessDeleteScreen(
-                      title: 'Pengelola berhasil dihapus',
+                      title: '${pengelola['full_name']} berhasil dihapus',
                     ),
                   );
-                },
-                child: const Text(
-                  'Hapus',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
+                }
+              } catch (e) {
+                DialogUtils.hideLoadingDialog(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: $e')),
+                );
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
           ),
+        ],
+      ),
     );
   }
 }
@@ -481,10 +740,20 @@ class _PenggelolaCard extends StatelessWidget {
                         width: 2,
                       ),
                     ),
-                    child: Icon(
-                      Icons.person,
-                      color: isPending ? Colors.orange : Colors.green,
-                      size: 28,
+                    child: CircleAvatar(
+                      backgroundColor: Colors.transparent,
+                      backgroundImage:
+                          pengelola['avatar'] != null
+                              ? NetworkImage(pengelola['avatar'])
+                              : null,
+                      child:
+                          pengelola['avatar'] == null
+                              ? Icon(
+                                Icons.person,
+                                color: isPending ? Colors.orange : Colors.green,
+                                size: 28,
+                              )
+                              : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -493,17 +762,24 @@ class _PenggelolaCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          pengelola['nama'],
+                          pengelola['full_name'] ?? 'Nama tidak tersedia',
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                           ),
                         ),
                         Text(
-                          pengelola['namaKost'],
+                          pengelola['email'] ?? 'Email tidak tersedia',
                           style: GoogleFonts.poppins(
                             color: Colors.grey[600],
                             fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          '@${pengelola['username'] ?? 'username'}',
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey[500],
+                            fontSize: 12,
                           ),
                         ),
                       ],
@@ -530,23 +806,32 @@ class _PenggelolaCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
+              if (pengelola['phone'] != null) ...[
+                Text(
+                  'Telepon: ${pengelola['phone']}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
+                    fontSize: 13,
+                  ),
+                ),
+              ],
               Text(
-                pengelola['lokasi'],
+                'Role: ${pengelola['role']}',
                 style: GoogleFonts.poppins(
                   color: Colors.grey[600],
                   fontSize: 13,
                 ),
               ),
               Text(
-                'Daftar: ${pengelola['tanggalDaftar']}',
+                'Bergabung: ${_formatDate(pengelola['created_at'])}',
                 style: GoogleFonts.poppins(
                   color: Colors.grey[500],
                   fontSize: 12,
                 ),
               ),
-              if (!isPending && pengelola['tanggalVerifikasi'] != null)
+              if (!isPending && pengelola['last_login'] != null)
                 Text(
-                  'Verifikasi: ${pengelola['tanggalVerifikasi']}',
+                  'Login terakhir: ${_formatDate(pengelola['last_login'])}',
                   style: GoogleFonts.poppins(color: Colors.green, fontSize: 12),
                 ),
               const SizedBox(height: 12),
@@ -591,5 +876,15 @@ class _PenggelolaCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null) return 'Tidak diketahui';
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return 'Format tanggal salah';
+    }
   }
 }

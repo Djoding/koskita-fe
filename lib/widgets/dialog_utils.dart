@@ -1,3 +1,4 @@
+// lib/widgets/dialog_utils.dart
 import 'package:flutter/material.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 
@@ -46,21 +47,30 @@ class DialogUtils {
   }
 
   static void hideLoadingDialog(BuildContext context) {
-    // Make sure the context is still valid before popping
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
+    // Check if the context is still mounted and can pop
+    try {
+      if (context.mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      // Silently catch any errors when trying to close dialog
+      print('Error closing dialog: $e');
     }
   }
 
   static void showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    }
   }
 
   static void showSuccess(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
-    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.green),
+      );
+    }
   }
 }

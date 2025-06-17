@@ -1,173 +1,234 @@
 // lib/services/admin_service.dart
-import 'package:kosan_euy/services/api_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AdminService {
-  // Get all pengelola (pending dan verified)
-  static Future<Map<String, dynamic>> getAllPengelola() async {
+  static const String _baseUrl = 'http://localhost:3000/api/v1';
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
+
+  // Headers dengan token
+  static Future<Map<String, String>> get _headers async {
+    final token = await _storage.read(key: 'accessToken');
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  // Get all users with pagination and filters
+  static Future<Map<String, dynamic>> getAllUsers({
+    String? role,
+    bool? isApproved,
+    String? search,
+    int page = 1,
+    int limit = 10,
+  }) async {
     try {
-      final response = await ApiService.get('/admin/pengelola');
-      return {
-        'status': true,
-        'data': response['data'],
-        'message': response['message'],
+      final Map<String, String> queryParams = {
+        'page': page.toString(),
+        'limit': limit.toString(),
       };
+
+      if (role != null) queryParams['role'] = role;
+      if (isApproved != null)
+        queryParams['is_approved'] = isApproved.toString();
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+
+      final uri = Uri.parse(
+        '$_baseUrl/users',
+      ).replace(queryParameters: queryParams);
+      final response = await http.get(uri, headers: await _headers);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'status': true,
+          'data': data['data'],
+          'pagination': data['pagination'],
+          'message': data['message'],
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to fetch users');
+      }
     } catch (e) {
-      // Offline mode - return dummy data
-      return {
-        'status': true,
-        'data': {
-          'pending': [
-            {
-              'id': '1',
-              'nama': 'John Doe',
-              'email': 'john@example.com',
-              'namaKost': 'Kost Kapling 40',
-              'lokasi': 'Jl. Kapling No. 40',
-              'tanggalDaftar': '2024-06-10',
-              'status': 'pending',
-              'phone': '08123456789',
-              'alamat': 'Jl. Contoh No. 123, Semarang',
-              'nik': '3374123456789012',
-              'jumlahKamar': 10,
-              'harga': '1000000',
-              'jenisKost': 'Putra',
-            },
-            {
-              'id': '2',
-              'nama': 'Jane Smith',
-              'email': 'jane@example.com',
-              'namaKost': 'Kost Melati',
-              'lokasi': 'Jl. Melati No. 15',
-              'tanggalDaftar': '2024-06-09',
-              'status': 'pending',
-              'phone': '08123456790',
-              'alamat': 'Jl. Melati No. 15, Semarang',
-              'nik': '3374123456789013',
-              'jumlahKamar': 8,
-              'harga': '900000',
-              'jenisKost': 'Putri',
-            },
-          ],
-          'verified': [
-            {
-              'id': '3',
-              'nama': 'Ahmad Sari',
-              'email': 'ahmad@example.com',
-              'namaKost': 'Kost Mawar',
-              'lokasi': 'Jl. Mawar No. 20',
-              'tanggalDaftar': '2024-06-01',
-              'tanggalVerifikasi': '2024-06-02',
-              'status': 'verified',
-              'phone': '08123456791',
-              'alamat': 'Jl. Mawar No. 20, Semarang',
-              'nik': '3374123456789014',
-              'jumlahKamar': 12,
-              'harga': '1200000',
-              'jenisKost': 'Campur',
-            },
-          ],
-        },
-        'message': 'Data retrieved successfully (offline mode)',
-      };
+      throw Exception('Network error: $e');
     }
   }
 
-  // Verify pengelola
-  static Future<Map<String, dynamic>> verifyPengelola(
-    String penggelolaId,
-  ) async {
+  // Get pending users (is_approved = false)
+  static Future<Map<String, dynamic>> getPendingUsers({
+    int page = 1,
+    int limit = 10,
+  }) async {
+    return getAllUsers(isApproved: false, page: page, limit: limit);
+  }
+
+  // Get verified users (is_approved = true)
+  static Future<Map<String, dynamic>> getVerifiedUsers({
+    int page = 1,
+    int limit = 10,
+  }) async {
+    return getAllUsers(isApproved: true, page: page, limit: limit);
+  }
+
+  // Get user by ID
+  static Future<Map<String, dynamic>> getUserById(String userId) async {
     try {
-      final response = await ApiService.put(
-        '/admin/pengelola/$penggelolaId/verify',
-        {},
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/$userId'),
+        headers: await _headers,
       );
-      return {'status': true, 'message': response['message']};
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'status': true,
+          'data': data['data']['user'],
+          'message': data['message'],
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to fetch user');
+      }
     } catch (e) {
-      // Offline mode
-      return {
-        'status': true,
-        'message': 'Pengelola berhasil diverifikasi (offline mode)',
-      };
+      throw Exception('Network error: $e');
     }
   }
 
-  // Delete pengelola
-  static Future<Map<String, dynamic>> deletePengelola(
-    String penggelolaId,
+  // Approve/Reject user
+  static Future<Map<String, dynamic>> approveUser(
+    String userId,
+    bool isApproved,
   ) async {
     try {
-      final response = await ApiService.delete(
-        '/admin/pengelola/$penggelolaId',
+      final response = await http.patch(
+        Uri.parse('$_baseUrl/users/$userId/approve'),
+        headers: await _headers,
+        body: jsonEncode({'is_approved': isApproved}),
       );
-      return {'status': true, 'message': response['message']};
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'status': true,
+          'data': data['data']['user'],
+          'message': data['message'],
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to update user');
+      }
     } catch (e) {
-      // Offline mode
-      return {
-        'status': true,
-        'message': 'Pengelola berhasil dihapus (offline mode)',
-      };
+      throw Exception('Network error: $e');
     }
   }
 
-  // Get pengelola detail
-  static Future<Map<String, dynamic>> getPenggelolaDetail(
-    String penggelolaId,
+  // Delete user
+  static Future<Map<String, dynamic>> deleteUser(String userId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/users/$userId'),
+        headers: await _headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'status': true, 'message': data['message']};
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to delete user');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Bulk approve users
+  static Future<Map<String, dynamic>> bulkApproveUsers(
+    List<String> userIds,
+    bool isApproved,
   ) async {
     try {
-      final response = await ApiService.get('/admin/pengelola/$penggelolaId');
-      return {
-        'status': true,
-        'data': response['data'],
-        'message': response['message'],
-      };
+      final response = await http.post(
+        Uri.parse('$_baseUrl/users/bulk-approve'),
+        headers: await _headers,
+        body: jsonEncode({'user_ids': userIds, 'is_approved': isApproved}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'status': true,
+          'data': data['data'],
+          'message': data['message'],
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to bulk approve users');
+      }
     } catch (e) {
-      // Offline mode - return dummy detail
-      return {
-        'status': true,
-        'data': {
-          'id': penggelolaId,
-          'nama': 'John Doe',
-          'email': 'john@example.com',
-          'namaKost': 'Kost Kapling 40',
-          'lokasi': 'Jl. Kapling No. 40',
-          'tanggalDaftar': '2024-06-10',
-          'status': 'pending',
-          'phone': '08123456789',
-          'alamat': 'Jl. Contoh No. 123, Semarang',
-          'nik': '3374123456789012',
-          'jumlahKamar': 10,
-          'harga': '1000000',
-          'jenisKost': 'Putra',
-          'fasilitasKamar': ['AC', 'WiFi', 'Lemari'],
-          'deskripsiProperti': 'Kost nyaman dengan fasilitas lengkap',
-        },
-        'message': 'Detail retrieved successfully (offline mode)',
-      };
+      throw Exception('Network error: $e');
     }
   }
 
-  // Get statistics
-  static Future<Map<String, dynamic>> getStatistics() async {
+  // Search users
+  static Future<Map<String, dynamic>> searchUsers(
+    String query, {
+    int page = 1,
+    int limit = 10,
+  }) async {
     try {
-      final response = await ApiService.get('/admin/statistics');
-      return {
-        'status': true,
-        'data': response['data'],
-        'message': response['message'],
-      };
-    } catch (e) {
-      // Offline mode
-      return {
-        'status': true,
-        'data': {
-          'totalPengelola': 3,
-          'pendingPengelola': 2,
-          'verifiedPengelola': 1,
-          'totalKost': 3,
-          'totalPenghuni': 15,
+      final uri = Uri.parse('$_baseUrl/users/search').replace(
+        queryParameters: {
+          'q': query,
+          'page': page.toString(),
+          'limit': limit.toString(),
         },
-        'message': 'Statistics retrieved successfully (offline mode)',
-      };
+      );
+
+      final response = await http.get(uri, headers: await _headers);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'status': true,
+          'data': data['data'],
+          'pagination': data['pagination'],
+          'query': data['query'],
+          'message': data['message'],
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to search users');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  // Get user statistics
+  static Future<Map<String, dynamic>> getUserStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/stats'),
+        headers: await _headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'status': true,
+          'data': data['data'],
+          'message': data['message'],
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to fetch statistics');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
     }
   }
 }
