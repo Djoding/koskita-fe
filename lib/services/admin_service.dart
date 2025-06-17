@@ -16,9 +16,8 @@ class AdminService {
     };
   }
 
-  // Get all users with pagination and filters
+  // Get all users with pagination and filters (PENGELOLA only)
   static Future<Map<String, dynamic>> getAllUsers({
-    String? role,
     bool? isApproved,
     String? search,
     int page = 1,
@@ -28,9 +27,9 @@ class AdminService {
       final Map<String, String> queryParams = {
         'page': page.toString(),
         'limit': limit.toString(),
+        'role': 'PENGELOLA', // Force role to PENGELOLA only
       };
 
-      if (role != null) queryParams['role'] = role;
       if (isApproved != null)
         queryParams['is_approved'] = isApproved.toString();
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
@@ -57,20 +56,32 @@ class AdminService {
     }
   }
 
-  // Get pending users (is_approved = false)
+  // Get pending PENGELOLA users only
   static Future<Map<String, dynamic>> getPendingUsers({
+    String? search,
     int page = 1,
     int limit = 10,
   }) async {
-    return getAllUsers(isApproved: false, page: page, limit: limit);
+    return getAllUsers(
+      isApproved: false,
+      search: search,
+      page: page,
+      limit: limit,
+    );
   }
 
-  // Get verified users (is_approved = true)
-  static Future<Map<String, dynamic>> getVerifiedUsers({
+  // Get verified PENGELOLA users only  
+static Future<Map<String, dynamic>> getVerifiedUsers({
+    String? search,
     int page = 1,
     int limit = 10,
   }) async {
-    return getAllUsers(isApproved: true, page: page, limit: limit);
+    return getAllUsers(
+      isApproved: true,
+      search: search,
+      page: page,
+      limit: limit,
+    );
   }
 
   // Get user by ID
@@ -173,48 +184,28 @@ class AdminService {
     }
   }
 
-  // Search users
+  // Search PENGELOLA users only
   static Future<Map<String, dynamic>> searchUsers(
     String query, {
+    bool? isApproved,
     int page = 1,
     int limit = 10,
   }) async {
-    try {
-      final uri = Uri.parse('$_baseUrl/users/search').replace(
-        queryParameters: {
-          'q': query,
-          'page': page.toString(),
-          'limit': limit.toString(),
-        },
-      );
-
-      final response = await http.get(uri, headers: await _headers);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'pagination': data['pagination'],
-          'query': data['query'],
-          'message': data['message'],
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to search users');
-      }
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
+    return getAllUsers(
+      isApproved: isApproved,
+      search: query,
+      page: page,
+      limit: limit,
+    );
   }
 
-  // Get user statistics
+  // Get statistics for PENGELOLA only
   static Future<Map<String, dynamic>> getUserStats() async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/users/stats'),
-        headers: await _headers,
+      final uri = Uri.parse('$_baseUrl/users/stats').replace(
+        queryParameters: {'role': 'PENGELOLA'}, // Only PENGELOLA stats
       );
+      final response = await http.get(uri, headers: await _headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

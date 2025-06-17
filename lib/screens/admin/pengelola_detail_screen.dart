@@ -70,11 +70,7 @@ class _PenggelolaDetailScreenState extends State<PenggelolaDetailScreen> {
                           children: [
                             _buildProfileSection(),
                             const SizedBox(height: 20),
-                            _buildPersonalInfoSection(),
-                            const SizedBox(height: 20),
-                            _buildAccountStatusSection(),
-                            const SizedBox(height: 20),
-                            _buildSystemInfoSection(),
+                            _buildDetailSection(),
                             const SizedBox(height: 30),
                             _buildActionButtons(),
                           ],
@@ -107,7 +103,7 @@ class _PenggelolaDetailScreenState extends State<PenggelolaDetailScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   'Detail Pengelola',
@@ -117,13 +113,7 @@ class _PenggelolaDetailScreenState extends State<PenggelolaDetailScreen> {
                     fontSize: 20,
                   ),
                 ),
-                Text(
-                  'Informasi lengkap pengelola kos',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 14,
-                  ),
-                ),
+                
               ],
             ),
           ),
@@ -242,63 +232,8 @@ class _PenggelolaDetailScreenState extends State<PenggelolaDetailScreen> {
     );
   }
 
-  Widget _buildPersonalInfoSection() {
-    return _buildInfoSection('Informasi Personal', Icons.person, [
-      _buildInfoRow('Nama Lengkap', pengelola['full_name'] ?? 'Tidak tersedia'),
-      _buildInfoRow('Email', pengelola['email'] ?? 'Tidak tersedia'),
-      _buildInfoRow(
-        'Username',
-        '@${pengelola['username'] ?? 'Tidak tersedia'}',
-      ),
-      _buildInfoRow('No. Telepon', pengelola['phone'] ?? 'Tidak tersedia'),
-      _buildInfoRow(
-        'WhatsApp',
-        pengelola['whatsapp_number'] ?? 'Tidak tersedia',
-      ),
-    ]);
-  }
-
-  Widget _buildAccountStatusSection() {
-    return _buildInfoSection('Status Akun', Icons.account_circle, [
-      _buildInfoRow(
-        'Status Approval',
-        pengelola['is_approved'] == true ? 'Disetujui' : 'Menunggu Persetujuan',
-        valueColor:
-            pengelola['is_approved'] == true ? Colors.green : Colors.orange,
-      ),
-      _buildInfoRow(
-        'Email Verified',
-        pengelola['email_verified'] == true
-            ? 'Terverifikasi'
-            : 'Belum Terverifikasi',
-        valueColor:
-            pengelola['email_verified'] == true ? Colors.green : Colors.red,
-      ),
-      _buildInfoRow(
-        'Tipe Akun',
-        pengelola['is_guest'] == true ? 'Guest' : 'Regular',
-      ),
-      if (pengelola['google_id'] != null)
-        _buildInfoRow('Google Account', 'Terhubung', valueColor: Colors.blue),
-    ]);
-  }
-
-  Widget _buildSystemInfoSection() {
-    return _buildInfoSection('Informasi Sistem', Icons.info, [
-      _buildInfoRow('User ID', pengelola['user_id'] ?? 'Tidak tersedia'),
-      _buildInfoRow('Role', pengelola['role'] ?? 'PENGELOLA'),
-      _buildInfoRow('Bergabung', _formatDate(pengelola['created_at'])),
-      _buildInfoRow('Diperbarui', _formatDate(pengelola['updated_at'])),
-      if (pengelola['last_login'] != null)
-        _buildInfoRow(
-          'Login Terakhir',
-          _formatDateTime(pengelola['last_login']),
-          valueColor: Colors.green,
-        ),
-    ]);
-  }
-
-  Widget _buildInfoSection(String title, IconData icon, List<Widget> children) {
+  // Update _buildDetailSection di PenggelolaDetailScreen
+  Widget _buildDetailSection() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -315,22 +250,30 @@ class _PenggelolaDetailScreenState extends State<PenggelolaDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: const Color(0xFF119DB1), size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: const Color(0xFF119DB1),
-                ),
-              ),
-            ],
+          Text(
+            'Informasi Pengelola', // Updated title
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
           ),
           const SizedBox(height: 16),
-          ...children,
+          _buildInfoRow('Email', pengelola['email'] ?? 'Tidak tersedia'),
+          _buildInfoRow('No. Telepon', pengelola['phone'] ?? 'Tidak tersedia'),
+          _buildInfoRow(
+            'WhatsApp',
+            pengelola['whatsapp_number'] ?? 'Tidak tersedia',
+          ),
+          _buildInfoRow(
+            'Role',
+            pengelola['role'] ?? 'PENGELOLA',
+          ), // Default to PENGELOLA
+          _buildInfoRow(
+            'Email Verified',
+            pengelola['email_verified'] == true ? 'Ya' : 'Tidak',
+          ),
+          if (pengelola['google_id'] != null)
+            _buildInfoRow('Google Account', 'Terhubung'),
         ],
       ),
     );
