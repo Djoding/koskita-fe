@@ -1,71 +1,109 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 class KostService {
-  // Login
-  static Future<Map<String, dynamic>> createKost(
-    Map<String, dynamic> formData,
-  ) async {
-    // try {
-    //   final response = await ApiService.post('/kost/create', {
-    //     'namaPemilik': formData['namaPemilik'],
-    //     'namaKost': formData['namaKost'],
-    //     'lokasi': formData['lokasi'],
-    //     'jenisKost': formData['jenisKost'],
-    //     'jumlahKamar': formData['jumlahKamar'],
-    //     'harga': formData['harga'],
-    //     'fasilitasKamar': formData['fasilitasKamar'],
-    //     'fasilitasKamarMandi': formData['fasilitasKamarMandi'],
-    //     'kebijakanProperti': formData['kebijakanProperti'],
-    //     'kebijakanFasilitas': formData['kebijakanFasilitas'],
-    //     'deskripsiProperti': formData['deskripsiProperti'],
-    //     'informasiJarak': formData['informasiJarak'],
-    //     'images': formData['imageUrls'],
-    //   });
-    //   debugPrint("RESPONSE $response");
-    //   if (response['status']) {
-    //     return {'status': true, 'message': response['message']};
-    //   }
-    //   return {'status': false, 'message': response['message']};
-    // } catch (e) {
-    //   debugPrint('Error creating kost: $e');
-    //   return {'status': false, 'message': e.toString()};
-    // }
-    // --- SLICING UI: return dummy ---
-    return {'status': true, 'message': 'Dummy kost created'};
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  static const String _accessTokenKey = 'accessToken';
+
+  static const String _baseUrl = 'http://localhost:3000/api/v1/kost';
+
+  static Map<String, dynamic> _handleResponse(http.Response response) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      return {
+        'status': true,
+        'data': responseBody['data'],
+        'message': responseBody['message'],
+      };
+    } else if (response.statusCode == 401) {
+      debugPrint('Unauthorized: Token might be expired or invalid.');
+      throw Exception('Unauthorized. Please log in again.');
+    } else {
+      final errorBody = jsonDecode(response.body);
+      throw Exception(
+        errorBody['message'] ??
+            'API call failed with status: ${response.statusCode}',
+      );
+    }
   }
 
-  static Future<Map<String, dynamic>> getDataKost() async {
-    // try {
-    //   final response = await ApiService.get('/kost/');
-    //   debugPrint("RESPONSE GET DATA KOST $response");
-    //   if (response['status']) {
-    //     return {
-    //       'status': true,
-    //       'data': response['data'],
-    //       'message': response['message'],
-    //     };
-    //   }
-    //   return {'status': false, 'message': response['message']};
-    // } catch (e) {
-    //   debugPrint("Error get data kost $e");
-    //   return {'status': false, 'message': e.toString()};
-    // }
-    // --- SLICING UI: return dummy ---
-    return {
-      'status': true,
-      'data': [
-        {
-          'namaKost': 'Kost Mawar',
-          'lokasi': 'Jl. Mawar No. 1',
-          'jumlahKamar': 10,
-          'harga': 1000000,
+  Future<String?> _getAccessToken() async {
+    return await _storage.read(key: _accessTokenKey);
+  }
+
+  Future<Map<String, dynamic>> getKostById(String kostId) async {
+    try {
+      final String? token = await _getAccessToken();
+
+      if (token == null) {
+        debugPrint('No access token found. User might not be logged in.');
+        throw Exception('Unauthorized. Please log in.');
+      }
+
+      final url = Uri.parse('$_baseUrl/$kostId');
+
+      debugPrint('Calling GET Kost by ID: ${url.toString()}');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
         },
-        {
-          'namaKost': 'Kost Melati',
-          'lokasi': 'Jl. Melati No. 2',
-          'jumlahKamar': 8,
-          'harga': 900000,
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      debugPrint("Error getting kost by ID ($kostId): $e");
+      return {'status': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getAllKost({String? namaKost}) async {
+    try {
+      Map<String, dynamic> queryParams = {};
+      if (namaKost != null && namaKost.isNotEmpty) {
+        queryParams['nama_kost'] = namaKost;
+      }
+
+      Uri url = Uri.parse(_baseUrl);
+      if (queryParams.isNotEmpty) {
+        url = url.replace(queryParameters: queryParams);
+      }
+
+      debugPrint('Calling GET All Kost: ${url.toString()}');
+
+      final response = await http.get(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      debugPrint("Error getting all kost: $e");
+      return {'status': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getKostTamuById(String kostId) async {
+    try {
+
+      final url = Uri.parse('$_baseUrl/$kostId/tamu');
+
+      debugPrint('Calling GET Kost by ID: ${url.toString()}');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
         },
-      ],
-      'message': 'Dummy data for slicing',
-    };
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      debugPrint("Error getting kost by ID ($kostId): $e");
+      return {'status': false, 'message': e.toString()};
+    }
   }
 }

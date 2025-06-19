@@ -373,27 +373,27 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
 
     debugPrint("Sending form data to API: $formData");
 
-    try {
-      final response = await KostService.createKost(formData);
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      if (response['status']) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => const SuccessScreen(
-                  title: 'Kost Berhasil di Daftarkan',
-                  subtitle: 'Tunggu Persetujuan Dari Admin',
-                ),
-          ),
-        );
-        return;
-      }
-      debugPrint("SINI 3");
-    } catch (e) {
-      debugPrint("Error sending form data: $e");
-      throw Exception('Error sending form data: $e');
-    }
+    // try {
+    //   final response = await KostService.createKost(formData);
+    //   if (!mounted) return;
+    //   Navigator.of(context).pop();
+    //   if (response['status']) {
+    //     Navigator.push(
+    //       context,
+    //       MaterialPageRoute(
+    //         builder:
+    //             (context) => const SuccessScreen(
+    //               title: 'Kost Berhasil di Daftarkan',
+    //               subtitle: 'Tunggu Persetujuan Dari Admin',
+    //             ),
+    //       ),
+    //     );
+    //     return;
+    //   }
+    //   debugPrint("SINI 3");
+    // } catch (e) {
+    //   debugPrint("Error sending form data: $e");
+    //   throw Exception('Error sending form data: $e');
+    // }
   }
 }

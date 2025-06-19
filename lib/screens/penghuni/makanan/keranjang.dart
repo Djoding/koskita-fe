@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts
-import 'package:kosan_euy/screens/penghuni/pembayaran/menu_pembayaran_Penghuni.dart';
+import 'package:kosan_euy/screens/penghuni/pembayaran/menu_pembayaran_penghuni.dart';
 
 class KeranjangScreen extends StatefulWidget {
   // Added optional selectedItems to simulate receiving data from MenuMakanan
@@ -360,7 +360,7 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
                     colorText: Colors.white,
                   );
                 } else {
-                  Get.to(() => MenuPembayaranPenghuni());
+                  // Get.to(() => MenuPembayaranPenghuni());
                 }
               },
               style: ElevatedButton.styleFrom(

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
 import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
+import 'package:kosan_euy/screens/tamu/dashboard_tamu_screen.dart';
 import 'package:kosan_euy/services/auth_service.dart';
 
 class HomeScreenPage extends StatefulWidget {
@@ -453,7 +454,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
         const SizedBox(height: 15),
         TextButton(
           onPressed: () {
-            Get.to(() => KosScreen());
+            Get.to(() => DashboardTamuScreen());
           },
           child: Text(
             'Masuk sebagai tamu',

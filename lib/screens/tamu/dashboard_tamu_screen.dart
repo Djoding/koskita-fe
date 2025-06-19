@@ -2,51 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
-import 'package:kosan_euy/screens/penghuni/dashboard_tenant_screen.dart';
-import 'package:kosan_euy/screens/penghuni/reservasi/detail_kos.dart';
-import 'package:kosan_euy/screens/settings/setting_screen.dart';
-import 'package:kosan_euy/services/auth_service.dart';
-import 'package:kosan_euy/services/reservation_service.dart';
+import 'package:kosan_euy/screens/tamu/detail_kos_tamu.dart';
+import 'package:kosan_euy/services/kost_service.dart';
 import 'dart:ui';
 
-class KosScreen extends StatefulWidget {
-  const KosScreen({super.key});
+class DashboardTamuScreen extends StatefulWidget {
+  const DashboardTamuScreen({super.key});
 
   @override
-  State<KosScreen> createState() => _KosScreenState();
+  State<DashboardTamuScreen> createState() => _DashboardTamuScreenState();
 }
 
-class _KosScreenState extends State<KosScreen>
+class _DashboardTamuScreenState extends State<DashboardTamuScreen>
     with SingleTickerProviderStateMixin {
   TabController? _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  final AuthService _authService = AuthService();
-  final ReservationService _reservationService = ReservationService();
 
-  String _displayedUserName = 'Memuat...';
-  bool _isLoggedIn = false;
-  bool _isLoadingReservations = true;
-  String? _reservationError;
+  final KostService _kostService = KostService();
 
   List<Map<String, dynamic>> _allKostData = [];
-  List<Map<String, dynamic>> _pendingUpcomingReservationsData = [];
-  List<Map<String, dynamic>> _activeReservationsData = [];
-  List<Map<String, dynamic>> _historyReservationsData = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _checkLoginStatusAndLoadProfile().then((_) {
-      _initTabController();
-
-      _fetchReservations();
-    });
+    _initTabController();
+    _fetchAllKost();
   }
 
   void _initTabController() {
-    _tabController?.dispose();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
     _tabController!.addListener(() {
       if (_tabController!.indexIsChanging) {
         setState(() {
@@ -55,93 +42,52 @@ class _KosScreenState extends State<KosScreen>
         });
       }
     });
-    setState(() {});
   }
 
-  Future<void> _checkLoginStatusAndLoadProfile() async {
-    bool loggedIn = false;
-    String userName = 'Tamu';
-
-    try {
-      final userData = await _authService.getStoredUserData();
-      if (userData != null && userData['full_name'] != null) {
-        loggedIn = true;
-        userName = userData['full_name'];
-      }
-    } catch (e) {
-      loggedIn = false;
-    }
-
+  Future<void> _fetchAllKost() async {
     setState(() {
-      _isLoggedIn = loggedIn;
-      _displayedUserName = userName;
+      _isLoading = true;
+      _errorMessage = null;
     });
-  }
-
-  Future<void> _fetchReservations() async {
-    setState(() {
-      _isLoadingReservations = true;
-      _reservationError = null;
-    });
-
     try {
-      final result = await _reservationService.getReservations();
+      final result = await _kostService.getAllKost();
       if (result['status'] == true && result['data'] != null) {
-        final Map<String, dynamic> apiData = result['data'];
+        _allKostData =
+            (result['data'] as List<dynamic>).map((item) {
+              final Map<String, dynamic> typedItem = Map<String, dynamic>.from(
+                item,
+              );
 
-        _allKostData = _mapApiDataToDisplayList(apiData['all_kost']);
-        _pendingUpcomingReservationsData = _mapApiDataToDisplayList(
-          apiData['pending_upcoming_reservations'],
-        );
-        _activeReservationsData = _mapApiDataToDisplayList(
-          apiData['active_reservations'],
-        );
-        _historyReservationsData = _mapApiDataToDisplayList(
-          apiData['history_reservations'],
-        );
+              String imageUrl = 'assets/placeholder_image.png';
+              if (typedItem['foto_kost'] != null &&
+                  typedItem['foto_kost'].isNotEmpty) {
+                String rawUrl = typedItem['foto_kost'][0].toString();
+                if (rawUrl.startsWith('http://localhost:3000http')) {
+                  imageUrl = rawUrl.substring('http://localhost:3000'.length);
+                } else {
+                  imageUrl = rawUrl;
+                }
+              }
+              return {
+                'id': typedItem['kost_id'],
+                'image': imageUrl,
+                'nama': typedItem['nama_kost'],
+                'alamat': typedItem['alamat'],
+                ...typedItem,
+              };
+            }).toList();
       } else {
-        _reservationError =
-            result['message'] ?? 'Gagal mengambil data reservasi.';
+        _errorMessage = result['message'] ?? 'Gagal mengambil daftar kos.';
       }
     } catch (e) {
-      debugPrint("Error fetching reservations: $e");
-      _reservationError =
-          'Terjadi kesalahan saat memuat reservasi: ${e.toString()}';
-      if (e.toString().contains('Unauthorized')) {
-        _displayedUserName = 'Tamu';
-        _isLoggedIn = false;
-        _initTabController();
-        Get.offAll(() => const HomeScreenPage());
-      }
+      debugPrint("Error fetching all kost: $e");
+      _errorMessage =
+          'Terjadi kesalahan saat memuat daftar kos: ${e.toString()}';
     } finally {
       setState(() {
-        _isLoadingReservations = false;
+        _isLoading = false;
       });
     }
-  }
-
-  List<Map<String, dynamic>> _mapApiDataToDisplayList(List<dynamic>? apiList) {
-    if (apiList == null) return [];
-    return apiList.map((item) {
-      final Map<String, dynamic> typedItem = Map<String, dynamic>.from(item);
-
-      String imageUrl = 'assets/placeholder_image.png';
-      if (typedItem['foto_kost'] != null && typedItem['foto_kost'].isNotEmpty) {
-        String rawUrl = typedItem['foto_kost'][0];
-        if (rawUrl.startsWith('http://localhost:3000http')) {
-          imageUrl = rawUrl.substring('http://localhost:3000'.length);
-        } else {
-          imageUrl = rawUrl;
-        }
-      }
-      return {
-        'id': typedItem['kost_id'] ?? typedItem['reservasi_id'],
-        'image': imageUrl,
-        'nama': typedItem['nama_kost'] ?? 'Nama Kos Tidak Tersedia',
-        'alamat': typedItem['alamat'] ?? 'Alamat Tidak Tersedia',
-        ...typedItem,
-      };
-    }).toList();
   }
 
   @override
@@ -154,8 +100,8 @@ class _KosScreenState extends State<KosScreen>
   List<Map<String, dynamic>> _filterKost(List<Map<String, dynamic>> data) {
     if (_searchQuery.isEmpty) return data;
     return data.where((kost) {
-      final namaKost = (kost['nama'] as String).toLowerCase();
-      final alamat = (kost['alamat'] as String).toLowerCase();
+      final namaKost = (kost['nama'] as String?)?.toLowerCase() ?? '';
+      final alamat = (kost['alamat'] as String?)?.toLowerCase() ?? '';
       final query = _searchQuery.toLowerCase();
       return namaKost.contains(query) || alamat.contains(query);
     }).toList();
@@ -163,22 +109,14 @@ class _KosScreenState extends State<KosScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_tabController == null || _isLoadingReservations) {
+    if (_tabController == null || _isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFFE0F2F7),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    List<Widget> tabBarViews = [
-      _buildKostList(_allKostData, 'Daftar Kos'),
-      _buildKostList(
-        _pendingUpcomingReservationsData,
-        'Reservasi Pending/Mendatang',
-      ),
-      _buildKostList(_activeReservationsData, 'Kos yang Sedang Aktif'),
-      _buildKostList(_historyReservationsData, 'Riwayat Pemesanan Kos'),
-    ];
+    List<Widget> tabBarViews = [_buildKostList(_allKostData, 'Daftar Kos')];
 
     return Scaffold(
       backgroundColor: const Color(0xFFE0F2F7),
@@ -233,14 +171,16 @@ class _KosScreenState extends State<KosScreen>
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   _buildCircularIconButton(
-                    icon: Icons.settings,
-                    onPressed: () => Get.to(() => const SettingScreen()),
+                    icon: Icons.login,
+                    onPressed: () {
+                      Get.to(() => const HomeScreenPage());
+                    },
                   ),
                 ],
               ),
               const SizedBox(height: 25),
               Text(
-                'Halo, $_displayedUserName!',
+                'Halo, Tamu!',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -249,7 +189,7 @@ class _KosScreenState extends State<KosScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Temukan dan reservasi kos dengan mudah.',
+                'Temukan kos impianmu dengan mudah.',
                 style: GoogleFonts.poppins(
                   color: Colors.white.withOpacity(0.9),
                   fontWeight: FontWeight.w400,
@@ -291,24 +231,6 @@ class _KosScreenState extends State<KosScreen>
           child: Text('Daftar Kos (${_allKostData.length})'),
         ),
       ),
-      Tab(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-          child: Text('Pending (${_pendingUpcomingReservationsData.length})'),
-        ),
-      ),
-      Tab(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-          child: Text('Kos Aktif (${_activeReservationsData.length})'),
-        ),
-      ),
-      Tab(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-          child: Text('Riwayat (${_historyReservationsData.length})'),
-        ),
-      ),
     ];
 
     return Container(
@@ -338,7 +260,7 @@ class _KosScreenState extends State<KosScreen>
           vertical: 5.0,
         ),
         indicator: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(25),
           color: const Color(0xFF119DB1),
         ),
         labelColor: Colors.white,
@@ -411,17 +333,14 @@ class _KosScreenState extends State<KosScreen>
     List<Map<String, dynamic>> data,
     String emptyMessagePrefix,
   ) {
-    if (_isLoadingReservations) {
+    if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_reservationError != null) {
-      return _buildEmptyState('$_reservationError\nCoba lagi.');
+    if (_errorMessage != null) {
+      return _buildEmptyState('$_errorMessage\nCoba lagi.');
     }
 
     final filteredData = _filterKost(data);
-    bool isAllKosTab =
-        (emptyMessagePrefix == 'Daftar Kos' ||
-            emptyMessagePrefix == 'Daftar Kos');
     return Column(
       children: [
         _buildSearchBar(),
@@ -440,11 +359,7 @@ class _KosScreenState extends State<KosScreen>
                     itemBuilder: (context, index) {
                       return _KostCard(
                         kost: filteredData[index],
-                        onTap:
-                            () => _goToDetail(
-                              filteredData[index],
-                              isGeneralKos: isAllKosTab,
-                            ),
+                        onTap: () => _goToDetail(filteredData[index]),
                       );
                     },
                   ),
@@ -477,11 +392,11 @@ class _KosScreenState extends State<KosScreen>
               style: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 14),
               textAlign: TextAlign.center,
             ),
-            if (_reservationError != null)
+            if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(top: 20.0),
                 child: ElevatedButton(
-                  onPressed: _fetchReservations,
+                  onPressed: _fetchAllKost,
                   child: const Text('Refresh Data'),
                 ),
               ),
@@ -491,8 +406,9 @@ class _KosScreenState extends State<KosScreen>
     );
   }
 
-  void _goToDetail(Map<String, dynamic> kosData, {bool isGeneralKos = false}) {
-    final kosId = kosData['kost_id'];
+  void _goToDetail(Map<String, dynamic> kosData) {
+    final String? kosId = kosData['id'] as String?;
+
     if (kosId == null) {
       Get.snackbar(
         'Error',
@@ -503,11 +419,7 @@ class _KosScreenState extends State<KosScreen>
       );
       return;
     }
-    if (_isLoggedIn && !isGeneralKos) {
-      Get.to(() => DashboardTenantScreen(), arguments: {'kostId': kosId});
-    } else {
-      Get.to(() => DetailKos(), arguments: {'id': kosId});
-    }
+    Get.to(() => DetailKosTamu(), arguments: {'id': kosId});
   }
 }
 
@@ -521,6 +433,11 @@ class _KostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final String imageUrl = kost['image'] ?? 'assets/placeholder_image.png';
     final bool isAsset = imageUrl.startsWith('assets/');
+
+    final String displayedNama =
+        (kost['nama'] as String?) ?? 'Nama kos tidak tersedia';
+    final String displayedAlamat =
+        (kost['alamat'] as String?) ?? 'Alamat tidak tersedia';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -607,7 +524,7 @@ class _KostCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        kost['nama'] ?? 'Nama kos tidak tersedia',
+                        displayedNama,
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w700,
                           fontSize: 18,
@@ -618,7 +535,7 @@ class _KostCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        kost['alamat'] ?? 'Alamat tidak tersedia',
+                        displayedAlamat,
                         style: GoogleFonts.poppins(
                           color: Colors.grey[600],
                           fontSize: 15,
