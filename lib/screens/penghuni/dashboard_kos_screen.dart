@@ -491,8 +491,12 @@ class _KosScreenState extends State<KosScreen>
     );
   }
 
+  // Lokasi: DashboardKosScreen atau file lain yang berisi fungsi ini
+
   void _goToDetail(Map<String, dynamic> kosData, {bool isGeneralKos = false}) {
     final kosId = kosData['kost_id'];
+    final reservasiId = kosData['reservasi_id'];
+
     if (kosId == null) {
       Get.snackbar(
         'Error',
@@ -504,7 +508,17 @@ class _KosScreenState extends State<KosScreen>
       return;
     }
     if (_isLoggedIn && !isGeneralKos) {
-      Get.to(() => DashboardTenantScreen(), arguments: {'kostId': kosId});
+      if (reservasiId != null) {
+        Get.to(() => DashboardTenantScreen(reservasiId: reservasiId));
+      } else {
+        Get.snackbar(
+          'Informasi',
+          'Reservasi Anda untuk kos ini tidak ditemukan.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
     } else {
       Get.to(() => DetailKos(), arguments: {'id': kosId});
     }
