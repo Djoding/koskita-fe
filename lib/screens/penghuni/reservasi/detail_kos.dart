@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:kosan_euy/screens/penghuni/reservasi/reservation_form_screen.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:get/get.dart';
 import 'dart:ui';
 import 'package:kosan_euy/services/auth_service.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
 import 'package:kosan_euy/services/kost_service.dart';
+import 'package:intl/intl.dart';
 
 class DetailKos extends StatefulWidget {
   const DetailKos({super.key});
@@ -21,11 +23,7 @@ class _DetailKosState extends State<DetailKos> {
   final CarouselSliderController _carouselController =
       CarouselSliderController();
 
-  LatLng _kostLocation = const LatLng(-6.9731, 107.6291);
-
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
-  final TextEditingController dateController = TextEditingController();
+  final LatLng _kostLocation = const LatLng(-6.9731, 107.6291);
 
   final AuthService _authService = AuthService();
   final KostService _kostService = KostService();
@@ -89,466 +87,15 @@ class _DetailKosState extends State<DetailKos> {
 
   @override
   void dispose() {
-    nameController.dispose();
-    phoneController.dispose();
-    dateController.dispose();
     super.dispose();
   }
 
-  void _showPaymentMethods(BuildContext context) {
-    if (_kostDetailData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Detail kos belum dimuat. Mohon tunggu."),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.75,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(241, 255, 243, 1.0),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(25),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                padding: const EdgeInsets.fromLTRB(20, 25, 20, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Align(
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 60,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      "Form Pemesanan",
-                      style: GoogleFonts.poppins(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueGrey[800],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildInputField(
-                      "Nama Lengkap",
-                      nameController,
-                      keyboardType: TextInputType.text,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildInputField(
-                      "Nomor Telepon",
-                      phoneController,
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDatePickerField(
-                      context,
-                      "Tanggal Pemesanan",
-                      dateController,
-                    ),
-                    const SizedBox(height: 25),
-                    _buildPriceDetails(),
-                    const SizedBox(height: 25),
-                    Text(
-                      "Pilih Metode Pembayaran",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueGrey[800],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Column(
-                      children: [
-                        _buildPaymentOption(
-                          context,
-                          "Transfer Bank",
-                          Icons.account_balance,
-                        ),
-                        _buildPaymentOption(
-                          context,
-                          "E-Wallet",
-                          Icons.account_balance_wallet,
-                        ),
-                        _buildPaymentOption(
-                          context,
-                          "Kartu Kredit",
-                          Icons.credit_card,
-                        ),
-                        _buildPaymentOption(
-                          context,
-                          "Virtual Account",
-                          Icons.payment,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 25),
-                    _buildSubmitButton(context),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildPaymentOption(
-    BuildContext context,
-    String method,
-    IconData icon,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF4A99BD)),
-        title: Text(
-          method,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.blueGrey[800],
-          ),
-        ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 18,
-          color: Colors.grey,
-        ),
-        onTap: () {
-          Get.back();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Metode pembayaran $method dipilih!"),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildInputField(
-    String label,
-    TextEditingController controller, {
-    TextInputType? keyboardType,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-            color: Colors.blueGrey[800],
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          style: GoogleFonts.poppins(color: Colors.black87),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFF4A99BD),
-                width: 2.0,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDatePickerField(
-    BuildContext context,
-    String label,
-    TextEditingController controller,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-            color: Colors.blueGrey[800],
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          readOnly: true,
-          style: GoogleFonts.poppins(color: Colors.black87),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFF4A99BD),
-                width: 2.0,
-              ),
-            ),
-            suffixIcon: const Icon(Icons.calendar_today, color: Colors.grey),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-          ),
-          onTap: () async {
-            DateTime? pickedDate = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime.now(),
-              lastDate: DateTime(2101),
-              builder: (context, child) {
-                return Theme(
-                  data: ThemeData.light().copyWith(
-                    colorScheme: const ColorScheme.light(
-                      primary: Color(0xFF4A99BD),
-                      onPrimary: Colors.white,
-                      surface: Colors.white,
-                      onSurface: Colors.black87,
-                    ),
-                    textButtonTheme: TextButtonThemeData(
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF4A99BD),
-                      ),
-                    ),
-                  ),
-                  child: child!,
-                );
-              },
-            );
-            if (pickedDate != null) {
-              setState(() {
-                controller.text =
-                    "${pickedDate.day.toString().padLeft(2, '0')}/${pickedDate.month.toString().padLeft(2, '0')}/${pickedDate.year}";
-              });
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPriceDetails() {
-    final String hargaBulanan = _kostDetailData?['harga_bulanan'] ?? '0';
-    final String biayaTambahan = _kostDetailData?['biaya_tambahan'] ?? '0';
-    final String hargaFinal = _kostDetailData?['harga_final'] ?? '0';
-
-    final String formattedHargaBulanan = _formatPrice(hargaBulanan);
-    final String formattedBiayaTambahan = _formatPrice(biayaTambahan);
-    final String formattedHargaFinal = _formatPrice(hargaFinal);
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Rincian Harga",
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: Colors.blueGrey[800],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Harga Bulanan",
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  color: Colors.blueGrey[700],
-                ),
-              ),
-              Text(
-                "Rp $formattedHargaBulanan",
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                  color: Colors.blueGrey[800],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Biaya Tambahan",
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  color: Colors.blueGrey[700],
-                ),
-              ),
-              Text(
-                "Rp $formattedBiayaTambahan",
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                  color: Colors.blueGrey[800],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Divider(color: Colors.grey, height: 1),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Total Harga Final",
-                style: GoogleFonts.poppins(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueGrey[900],
-                ),
-              ),
-              Text(
-                "Rp $formattedHargaFinal",
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
-                  color: Colors.blueGrey[900],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatPrice(String price) {
-    try {
-      final numPrice = num.parse(price);
-      return numPrice
-          .toStringAsFixed(0)
-          .replaceAllMapped(
-            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]}.',
-          );
-    } catch (e) {
-      return price;
-    }
-  }
-
-  Widget _buildSubmitButton(BuildContext context) {
-    return Center(
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4A99BD),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          elevation: 5,
-          shadowColor: const Color(0xFF4A99BD).withOpacity(0.4),
-        ),
-        onPressed: () {
-          if (_isLoggedIn) {
-            _showPaymentMethods(context);
-          } else {
-            Get.to(() => const HomeScreenPage());
-          }
-        },
-        child: Text(
-          "Pesan Sekarang",
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
+  String _formatPriceDisplay(int price) {
+    return NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: '',
+      decimalDigits: 0,
+    ).format(price);
   }
 
   @override
@@ -887,7 +434,7 @@ class _DetailKosState extends State<DetailKos> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    "Rp ${_formatPrice(hargaBulananDisplay)} / Per Bulan",
+                    "Rp ${_formatPriceDisplay(int.parse(hargaBulananDisplay))} / Per Bulan",
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -1006,7 +553,44 @@ class _DetailKosState extends State<DetailKos> {
                     ),
                     onPressed: () {
                       if (_isLoggedIn) {
-                        _showPaymentMethods(context);
+                        if (_kostDetailData == null) {
+                          Get.snackbar(
+                            'Error',
+                            'Detail kos belum dimuat. Mohon coba lagi.',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: Colors.redAccent,
+                            colorText: Colors.white,
+                          );
+                          return;
+                        }
+
+                        final int? totalKamar = int.tryParse(
+                          _kostDetailData!['total_kamar']?.toString() ?? '0',
+                        );
+                        final int? availableRooms = int.tryParse(
+                          _kostDetailData!['available_rooms']?.toString() ??
+                              '0',
+                        );
+
+                        // Validasi ketersediaan kamar
+                        if (totalKamar == null ||
+                            availableRooms == null ||
+                            availableRooms <= 0) {
+                          Get.snackbar(
+                            'Peringatan',
+                            'Tidak ada kamar yang tersedia saat ini.',
+                            snackPosition: SnackPosition.TOP,
+                            backgroundColor: Colors.orange,
+                            colorText: Colors.white,
+                          );
+                          return;
+                        }
+                        Get.to(
+                          () => InitialReservationFormScreen(
+                            kostDetailData: _kostDetailData!,
+                            currentKostId: _currentKostId!,
+                          ),
+                        );
                       } else {
                         Get.to(() => const HomeScreenPage());
                       }

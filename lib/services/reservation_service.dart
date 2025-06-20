@@ -83,11 +83,10 @@ class ReservationService {
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
       return {
         'status': true,
-        'data': responseBody['data'],
-        'message': responseBody['message'],
+        'data': responseBody['data'] ?? {},
+        'message': responseBody['message'] ?? 'Success',
       };
     } else if (response.statusCode == 401) {
-      debugPrint('Unauthorized: Token might be expired or invalid.');
       throw Exception('Unauthorized. Please log in again.');
     } else {
       final errorBody = jsonDecode(response.body);
@@ -215,6 +214,68 @@ class ReservationService {
       debugPrint("Error extending reservation: $e");
       throw Exception(
         'Failed to connect to the server or extend reservation: $e',
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> createReservation({
+    required String kostId,
+    required String tanggalCheckIn,
+    required int durasiBulan,
+    required String metodeBayar,
+    String? catatan,
+    required File buktiBayarFile,
+  }) async {
+    final String? token = await _getAccessToken();
+
+    if (token == null) {
+      debugPrint('No access token found. User might not be logged in.');
+      throw Exception('Unauthorized. Please log in.');
+    }
+    final Uri requestUri = Uri.parse(_baseUrl);
+
+    final http.MultipartRequest request = http.MultipartRequest(
+      'POST',
+      requestUri,
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+
+    request.fields['kost_id'] = kostId;
+    request.fields['tanggal_check_in'] = tanggalCheckIn;
+    request.fields['durasi_bulan'] = durasiBulan.toString();
+    request.fields['metode_bayar'] = metodeBayar;
+    if (catatan != null) {
+      request.fields['catatan'] = catatan;
+    }
+
+    final MediaType contentType = _getMediaTypeForFile(buktiBayarFile);
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'bukti_bayar',
+        buktiBayarFile.path,
+        filename: buktiBayarFile.path.split('/').last,
+        contentType: contentType,
+      ),
+    );
+
+    debugPrint('Calling POST Create Reservation: ${requestUri.toString()}');
+    debugPrint('Request fields: ${request.fields}');
+    debugPrint(
+      'Request files: ${request.files.map((e) => e.filename).join(', ')}',
+    );
+    debugPrint('Content-Type sent for file: ${contentType.toString()}');
+
+    try {
+      final http.StreamedResponse streamedResponse = await request.send();
+      final http.Response response = await http.Response.fromStream(
+        streamedResponse,
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      debugPrint("Error creating reservation: $e");
+      throw Exception(
+        'Failed to connect to the server or create reservation: $e',
       );
     }
   }

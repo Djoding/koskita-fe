@@ -1,12 +1,11 @@
-import 'dart:io'; // Import ini untuk menggunakan tipe File
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:image_picker/image_picker.dart'; // Tetap perlu untuk memilih gambar
+import 'package:image_picker/image_picker.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
-import 'package:kosan_euy/screens/penghuni/dashboard_tenant_screen.dart'; // Halaman tujuan setelah selesai
-import 'package:kosan_euy/services/reservation_service.dart'; // Import ReservationService
+import 'package:kosan_euy/services/reservation_service.dart';
 
 class MenuPembayaranPenghuni extends StatefulWidget {
   final int amount;
@@ -16,8 +15,8 @@ class MenuPembayaranPenghuni extends StatefulWidget {
   final int? durasiBulan;
   final String? kostId;
   final String? reservasiId;
-  final String?
-  paymentPurpose; // Tambahkan parameter baru untuk tujuan pembayaran
+  final String? paymentPurpose;
+  final String? tanggalCheckIn;
 
   const MenuPembayaranPenghuni({
     super.key,
@@ -28,7 +27,8 @@ class MenuPembayaranPenghuni extends StatefulWidget {
     this.durasiBulan,
     this.kostId,
     this.reservasiId,
-    this.paymentPurpose, // Inisialisasi parameter baru
+    this.paymentPurpose,
+    this.tanggalCheckIn,
   });
 
   @override
@@ -36,18 +36,13 @@ class MenuPembayaranPenghuni extends StatefulWidget {
 }
 
 class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
-  File?
-  _pickedImageFile; // State untuk menyimpan file gambar yang dipilih (tipe File)
-  bool _isUploading = false; // State untuk menunjukkan apakah sedang mengunggah
-  final ImagePicker _picker = ImagePicker(); // Instance ImagePicker
-  final ReservationService _reservationService =
-      ReservationService(); // Instance ReservationService
+  File? _pickedImageFile;
+  bool _isUploading = false;
+  final ImagePicker _picker = ImagePicker();
+  final ReservationService _reservationService = ReservationService();
 
-  String?
-  _selectedPaymentMethod; // State untuk menyimpan metode pembayaran yang dipilih dari dropdown
-
-  // List metode pembayaran yang tersedia
-  List<String> _availablePaymentMethods = [];
+  String? _selectedPaymentMethod;
+  final List<String> _availablePaymentMethods = [];
 
   @override
   void initState() {
@@ -63,11 +58,9 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
       _availablePaymentMethods.add('TRANSFER');
     }
 
-    // Set metode pembayaran default jika hanya ada satu atau sesuai preferensi
     if (_availablePaymentMethods.isNotEmpty) {
       _selectedPaymentMethod = _availablePaymentMethods[0];
     } else {
-      // Handle case where no payment methods are available (shouldn't happen if amount > 0)
       Get.snackbar(
         'Peringatan',
         'Tidak ada metode pembayaran yang tersedia.',
@@ -96,25 +89,21 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
 
   String _cleanImageUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.isEmpty) return '';
-    // Perbaikan: Pastikan URL tidak memiliki duplikasi 'http://localhost:3000'
     String cleaned = rawUrl;
     if (cleaned.startsWith('http://localhost:3000http')) {
       cleaned = cleaned.substring('http://localhost:3000'.length);
     }
-    // Perbaikan: Tambahkan base URL jika ini adalah path relatif dari server
     if (cleaned.startsWith('/uploads/')) {
-      // Sesuaikan dengan path upload Anda di server
-      cleaned = 'http://localhost:3000' + cleaned;
+      cleaned = 'http://localhost:3000$cleaned';
     }
     return cleaned;
   }
 
-  // Fungsi untuk memilih gambar dari galeri
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       setState(() {
-        _pickedImageFile = File(image.path); // Konversi XFile ke File
+        _pickedImageFile = File(image.path);
       });
     } else {
       Get.snackbar(
@@ -162,36 +151,37 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
           );
         }
 
-        // final result = await _reservationService.createReservation(
-        //   kostId: widget.kostId!,
-        //   tanggalCheckIn:
-        //       DateTime.now().toIso8601String().split(
-        //         'T',
-        //       )[0], // Contoh tanggal check-in hari ini
-        //   durasiBulan: widget.durasiBulan!,
-        //   metodeBayar: _selectedPaymentMethod!,
-        //   buktiBayarFile: _pickedImageFile!,
-        // );
+        final result = await _reservationService.createReservation(
+          kostId: widget.kostId!,
+          tanggalCheckIn: widget.tanggalCheckIn!,
+          durasiBulan: widget.durasiBulan!,
+          metodeBayar: _selectedPaymentMethod!,
+          buktiBayarFile: _pickedImageFile!,
+        );
 
-        // if (result['status'] == true) {
-        //   Get.snackbar(
-        //     'Sukses!',
-        //     result['message'] ??
-        //         'Reservasi berhasil dibuat. Menunggu konfirmasi pengelola.',
-        //     snackPosition: SnackPosition.TOP,
-        //     backgroundColor: Colors.green,
-        //     colorText: Colors.white,
-        //   );
-        //   Get.offAll(() => const DashboardTenantScreen());
-        // } else {
-        //   Get.snackbar(
-        //     'Gagal',
-        //     result['message'] ?? 'Gagal membuat reservasi. Mohon coba lagi.',
-        //     snackPosition: SnackPosition.TOP,
-        //     backgroundColor: Colors.red,
-        //     colorText: Colors.white,
-        //   );
-        // }
+        if (result['status'] == true) {
+          Get.snackbar(
+            'Sukses!',
+            result['message'] ??
+                'Reservasi berhasil dibuat. Menunggu konfirmasi pengelola.',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+          _showSuccessDialogAndNavigate(
+            message:
+                result['message'] ??
+                'Pembayaran berhasil diunggah. Mohon tunggu verifikasi dari pengelola.',
+          );
+        } else {
+          Get.snackbar(
+            'Gagal',
+            result['message'] ?? 'Gagal membuat reservasi. Mohon coba lagi.',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
       } else if (widget.paymentPurpose == 'extend_reservation') {
         if (widget.reservasiId == null || widget.durasiBulan == null) {
           throw Exception(
@@ -214,7 +204,11 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
             backgroundColor: Colors.green,
             colorText: Colors.white,
           );
-          Get.offAll(() => const KosScreen());
+          _showSuccessDialogAndNavigate(
+            message:
+                result['message'] ??
+                'Pembayaran berhasil diunggah. Mohon tunggu verifikasi dari pengelola.',
+          );
         } else {
           Get.snackbar(
             'Gagal',
@@ -245,10 +239,49 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
       );
     } finally {
       setState(() {
-        _isUploading = false; // Nonaktifkan status loading
-        _pickedImageFile = null; // Bersihkan gambar yang dipilih
+        _isUploading = false;
+        _pickedImageFile = null;
       });
     }
+  }
+
+  void _showSuccessDialogAndNavigate({required String message}) {
+    Get.defaultDialog(
+      title: "Pembayaran Berhasil!",
+      titleStyle: GoogleFonts.poppins(
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
+        color: Colors.green[700],
+      ),
+      content: Column(
+        children: [
+          Icon(Icons.check_circle_outline, color: Colors.green, size: 60),
+          SizedBox(height: 15),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(fontSize: 16),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              Get.offAll(() => const KosScreen());
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF119DB1),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: Text('Oke', style: GoogleFonts.poppins(fontSize: 16)),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+      radius: 15.0,
+      contentPadding: EdgeInsets.all(20.0),
+    );
   }
 
   @override
@@ -282,10 +315,8 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
                 children: [
                   _buildDetailPembayaranCard(context),
                   const SizedBox(height: 20),
-                  // Dropdown untuk memilih metode pembayaran
                   _buildPaymentMethodDropdown(),
                   const SizedBox(height: 20),
-                  // Tampilkan informasi sesuai metode yang dipilih
                   if (_selectedPaymentMethod == 'TRANSFER' &&
                       _isBankInfoAvailable())
                     _buildBankInfoCard(bankName, accountNumber, accountName),
@@ -294,7 +325,6 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
                       widget.qrisImage!.isNotEmpty)
                     _buildQrisImage(widget.qrisImage),
                   const SizedBox(height: 20),
-                  // Tampilan gambar yang sudah dipilih (jika ada)
                   if (_pickedImageFile != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -326,8 +356,7 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed:
-                      _isUploading ? null : _pickImage, // Pilih gambar dulu
+                  onPressed: _isUploading ? null : _pickImage,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF119DB1),
                     foregroundColor: Colors.white,
@@ -347,24 +376,17 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 0,
-              ), // Pindah tombol upload di bawah tombol pilih
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
                   onPressed:
-                      _isUploading ||
-                              _pickedImageFile ==
-                                  null // Aktif jika tidak mengunggah & gambar sudah dipilih
+                      _isUploading || _pickedImageFile == null
                           ? null
                           : _submitPaymentProof,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFF4CAF50,
-                    ), // Warna hijau untuk tombol upload
+                    backgroundColor: const Color(0xFF4CAF50),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
@@ -384,9 +406,7 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
                 ),
               ),
             ),
-            const SizedBox(
-              height: 24,
-            ), // Tambahkan sedikit ruang di bagian bawah
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -402,11 +422,11 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withAlpha((0.9 * 255).toInt()),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withAlpha((0.1 * 255).toInt()),
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
@@ -529,7 +549,7 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
 
   Widget _buildPaymentMethodDropdown() {
     if (_availablePaymentMethods.isEmpty) {
-      return const SizedBox.shrink(); // Jangan tampilkan dropdown jika tidak ada pilihan
+      return const SizedBox.shrink();
     }
 
     return Card(
@@ -587,8 +607,6 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
     String accountNumber,
     String accountName,
   ) {
-    // Kondisi untuk menampilkan card ini sudah ada di _initializePaymentMethods
-    // dan _buildPaymentMethodDropdown, jadi di sini cukup pastikan tampilannya
     return Card(
       margin: EdgeInsets.zero,
       elevation: 8,
@@ -654,10 +672,8 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
   Widget _buildQrisImage(String? imageUrl) {
     final String cleanedUrl = _cleanImageUrl(imageUrl);
     if (cleanedUrl.isEmpty) {
-      return const SizedBox.shrink(); // Sembunyikan jika URL kosong setelah dibersihkan
+      return const SizedBox.shrink();
     }
-    // Perbaikan: Asumsikan semua QRIS adalah Network Image karena datang dari server
-    // Jika Anda punya QRIS lokal, Anda harus membedakannya.
     final bool isAsset = cleanedUrl.startsWith('assets/');
 
     return Card(
