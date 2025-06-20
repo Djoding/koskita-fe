@@ -4,14 +4,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
 import 'package:kosan_euy/screens/penghuni/laundry/laundry_penghuni.dart';
 import 'package:kosan_euy/screens/penghuni/makanan/menu_makanan.dart';
-import 'package:kosan_euy/screens/penghuni/reservasi/dashboard_reservasi.dart';
+import 'package:kosan_euy/screens/penghuni/reservasi/dashboard_reservasi.dart'; // Untuk perpanjangan
+import 'package:kosan_euy/screens/penghuni/reservasi/reservasi_detail_screen.dart'; // Untuk detail reservasi
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/auth_service.dart';
 import 'package:kosan_euy/services/reservation_service.dart';
 import 'package:intl/intl.dart';
 
 class DashboardTenantScreen extends StatefulWidget {
-  const DashboardTenantScreen({super.key});
+  final String reservasiId;
+
+  const DashboardTenantScreen({super.key, required this.reservasiId});
 
   @override
   State<DashboardTenantScreen> createState() => _DashboardTenantScreenState();
@@ -34,27 +37,28 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
   bool _isLoadingReservationDetail = true;
   String? _errorMessage;
 
-  String? _kostIdFromArgs;
-
   @override
   void initState() {
     super.initState();
-    final args = Get.arguments as Map<String, dynamic>?;
-    if (args != null && args['kostId'] != null) {
-      _kostIdFromArgs = args['kostId'] as String;
-    }
-
+    _activeReservationId = widget.reservasiId;
     _loadDashboardData();
   }
 
   Future<void> _loadDashboardData() async {
     await _loadUserProfile();
-    if (_kostIdFromArgs != null) {
-      await _loadReservationDetail(_kostIdFromArgs!);
+    if (_activeReservationId != null) {
+      await _loadActiveReservationDetail(_activeReservationId!);
     } else {
       setState(() {
         _isLoadingReservationDetail = false;
-        _errorMessage = 'ID Kos tidak diterima untuk memuat detail reservasi.';
+        _errorMessage = 'ID Reservasi tidak tersedia.';
+        _kostName = 'Tidak ada Kost Aktif';
+        _kostAddress = '';
+        _checkInDate = 'N/A';
+        _checkOutDate = 'N/A';
+        _kostImageUrl = 'assets/placeholder_image.png';
+        _statusPenghunian = null;
+        _activeReservationId = null;
       });
     }
   }
@@ -84,20 +88,19 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
     }
   }
 
-  Future<void> _loadReservationDetail(String kostId) async {
+  Future<void> _loadActiveReservationDetail(String reservasiId) async {
     setState(() {
       _isLoadingReservationDetail = true;
       _errorMessage = null;
     });
     try {
-      final result = await _reservationService.getReservationsByKostAndUser(
-        kostId,
+      final result = await _reservationService.getReservationDetailById(
+        reservasiId,
       );
-      if (result['status'] == true &&
-          result['data'] != null &&
-          result['data'].isNotEmpty) {
+
+      if (result['status'] == true && result['data'] != null) {
         final Map<String, dynamic> reservationData = Map<String, dynamic>.from(
-          result['data'][0],
+          result['data'],
         );
 
         final Map<String, dynamic>? kostInfo = reservationData['kost'];
@@ -164,7 +167,7 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
     }
     try {
       DateTime date = DateTime.parse(dateString);
-      return DateFormat('d MMMM yyyy', 'id_ID').format(date);
+      return DateFormat('d MMMM y', 'id_ID').format(date);
     } catch (e) {
       debugPrint('Error parsing date: $e');
       return dateString;
@@ -319,8 +322,12 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
           onTap: () {
-            if (_kostName != 'Tidak ada Kost Aktif') {
-              Get.to(() => DashboardReservasiScreen());
+            if (_activeReservationId != null &&
+                _kostName != 'Tidak ada Kost Aktif') {
+              Get.to(
+                () =>
+                    ReservationDetailScreen(reservasiId: _activeReservationId!),
+              );
             } else {
               Get.snackbar(
                 'Informasi',
@@ -445,23 +452,40 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
   }
 
   Widget _buildServiceCards() {
-    final bool showTenantServices = _statusPenghunian != null;
+    final bool isPenghuniAktif = _statusPenghunian == 'AKTIF';
+    final bool isPenghuniKeluar = _statusPenghunian == 'KELUAR';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          _LayananCard(
-            title: 'Layanan Reservasi Kamar',
-            imageAsset: 'assets/icon_reservasi.png',
-            onTap: () {
-              Get.to(
-                () => DashboardReservasiScreen(),
-                arguments: {'reservasiId': _activeReservationId},
-              );
-            },
-          ),
-          if (showTenantServices) const SizedBox(height: 15),
-          if (showTenantServices)
+          if (isPenghuniAktif || _statusPenghunian == null)
+            _LayananCard(
+              title: 'Layanan Reservasi Kamar',
+              imageAsset: 'assets/icon_reservasi.png',
+              onTap: () {
+                if (_activeReservationId != null &&
+                    (isPenghuniAktif || _statusPenghunian == null)) {
+                  Get.to(
+                    () => DashboardReservasiScreen(),
+                    arguments: {'reservasiId': _activeReservationId},
+                  );
+                } else {
+                  Get.snackbar(
+                    'Informasi',
+                    'Anda belum memiliki reservasi kos aktif. Silakan cari kos untuk memulai.',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.blueAccent,
+                    colorText: Colors.white,
+                  );
+                }
+              },
+            ),
+
+          if (isPenghuniAktif || _statusPenghunian == null)
+            const SizedBox(height: 15),
+
+          if (isPenghuniAktif)
             _LayananCard(
               title: 'Layanan Pemesanan Makanan',
               imageAsset: 'assets/icon_makanan.png',
@@ -469,13 +493,47 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
                 Get.to(() => const MenuMakanan());
               },
             ),
-          if (showTenantServices) const SizedBox(height: 15),
-          if (showTenantServices)
+
+          if (isPenghuniAktif) const SizedBox(height: 15),
+
+          if (isPenghuniAktif)
             _LayananCard(
               title: 'Layanan Laundry',
               imageAsset: 'assets/icon_laundry.png',
               onTap: () {
                 Get.to(() => const LaundryPenghuni());
+              },
+            ),
+
+          if (isPenghuniKeluar)
+            _LayananCard(
+              title: 'Riwayat Pemesanan Makanan',
+              imageAsset: 'assets/icon_makanan.png',
+              onTap: () {
+                Get.snackbar(
+                  'Informasi',
+                  'Fungsi riwayat pemesanan makanan belum diimplementasikan.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.blueAccent,
+                  colorText: Colors.white,
+                );
+              },
+            ),
+
+          if (isPenghuniKeluar) const SizedBox(height: 15),
+
+          if (isPenghuniKeluar)
+            _LayananCard(
+              title: 'Riwayat Pemesanan Laundry',
+              imageAsset: 'assets/icon_laundry.png',
+              onTap: () {
+                Get.snackbar(
+                  'Informasi',
+                  'Fungsi riwayat pemesanan laundry belum diimplementasikan.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.blueAccent,
+                  colorText: Colors.white,
+                );
               },
             ),
         ],
@@ -499,7 +557,7 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
           BoxShadow(
             color: Colors.black.withAlpha((0.1 * 255).toInt()),
             blurRadius: 5,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
