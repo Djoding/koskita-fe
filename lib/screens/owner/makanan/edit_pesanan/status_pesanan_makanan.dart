@@ -1,18 +1,25 @@
+// lib/screens/owner/makanan/edit_pesanan/status_pesanan_makanan.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/edit_status_pesanan_makanan.dart';
+import 'package:kosan_euy/routes/app_pages.dart'; // For navigation
 
 class StatusPesananMakananScreen extends StatelessWidget {
   const StatusPesananMakananScreen({super.key});
 
+  // This screen will receive the order detail as argument,
+  // but for now it's hardcoded based on the previous structure.
+  // If you want to make this dynamic, it needs to fetch data or receive it fully.
+  // For simplicity, let's keep it as a hardcoded view demonstrating the flow.
+
   @override
   Widget build(BuildContext context) {
+    // These steps are hardcoded to demonstrate the flow.
+    // In a real app, these would be derived from the actual order status.
     final List<_StepStatus> steps = [
-      _StepStatus('Pesanan Anda telah diterima', true),
-      _StepStatus('Sedang menyiapkan pesanan Anda', true),
-      _StepStatus('Pesanan Anda siap diantar', true),
-      _StepStatus('Pesanan segera tiba!', true),
-      _StepStatus('Pesanan telah diantar', false, isLast: true),
+      _StepStatus('Pesanan Diterima', true),
+      _StepStatus('Sedang Proses', true),
+      _StepStatus('Pesanan Siap Diantar', true),
+      _StepStatus('Telah Diantar', false, isLast: true),
     ];
     return Scaffold(
       backgroundColor: const Color(0xFF91B7DE),
@@ -132,7 +139,8 @@ class StatusPesananMakananScreen extends StatelessWidget {
                       const SizedBox(height: 24),
                       const Center(
                         child: Text(
-                          '1 menit',
+                          // This text needs to be dynamic based on order status
+                          'Status Order',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 28,
@@ -142,7 +150,7 @@ class StatusPesananMakananScreen extends StatelessWidget {
                       ),
                       const Center(
                         child: Text(
-                          'SEDANG DIANTAR',
+                          'STATUS SAAT INI', // This text needs to be dynamic
                           style: TextStyle(
                             color: Colors.grey,
                             fontWeight: FontWeight.w600,
@@ -178,7 +186,8 @@ class StatusPesananMakananScreen extends StatelessWidget {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    Get.to(() => const EditStatusPesananMakananScreen());
+                    // Navigate to edit status screen
+                    Get.toNamed(Routes.editCateringOrderStatus);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF119DB0),

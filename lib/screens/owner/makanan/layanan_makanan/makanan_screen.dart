@@ -1,10 +1,19 @@
+// lib/screens/owner/makanan/layanan_makanan/makanan_screen.dart
 import 'package:flutter/material.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/add_screen.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/edit_screen.dart';
+import 'package:kosan_euy/services/catering_menu_service.dart'; // Import service
+import 'package:kosan_euy/models/catering_model.dart'; // Import models
+import 'package:kosan_euy/routes/app_pages.dart'; // For navigation
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // To get user ID
 
 class FoodListScreen extends StatefulWidget {
-  const FoodListScreen({super.key});
+  // Pass kostData for context, if needed. Assuming it's passed via Get.arguments
+  final Map<String, dynamic>? kostData;
+
+  const FoodListScreen({super.key, this.kostData});
 
   @override
   State<FoodListScreen> createState() => _FoodListScreenState();
@@ -13,18 +22,111 @@ class FoodListScreen extends StatefulWidget {
 class _FoodListScreenState extends State<FoodListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _showFoodTab = true;
+  bool _showFoodTab = true; // True for Makanan, False for Minuman
+  List<CateringMenuItem> _menuItems = [];
+  bool _isLoadingMenus = true;
+  String _errorMessage = '';
+
+  String? _cateringId; // The ID of the catering service
+  String? _pengelolaId; // Current logged in pengelola ID
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _initializeCateringData();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _getPengelolaId() async {
+    final prefs =
+        await Get.find<SharedPreferences>(); // Get SharedPreferences instance
+    final token = prefs.getString('accessToken');
+    if (token != null) {
+      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      _pengelolaId =
+          decodedToken["userId"]; // Assuming "userId" is the key in JWT for user ID
+    }
+  }
+
+  Future<void> _initializeCateringData() async {
+    await _getPengelolaId(); // Get pengelola ID first
+
+    if (widget.kostData == null) {
+      setState(() {
+        _errorMessage = 'Kost data is missing. Cannot fetch catering menus.';
+        _isLoadingMenus = false;
+      });
+      return;
+    }
+
+    // First, get the catering service associated with this kost
+    try {
+      final response = await CateringMenuService.getCateringsByKost(
+        widget.kostData!['kost_id'],
+      );
+      if (response['status'] && (response['data'] as List).isNotEmpty) {
+        final List<Catering> caterings = response['data'];
+        _cateringId =
+            caterings
+                .first
+                .cateringId; // Assuming one catering per kost for simplicity
+
+        await _fetchCateringMenus(); // Then fetch menus for this catering
+      } else {
+        setState(() {
+          _errorMessage =
+              response['message'] ?? 'No catering service found for this kost.';
+          _isLoadingMenus = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error fetching catering service: $e';
+        _isLoadingMenus = false;
+      });
+    }
+  }
+
+  Future<void> _fetchCateringMenus() async {
+    if (_cateringId == null) {
+      setState(() {
+        _errorMessage = 'Catering ID is not available.';
+        _isLoadingMenus = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingMenus = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final response = await CateringMenuService.getCateringMenu(_cateringId!);
+      if (response['status']) {
+        setState(() {
+          _menuItems = response['data'];
+        });
+      } else {
+        setState(() {
+          _errorMessage = response['message'] ?? 'Failed to load menu items.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Network error fetching menus: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoadingMenus = false;
+      });
+    }
   }
 
   @override
@@ -50,7 +152,6 @@ class _FoodListScreenState extends State<FoodListScreen>
                         color: Colors.black,
                       ),
                       onPressed: () {
-                        // Go back action
                         Navigator.pop(context);
                       },
                     ),
@@ -63,12 +164,18 @@ class _FoodListScreenState extends State<FoodListScreen>
                     child: IconButton(
                       icon: const Icon(Icons.add, color: Colors.black),
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddFoodScreen(),
-                          ),
-                        );
+                        // Pass cateringId to AddFoodScreen
+                        if (_cateringId != null) {
+                          Get.toNamed(
+                            Routes.addCateringMenu,
+                            arguments: {'cateringId': _cateringId},
+                          );
+                        } else {
+                          Get.snackbar(
+                            'Error',
+                            'Catering service not found for this kost. Cannot add menu.',
+                          );
+                        }
                       },
                     ),
                   ),
@@ -76,7 +183,7 @@ class _FoodListScreenState extends State<FoodListScreen>
               ),
               const SizedBox(height: 20),
               Text(
-                _showFoodTab ? 'Cari Makanan Untukmu' : 'Cari Minuman Untukmu',
+                _showFoodTab ? 'Daftar Menu Makanan' : 'Daftar Menu Minuman',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -97,7 +204,7 @@ class _FoodListScreenState extends State<FoodListScreen>
                       const Icon(Icons.search, color: Colors.grey),
                       const SizedBox(width: 10),
                       Text(
-                        'Cari Makan...',
+                        'Cari Menu...',
                         style: TextStyle(color: Colors.grey[400]),
                       ),
                     ],
@@ -172,32 +279,71 @@ class _FoodListScreenState extends State<FoodListScreen>
                 ],
               ),
               const SizedBox(height: 16),
-              Expanded(
-                child:
-                    _showFoodTab ? const FoodGridView() : const DrinkGridView(),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4D9DAB),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
+              _isLoadingMenus
+                  ? const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                  : _errorMessage.isNotEmpty
+                  ? Expanded(
+                    child: Center(
+                      child: Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.white),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    onPressed: () {
-                      Get.to(() => const EditFoodScreen());
-                    },
-                    child: const Text(
-                      'Edit',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                  )
+                  : Expanded(
+                    child:
+                        _showFoodTab
+                            ? MenuGridView(
+                              menuItems:
+                                  _menuItems
+                                      .where(
+                                        (item) =>
+                                            item.kategori == 'MAKANAN_BERAT' ||
+                                            item.kategori == 'SNACK',
+                                      ) // Filter based on category
+                                      .toList(),
+                              cateringId: _cateringId!,
+                              onRefresh: _fetchCateringMenus,
+                            )
+                            : MenuGridView(
+                              menuItems:
+                                  _menuItems
+                                      .where(
+                                        (item) => item.kategori == 'MINUMAN',
+                                      ) // Filter based on category
+                                      .toList(),
+                              cateringId: _cateringId!,
+                              onRefresh: _fetchCateringMenus,
+                            ),
                   ),
-                ),
-              ),
+              // The "Edit" button below should be per item, not global here.
+              // We will adjust FoodItemCard to have edit functionality directly.
+              // For now, removing this global Edit button if it was meant for item editing.
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(vertical: 16.0),
+              //   child: SizedBox(
+              //     width: double.infinity,
+              //     height: 50,
+              //     child: ElevatedButton(
+              //       style: ElevatedButton.styleFrom(
+              //         backgroundColor: const Color(0xFF4D9DAB),
+              //         shape: RoundedRectangleBorder(
+              //           borderRadius: BorderRadius.circular(25),
+              //         ),
+              //       ),
+              //       onPressed: () {
+              //         Get.to(() => const EditFoodScreen());
+              //       },
+              //       child: const Text(
+              //         'Edit',
+              //         style: TextStyle(color: Colors.white, fontSize: 16),
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
@@ -206,32 +352,28 @@ class _FoodListScreenState extends State<FoodListScreen>
   }
 }
 
-class FoodGridView extends StatelessWidget {
-  const FoodGridView({super.key});
+class MenuGridView extends StatelessWidget {
+  final List<CateringMenuItem> menuItems;
+  final String cateringId;
+  final VoidCallback onRefresh; // Callback to refresh menus
+
+  const MenuGridView({
+    super.key,
+    required this.menuItems,
+    required this.cateringId,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> foodItems = [
-      {
-        'name': 'Indomie kuah/goreng Spesial',
-        'price': 'RP 8.000',
-        'image': 'assets/food6.png',
-      },
-      {
-        'name': 'Nasi Goreng Telur',
-        'price': 'RP 12.000',
-        'image': 'assets/food5.png',
-      },
-      {'name': 'Telur Dadar', 'price': 'RP 6.000', 'image': 'assets/food4.png'},
-      {
-        'name': 'Telur Ceplok',
-        'price': 'RP 7.000',
-        'image': 'assets/food3.png',
-      },
-      {'name': 'Nasi Putih', 'price': 'RP 5.000', 'image': 'assets/food2.png'},
-      {'name': 'Midog', 'price': 'RP 5.000', 'image': 'assets/food1.png'},
-    ];
-
+    if (menuItems.isEmpty) {
+      return const Center(
+        child: Text(
+          'Tidak ada menu ditemukan.',
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -239,74 +381,89 @@ class FoodGridView extends StatelessWidget {
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
       ),
-      itemCount: foodItems.length,
+      itemCount: menuItems.length,
       itemBuilder: (context, index) {
+        final item = menuItems[index];
         return FoodItemCard(
-          name: foodItems[index]['name'],
-          price: foodItems[index]['price'],
-          imagePath: foodItems[index]['image'],
+          menuItem: item,
+          cateringId: cateringId,
+          onRefresh: onRefresh,
         );
       },
     );
   }
 }
 
-class DrinkGridView extends StatelessWidget {
-  const DrinkGridView({super.key});
+// Rename to MenuCard or similar to avoid confusion with FoodItemCard
+// class FoodItemCard extends StatelessWidget { // This will be the new FoodItemCard
+//   final String name;
+//   final String price;
+//   final String imagePath;
+//   // ... (constructor)
+// }
 
-  @override
-  Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> drinkItems = [
-      {
-        'name': 'Es Teh/hangat',
-        'price': 'RP 4.000',
-        'image': 'assets/drink1.png',
-      },
-      {
-        'name': 'Es Nutrisari',
-        'price': 'RP 5.000',
-        'image': 'assets/drink2.png',
-      },
-      {
-        'name': 'Es Kopi Good Day',
-        'price': 'RP 5.000',
-        'image': 'assets/drink3.png',
-      },
-      {'name': 'Es Milo', 'price': 'RP 7.000', 'image': 'assets/drink4.png'},
-      {'name': 'Es Sirsir', 'price': 'RP 5.000', 'image': 'assets/drink5.png'},
-      {'name': 'Es Dancow', 'price': 'RP 7.000', 'image': 'assets/drink6.png'},
-    ];
-
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.75,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
-      itemCount: drinkItems.length,
-      itemBuilder: (context, index) {
-        return FoodItemCard(
-          name: drinkItems[index]['name'],
-          price: drinkItems[index]['price'],
-          imagePath: drinkItems[index]['image'],
-        );
-      },
-    );
-  }
-}
-
+// Create a new FoodItemCard that takes CateringMenuItem
 class FoodItemCard extends StatelessWidget {
-  final String name;
-  final String price;
-  final String imagePath;
+  final CateringMenuItem menuItem;
+  final String cateringId;
+  final VoidCallback onRefresh;
 
   const FoodItemCard({
     super.key,
-    required this.name,
-    required this.price,
-    required this.imagePath,
+    required this.menuItem,
+    required this.cateringId,
+    required this.onRefresh,
   });
+
+  String _formatCurrency(double amount) {
+    return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Konfirmasi Hapus'),
+            content: Text(
+              'Apakah Anda yakin ingin menghapus menu "${menuItem.namaMenu}"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Get.back(); // Close dialog
+                  try {
+                    final response =
+                        await CateringMenuService.deleteCateringMenuItem(
+                          cateringId: cateringId,
+                          menuId: menuItem.menuId,
+                        );
+                    if (response['status']) {
+                      Get.snackbar(
+                        'Sukses',
+                        response['message'] ?? 'Menu berhasil dihapus!',
+                      );
+                      onRefresh(); // Refresh the list after deletion
+                    } else {
+                      Get.snackbar(
+                        'Error',
+                        response['message'] ?? 'Gagal menghapus menu.',
+                      );
+                    }
+                  } catch (e) {
+                    Get.snackbar('Error', 'Terjadi kesalahan: $e');
+                  }
+                },
+                child: const Text('Hapus'),
+              ),
+            ],
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -314,12 +471,15 @@ class FoodItemCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          name,
+          menuItem.namaMenu,
           style: const TextStyle(color: Colors.white, fontSize: 12),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        Text(price, style: const TextStyle(color: Colors.white, fontSize: 12)),
+        Text(
+          _formatCurrency(menuItem.harga),
+          style: const TextStyle(color: Colors.white, fontSize: 12),
+        ),
         const SizedBox(height: 5),
         Expanded(
           child: Stack(
@@ -329,10 +489,36 @@ class FoodItemCard extends StatelessWidget {
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(10),
                   image: DecorationImage(
-                    image: AssetImage(imagePath),
+                    image:
+                        menuItem.fotoMenuUrl != null
+                            ? NetworkImage(menuItem.fotoMenuUrl!)
+                                as ImageProvider // Use NetworkImage for URL
+                            : const AssetImage(
+                              'assets/food_placeholder.png',
+                            ), // Placeholder asset
                     fit: BoxFit.cover,
                   ),
                 ),
+                child:
+                    menuItem
+                            .isAvailable // Overlay if not available
+                        ? null
+                        : Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Tidak Tersedia',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
               ),
               Positioned(
                 right: 0,
@@ -350,37 +536,10 @@ class FoodItemCard extends StatelessWidget {
                     ),
                   ),
                   child: InkWell(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder:
-                            (context) => AlertDialog(
-                              title: const Text('Konfirmasi'),
-                              content: Text(
-                                'Apakah anda yakin ingin menghapus menu $name?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  child: const Text('Tidak'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) =>
-                                                const DeleteSuccessScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Ya'),
-                                ),
-                              ],
-                            ),
-                      );
-                    },
+                    onTap:
+                        () => _showDeleteConfirmation(
+                          context,
+                        ), // Use new delete function
                     child: Row(
                       children: const [
                         Icon(Icons.delete, color: Colors.white, size: 14),
@@ -394,71 +553,37 @@ class FoodItemCard extends StatelessWidget {
                   ),
                 ),
               ),
+              // Edit button overlay
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(10),
+                      bottomLeft: Radius.circular(10),
+                    ),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      Get.toNamed(
+                        Routes.editCateringMenu,
+                        arguments: {
+                          'cateringId': cateringId,
+                          'menuItem': menuItem, // Pass the whole menu item
+                        },
+                      );
+                    },
+                    child: Icon(Icons.edit, color: Colors.white, size: 14),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ],
-    );
-  }
-}
-
-class DeleteSuccessScreen extends StatelessWidget {
-  const DeleteSuccessScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF89B3DE),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 180,
-                height: 180,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFA51C1C),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(Icons.close, color: Colors.white, size: 120),
-                ),
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                'Menu Midog Berhasil Dihapus',
-                style: TextStyle(
-                  color: Color(0xFFA51C1C),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
-                ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: 240,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFA51C1C),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: const Text(
-                    'Kembali',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

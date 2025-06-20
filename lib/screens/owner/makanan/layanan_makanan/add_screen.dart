@@ -1,9 +1,13 @@
+// lib/screens/owner/makanan/layanan_makanan/add_screen.dart
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/success_screen.dart';
+import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/success_screen.dart'; // Maybe redundant now
 import 'package:image_picker/image_picker.dart';
 import 'package:get/get.dart';
+import 'package:kosan_euy/services/catering_menu_service.dart'; // Import service
+import 'package:kosan_euy/widgets/success_screen.dart'
+    as GlobalSuccess; // Use alias for global success screen
 
 class AddFoodScreen extends StatefulWidget {
   const AddFoodScreen({super.key});
@@ -13,8 +17,33 @@ class AddFoodScreen extends StatefulWidget {
 }
 
 class _AddFoodScreenState extends State<AddFoodScreen> {
+  final _formKey = GlobalKey<FormState>();
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _namaMenuController = TextEditingController();
+  final TextEditingController _hargaController = TextEditingController();
+  String? _selectedKategori;
+  bool _isSubmitting = false;
+
+  String? _cateringId; // Will be passed as argument
+
+  @override
+  void initState() {
+    super.initState();
+    // Retrieve cateringId from arguments
+    if (Get.arguments != null && Get.arguments['cateringId'] != null) {
+      _cateringId = Get.arguments['cateringId'];
+    } else {
+      // Handle case where cateringId is not passed (e.g., show error, pop screen)
+      Get.snackbar(
+        'Error',
+        'Catering ID tidak ditemukan. Kembali ke daftar menu.',
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.back(); // Pop if no cateringId
+      });
+    }
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -25,7 +54,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
         });
       }
     } catch (e) {
-      // Handle any errors
       Get.snackbar('Error', 'Error picking image: $e');
     }
   }
@@ -60,14 +88,79 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     );
   }
 
+  Future<void> _addMenuItem() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_cateringId == null) {
+      Get.snackbar('Error', 'Catering ID tidak ditemukan.');
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final response = await CateringMenuService.addCateringMenuItem(
+        cateringId: _cateringId!,
+        namaMenu: _namaMenuController.text.trim(),
+        kategori: _selectedKategori!,
+        harga: double.parse(
+          _hargaController.text.replaceAll('.', ''),
+        ), // Remove dots for parsing
+        fotoMenu: _imageFile,
+        isAvailable: true, // Default to available
+      );
+
+      if (response['status']) {
+        Get.back(); // Go back to previous screen (menu list)
+        Get.snackbar(
+          'Sukses',
+          response['message'] ?? 'Menu berhasil ditambahkan!',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        // Navigate to a success screen or refresh the previous list
+        Get.off(
+          () => const GlobalSuccess.SuccessScreen(
+            title: 'Menu Berhasil Ditambah',
+            subtitle: 'Data menu catering berhasil disimpan.',
+          ),
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          response['message'] ?? 'Gagal menambahkan menu.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Terjadi kesalahan: $e');
+    } finally {
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _namaMenuController.dispose();
+    _hargaController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          // Added SingleChildScrollView
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              // Added Form widget
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -96,42 +189,106 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blue),
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Nama Makanan/Minuman',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 15,
-                        ),
-                        border: InputBorder.none,
+                  // Nama Makanan/Minuman
+                  TextFormField(
+                    // Changed to TextFormField
+                    controller: _namaMenuController,
+                    decoration: InputDecoration(
+                      hintText: 'Nama Makanan/Minuman',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 18, // Adjusted vertical padding
                       ),
+                      border: OutlineInputBorder(
+                        // Added border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Colors.blue),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Nama menu tidak boleh kosong';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blue),
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Harga',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 15,
-                        ),
-                        border: InputBorder.none,
+                  // Kategori Dropdown
+                  DropdownButtonFormField<String>(
+                    value: _selectedKategori,
+                    decoration: InputDecoration(
+                      hintText: 'Pilih Kategori',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 18, // Adjusted vertical padding
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Colors.blue),
                       ),
                     ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'MAKANAN_BERAT',
+                        child: Text('Makanan Berat'),
+                      ),
+                      DropdownMenuItem(value: 'SNACK', child: Text('Snack')),
+                      DropdownMenuItem(
+                        value: 'MINUMAN',
+                        child: Text('Minuman'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedKategori = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Kategori tidak boleh kosong';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
+                  // Harga
+                  TextFormField(
+                    // Changed to TextFormField
+                    controller: _hargaController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Harga',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 18, // Adjusted vertical padding
+                      ),
+                      border: OutlineInputBorder(
+                        // Added border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Colors.blue),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Harga tidak boleh kosong';
+                      }
+                      if (double.tryParse(value.replaceAll('.', '')) == null) {
+                        return 'Harga harus berupa angka';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // Upload Foto
                   GestureDetector(
                     onTap: () {
                       _showImageSourceActionSheet(context);
@@ -149,7 +306,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Upload Foto Makanan/Minuman',
+                              _imageFile == null
+                                  ? 'Upload Foto Makanan/Minuman'
+                                  : 'Foto Terpilih: ${_imageFile!.path.split('/').last}',
                               style: TextStyle(color: Colors.grey[400]),
                             ),
                             const Icon(
@@ -181,39 +340,33 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4D9DAB),
+                        backgroundColor:
+                            _isSubmitting
+                                ? Colors.grey
+                                : const Color(0xFF4D9DAB),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
                       ),
-                      onPressed: () {
-                        if (_imageFile != null) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SuccessScreen(),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Harap pilih gambar terlebih dahulu',
+                      onPressed: _isSubmitting ? null : _addMenuItem,
+                      child:
+                          _isSubmitting
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                              : const Text(
+                                'Daftar',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                      },
-                      child: const Text(
-                        'Daftar',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

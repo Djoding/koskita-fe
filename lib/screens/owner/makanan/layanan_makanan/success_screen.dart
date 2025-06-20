@@ -8,10 +8,6 @@ class SuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(const Duration(seconds: 2), () {
-      Get.offNamed(Routes.foodList);
-    });
-
     return Scaffold(
       body: SafeArea(
         child: Padding(
