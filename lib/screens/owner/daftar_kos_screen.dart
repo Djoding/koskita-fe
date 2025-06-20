@@ -48,15 +48,20 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       TextEditingController();
   final TextEditingController _namaPemilikController = TextEditingController();
 
-  // Dropdown values
+  // Dropdown values dan state untuk fasilitas & peraturan
   List<Map<String, dynamic>> _tipeKamarList = [];
+  List<Map<String, dynamic>> _fasilitasList = [];
+  List<Map<String, dynamic>> _peraturanList = [];
   String? _selectedTipeId;
+  Set<String> _selectedFasilitas = {};
+  List<Map<String, dynamic>> _selectedPeraturan = [];
   bool _loadingTipeKamar = true;
+  bool _loadingMasterData = true;
 
   @override
   void initState() {
     super.initState();
-    _loadTipeKamar();
+    _loadMasterData();
     _setupCalculation();
   }
 
@@ -83,20 +88,35 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
     );
   }
 
-  Future<void> _loadTipeKamar() async {
+  Future<void> _loadMasterData() async {
+    setState(() {
+      _loadingMasterData = true;
+    });
+
     try {
-      final response = await PengelolaService.getTipeKamar();
-      if (response['status']) {
-        setState(() {
-          _tipeKamarList = List<Map<String, dynamic>>.from(
-            response['data'] ?? [],
-          );
-          _loadingTipeKamar = false;
-        });
-      }
+      final responses = await Future.wait([
+        PengelolaService.getTipeKamar(),
+        PengelolaService.getFasilitas(),
+        PengelolaService.getPeraturan(),
+      ]);
+
+      setState(() {
+        if (responses[0]['status']) {
+          _tipeKamarList = List<Map<String, dynamic>>.from(responses[0]['data']);
+        }
+        if (responses[1]['status']) {
+          _fasilitasList = List<Map<String, dynamic>>.from(responses[1]['data']);
+        }
+        if (responses[2]['status']) {
+          _peraturanList = List<Map<String, dynamic>>.from(responses[2]['data']);
+        }
+        _loadingTipeKamar = false;
+        _loadingMasterData = false;
+      });
     } catch (e) {
       setState(() {
         _loadingTipeKamar = false;
+        _loadingMasterData = false;
       });
     }
   }
@@ -126,6 +146,15 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loadingMasterData) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF90CAF9),
+        body: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF90CAF9),
       body: SafeArea(
@@ -295,6 +324,16 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
 
                   const SizedBox(height: 20),
 
+                  // Fasilitas Selection
+                  _buildFasilitasSection(),
+
+                  const SizedBox(height: 20),
+
+                  // Peraturan Selection
+                  _buildPeraturanSection(),
+
+                  const SizedBox(height: 20),
+
                   // Upload Files
                   _buildSectionTitle('Upload Foto'),
                   _buildUploadButton(),
@@ -341,23 +380,22 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       readOnly: readOnly,
-      validator:
-          isRequired
-              ? (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '$label tidak boleh kosong';
-                }
-                if (label.contains('Total Kamar') &&
-                    int.tryParse(value) == null) {
-                  return 'Total kamar harus berupa angka';
-                }
-                if (label.contains('Harga') &&
-                    double.tryParse(value.replaceAll('.', '')) == null) {
-                  return 'Harga harus berupa angka';
-                }
-                return null;
+      validator: isRequired
+          ? (value) {
+              if (value == null || value.trim().isEmpty) {
+                return '$label tidak boleh kosong';
               }
-              : null,
+              if (label.contains('Total Kamar') &&
+                  int.tryParse(value) == null) {
+                return 'Total kamar harus berupa angka';
+              }
+              if (label.contains('Harga') &&
+                  double.tryParse(value.replaceAll('.', '')) == null) {
+                return 'Harga harus berupa angka';
+              }
+              return null;
+            }
+          : null,
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
@@ -408,28 +446,162 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
         }
         return null;
       },
-      items:
-          _tipeKamarList.map((tipe) {
-            return DropdownMenuItem<String>(
-              value: tipe['tipe_id'],
-              child: Text(
-                '${tipe['nama_tipe']} - ${tipe['ukuran'] ?? ''} (${tipe['kapasitas']} orang)',
-                style: TextStyle(fontSize: 14),
+      items: _tipeKamarList.map((tipe) {
+        return DropdownMenuItem<String>(
+          value: tipe['tipe_id'],
+          child: Text(
+            '${tipe['nama_tipe']} - ${tipe['ukuran'] ?? ''} (${tipe['kapasitas']} orang)',
+            style: TextStyle(fontSize: 14),
+          ),
+        );
+      }).toList(),
+      onChanged: _isSubmitting
+          ? null
+          : (value) {
+              setState(() {
+                _selectedTipeId = value;
+              });
+            },
+      hint: _loadingTipeKamar
+          ? Text('Memuat tipe kamar...')
+          : Text('Pilih tipe kamar'),
+    );
+  }
+
+  Widget _buildFasilitasSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Fasilitas',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _fasilitasList.map((fasilitas) {
+              final isSelected = _selectedFasilitas.contains(fasilitas['fasilitas_id']);
+              return FilterChip(
+                label: Text(fasilitas['nama_fasilitas']),
+                selected: isSelected,
+                onSelected: _isSubmitting
+                    ? null
+                    : (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedFasilitas.add(fasilitas['fasilitas_id']);
+                          } else {
+                            _selectedFasilitas.remove(fasilitas['fasilitas_id']);
+                          }
+                        });
+                      },
+                selectedColor: Colors.green.withOpacity(0.3),
+                checkmarkColor: Colors.green,
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPeraturanSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Peraturan',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ..._peraturanList.map((peraturan) {
+            final existingPeraturan = _selectedPeraturan.firstWhere(
+              (p) => p['peraturan_id'] == peraturan['peraturan_id'],
+              orElse: () => {},
+            );
+            final isSelected = existingPeraturan.isNotEmpty;
+            final keteranganController = TextEditingController(
+              text: existingPeraturan['keterangan_tambahan'] ?? '',
+            );
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CheckboxListTile(
+                    title: Text(peraturan['nama_peraturan']),
+                    value: isSelected,
+                    onChanged: _isSubmitting
+                        ? null
+                        : (selected) {
+                            setState(() {
+                              if (selected == true) {
+                                _selectedPeraturan.add({
+                                  'peraturan_id': peraturan['peraturan_id'],
+                                  'keterangan_tambahan': '',
+                                });
+                              } else {
+                                _selectedPeraturan.removeWhere(
+                                  (p) => p['peraturan_id'] == peraturan['peraturan_id'],
+                                );
+                              }
+                            });
+                          },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  if (isSelected) ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: keteranganController,
+                      enabled: !_isSubmitting,
+                      decoration: const InputDecoration(
+                        labelText: 'Keterangan Tambahan (Opsional)',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 2,
+                      onChanged: (value) {
+                        final index = _selectedPeraturan.indexWhere(
+                          (p) => p['peraturan_id'] == peraturan['peraturan_id'],
+                        );
+                        if (index != -1) {
+                          _selectedPeraturan[index]['keterangan_tambahan'] = value;
+                        }
+                      },
+                    ),
+                  ],
+                ],
               ),
             );
           }).toList(),
-      onChanged:
-          _isSubmitting
-              ? null
-              : (value) {
-                setState(() {
-                  _selectedTipeId = value;
-                });
-              },
-      hint:
-          _loadingTipeKamar
-              ? Text('Memuat tipe kamar...')
-              : Text('Pilih tipe kamar'),
+        ],
+      ),
     );
   }
 
@@ -594,14 +766,13 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed:
-            _isSubmitting
-                ? null
-                : () {
-                  if (_formKey.currentState!.validate()) {
-                    _submitForm();
-                  }
-                },
+        onPressed: _isSubmitting
+            ? null
+            : () {
+                if (_formKey.currentState!.validate()) {
+                  _submitForm();
+                }
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor:
               _isSubmitting ? Colors.grey : const Color(0xFF26A69A),
@@ -610,27 +781,26 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
             borderRadius: BorderRadius.circular(25),
           ),
         ),
-        child:
-            _isSubmitting
-                ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
+        child: _isSubmitting
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
-                    const SizedBox(width: 8),
-                    const Text('Menyimpan...'),
-                  ],
-                )
-                : const Text(
-                  'Daftar',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Menyimpan...'),
+                ],
+              )
+            : const Text(
+                'Daftar',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
       ),
     );
   }
@@ -645,9 +815,9 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error memilih gambar: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error memilih gambar: $e')),
+      );
     }
   }
 
@@ -664,9 +834,9 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error memilih gambar QRIS: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error memilih gambar QRIS: $e')),
+      );
     }
   }
 
@@ -768,6 +938,9 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
         'harga_final':
             double.tryParse(_hargaFinalController.text.replaceAll('.', '')) ??
             0,
+        // Tambahan field yang ada di edit_kos
+        'fasilitas_ids': _selectedFasilitas.toList(),
+        'peraturan_data': _selectedPeraturan,
       };
 
       // Submit to API
@@ -786,8 +959,6 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
             builder:
                 (context) => const SuccessScreen(
                   title: 'Kost Berhasil Didaftarkan',
-                  subtitle:
-                      'Tunggu persetujuan dari admin untuk mengaktifkan kost Anda',
                 ),
           ),
         );

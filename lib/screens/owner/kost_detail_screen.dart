@@ -1,13 +1,14 @@
+// lib/screens/owner/kost_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
-import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/makanan_screen.dart';
-import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:kosan_euy/screens/owner/laundry/dashboard_laundry.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_screen.dart';
+import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
 import 'package:kosan_euy/services/api_service.dart';
-import 'package:kosan_euy/services/pengelola_service.dart'; // Import ApiService
+import 'package:kosan_euy/services/pengelola_service.dart';
+import 'package:kosan_euy/routes/app_pages.dart';
 
 class KostDetailScreen extends StatefulWidget {
   final String kostId;
@@ -26,8 +27,8 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
   final CarouselSliderController _carouselController =
       CarouselSliderController();
 
-  List<String> _fullImageUrls = []; // New list to store full image URLs
-  String? _fullQrisImageUrl; // New variable for full QRIS image URL
+  List<String> _fullImageUrls = [];
+  String? _fullQrisImageUrl;
 
   @override
   void initState() {
@@ -44,25 +45,80 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
     try {
       final response = await PengelolaService.getKostById(widget.kostId);
 
+      print('API Response: $response'); // Debug keseluruhan response
+
       if (response['status']) {
         setState(() {
           kostData = response['data'];
 
-          // Generate full URLs for foto_kost
-          _fullImageUrls =
-              (kostData!['foto_kost'] as List<dynamic>?)
-                  ?.map(
-                    (path) =>
-                        '${ApiService.baseUrl.replaceFirst('/api/v1/', '')}${path}',
-                  )
-                  .toList() ??
-              [];
+          // Debug data yang diterima
+          print('Raw kostData: $kostData');
+          print('Raw foto_kost: ${kostData!['foto_kost']}');
+          print('ApiService.baseUrl: ${ApiService.baseUrl}');
 
-          // Generate full URL for qris_image
+          // Process dengan cara yang aman
+          final fotoKostList = kostData!['foto_kost'] as List<dynamic>? ?? [];
+          print('foto_kost as List: $fotoKostList');
+
+          _fullImageUrls =
+              fotoKostList.map((path) {
+                String cleanUrl = path.toString();
+                print('Original path: $cleanUrl');
+
+                // Bersihkan URL dari duplikasi localhost
+                while (cleanUrl.contains(
+                  'http://localhost:3000http://localhost:3000',
+                )) {
+                  cleanUrl = cleanUrl.replaceFirst(
+                    'http://localhost:3000http://localhost:3000',
+                    'http://localhost:3000',
+                  );
+                }
+
+                // Jika dimulai dengan http://localhost:3000http, hilangkan yang pertama
+                if (cleanUrl.startsWith('http://localhost:3000http')) {
+                  cleanUrl = cleanUrl.substring('http://localhost:3000'.length);
+                }
+
+                // Jika sudah berupa URL lengkap (https:// atau http://), gunakan langsung
+                if (cleanUrl.startsWith('https://') ||
+                    cleanUrl.startsWith('http://')) {
+                  print('Final clean URL: $cleanUrl');
+                  return cleanUrl;
+                }
+
+                // Jika masih berupa path relatif, tambahkan base URL
+                if (cleanUrl.startsWith('/')) {
+                  cleanUrl = cleanUrl.substring(1);
+                }
+
+                final fullUrl = 'http://localhost:3000/$cleanUrl';
+                print('Generated URL: $fullUrl');
+                return fullUrl;
+              }).toList();
+
+          print('Final _fullImageUrls: $_fullImageUrls');
+
+          // Process qris_image dengan logika yang sama
           if (kostData!['qris_image'] != null &&
-              kostData!['qris_image'].isNotEmpty) {
-            _fullQrisImageUrl =
-                '${ApiService.baseUrl.replaceFirst('/api/v1/', '')}${kostData!['qris_image']}';
+              kostData!['qris_image'].toString().isNotEmpty) {
+            String qrisUrl = kostData!['qris_image'].toString();
+
+            // Bersihkan duplikasi
+            while (qrisUrl.contains(
+              'http://localhost:3000http://localhost:3000',
+            )) {
+              qrisUrl = qrisUrl.replaceFirst(
+                'http://localhost:3000http://localhost:3000',
+                'http://localhost:3000',
+              );
+            }
+
+            if (qrisUrl.startsWith('http://localhost:3000http')) {
+              qrisUrl = qrisUrl.substring('http://localhost:3000'.length);
+            }
+
+            _fullQrisImageUrl = qrisUrl;
           } else {
             _fullQrisImageUrl = null;
           }
@@ -76,6 +132,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
         });
       }
     } catch (e) {
+      print('Error in _fetchKostDetail: $e');
       setState(() {
         errorMessage = 'Network error: $e';
         isLoading = false;
@@ -121,14 +178,13 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
   }
 
   Future<void> _deleteKost() async {
-    // Show loading dialog
     Get.dialog(
       AlertDialog(
         content: Row(
           children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Text('Menghapus kost...'),
+            const CircularProgressIndicator(),
+            const SizedBox(width: 16),
+            Text('Menghapus kost...', style: GoogleFonts.poppins()),
           ],
         ),
       ),
@@ -171,13 +227,17 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
+        backgroundColor: const Color(0xFF86B0DD),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Memuat detail kost...'),
+              const CircularProgressIndicator(color: Colors.white),
+              const SizedBox(height: 16),
+              Text(
+                'Memuat detail kost...',
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
+              ),
             ],
           ),
         ),
@@ -186,6 +246,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
 
     if (errorMessage.isNotEmpty) {
       return Scaffold(
+        backgroundColor: const Color(0xFF86B0DD),
         body: SafeArea(
           child: Column(
             children: [
@@ -195,17 +256,28 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.white70,
+                      ),
+                      const SizedBox(height: 16),
                       Text(
                         errorMessage,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _fetchKostDetail,
-                        child: Text('Coba Lagi'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF86B0DD),
+                        ),
+                        child: const Text('Coba Lagi'),
                       ),
                     ],
                   ),
@@ -218,6 +290,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFF86B0DD),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -225,10 +298,10 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
             children: [
               _buildImageCarousel(),
               _buildKostInfo(),
-              _buildFasilitas(), // Sudah ada, tidak perlu diubah lagi
-              _buildPeraturan(), // Sudah ada, tidak perlu diubah lagi
+              _buildFasilitas(),
+              _buildPeraturan(),
               _buildServiceMenus(),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -251,7 +324,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 4,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -264,24 +337,23 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
               onPressed: () => Get.back(),
             ),
           ),
-          Spacer(),
+          const Spacer(),
           Text(
             'Detail Kost',
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Colors.white,
             ),
           ),
-          Spacer(),
-          Container(width: 44), // Placeholder for symmetry
+          const Spacer(),
+          const SizedBox(width: 44), // Placeholder for symmetry
         ],
       ),
     );
   }
 
   Widget _buildImageCarousel() {
-    // Use _fullImageUrls here
     return Stack(
       children: [
         Container(
@@ -295,7 +367,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                       height: 300,
                       viewportFraction: 1.0,
                       autoPlay: true,
-                      autoPlayInterval: Duration(seconds: 5),
+                      autoPlayInterval: const Duration(seconds: 5),
                       onPageChanged: (index, reason) {
                         setState(() {
                           _currentImageIndex = index;
@@ -332,7 +404,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.home, size: 80, color: Colors.grey[600]),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             'Tidak ada foto',
                             style: TextStyle(color: Colors.grey[600]),
@@ -367,69 +439,61 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                   onPressed: () => Get.back(),
                 ),
               ),
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: PopupMenuButton<String>(
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: Colors.black,
-                        size: 20,
-                      ),
-                      onSelected: (value) {
-                        switch (value) {
-                          case 'edit':
-                            // Pass the actual kostData, not null
-                            Get.to(() => EditKosScreen(kostData: kostData!));
-                            break;
-                          case 'delete':
-                            _showDeleteConfirmation();
-                            break;
-                          case 'share':
-                            // Implement share functionality
-                            break;
-                        }
-                      },
-                      itemBuilder:
-                          (BuildContext context) => [
-                            PopupMenuItem<String>(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.edit,
-                                    size: 20,
-                                    color: Colors.blue,
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text('Edit Kost'),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.delete,
-                                    size: 20,
-                                    color: Colors.red,
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text('Hapus Kost'),
-                                ],
-                              ),
-                            ),
-                          ],
-                    ),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: PopupMenuButton<String>(
+                  icon: const Icon(
+                    Icons.more_vert,
+                    color: Colors.black,
+                    size: 20,
                   ),
-                ],
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'edit':
+                        Get.to(() => EditKosScreen(kostData: kostData!));
+                        break;
+                      case 'delete':
+                        _showDeleteConfirmation();
+                        break;
+                    }
+                  },
+                  itemBuilder:
+                      (BuildContext context) => [
+                        PopupMenuItem<String>(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.edit,
+                                size: 20,
+                                color: Colors.blue,
+                              ),
+                              const SizedBox(width: 12),
+                              Text('Edit Kost', style: GoogleFonts.poppins()),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.delete,
+                                size: 20,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(width: 12),
+                              Text('Hapus Kost', style: GoogleFonts.poppins()),
+                            ],
+                          ),
+                        ),
+                      ],
+                ),
               ),
             ],
           ),
@@ -451,7 +515,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                   child: Container(
                     width: 8,
                     height: 8,
-                    margin: EdgeInsets.symmetric(horizontal: 4),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color:
@@ -470,7 +534,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
           top: 80,
           right: 16,
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color:
                   kostData?['is_approved'] == true
@@ -480,7 +544,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
             ),
             child: Text(
               kostData?['is_approved'] == true ? 'Aktif' : 'Pending',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -493,14 +557,11 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
   }
 
   Widget _buildKostInfo() {
-    // Parse `biaya_tambahan` from dynamic to double for comparison.
-    // This is needed because the backend might send it as a String.
     final double? biayaTambahanParsed =
         kostData?['biaya_tambahan'] != null
             ? double.tryParse(kostData!['biaya_tambahan'].toString())
             : null;
 
-    // Retrieve tipe kamar data
     final Map<String, dynamic>? tipeKamar = kostData?['tipe'];
     final String tipeKamarText =
         tipeKamar != null
@@ -511,10 +572,6 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(25),
-          topRight: Radius.circular(25),
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,7 +588,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.location_on, color: Colors.blue, size: 18),
+              const Icon(Icons.location_on, color: Colors.blue, size: 18),
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
@@ -545,10 +602,10 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          // Tipe Kamar (dipindahkan ke sini)
+          // Tipe Kamar
           Row(
             children: [
-              Icon(Icons.meeting_room, color: Colors.blue, size: 18),
+              const Icon(Icons.meeting_room, color: Colors.blue, size: 18),
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
@@ -571,7 +628,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                 Icons.home_outlined,
                 'Total: ${kostData?['total_kamar'] ?? 0} kamar',
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               _buildInfoChip(
                 Icons.check_circle_outline,
                 'Tersedia: ${kostData?['available_rooms'] ?? 0}',
@@ -584,7 +641,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
 
           // Harga
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.blue.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
@@ -600,7 +657,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                     color: Colors.blue[800],
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -618,7 +675,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                   ],
                 ),
                 if (kostData?['deposit'] != null) ...[
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -636,9 +693,8 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                     ],
                   ),
                 ],
-                // Apply the fix here: use the parsed value for comparison
                 if (biayaTambahanParsed != null && biayaTambahanParsed > 0) ...[
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -656,7 +712,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                     ],
                   ),
                 ],
-                Divider(),
+                const Divider(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -695,7 +751,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 _buildSpecificationGrid(),
               ],
             ),
@@ -715,7 +771,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   kostData!['deskripsi'],
                   style: GoogleFonts.poppins(
@@ -733,7 +789,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
 
   Widget _buildInfoChip(IconData icon, String text, {Color? color}) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: (color ?? Colors.blue).withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
@@ -742,7 +798,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: color ?? Colors.blue),
-          SizedBox(width: 4),
+          const SizedBox(width: 4),
           Text(
             text,
             style: TextStyle(
@@ -768,11 +824,11 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
         (kostData?['kapasitas_parkir_motor'] != null &&
             (double.tryParse(kostData!['kapasitas_parkir_motor'].toString()) ??
                     0) >
-                0) || // Safely parse before comparison
+                0) ||
         (kostData?['kapasitas_parkir_mobil'] != null &&
             (double.tryParse(kostData!['kapasitas_parkir_mobil'].toString()) ??
                     0) >
-                0); // Safely parse before comparison
+                0);
   }
 
   Widget _buildSpecificationGrid() {
@@ -811,7 +867,6 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
       );
     }
 
-    // Safely parse before using in text
     final int kapasitasParkirMotorDisplay =
         (double.tryParse(kostData!['kapasitas_parkir_motor'].toString()) ?? 0)
             .toInt();
@@ -825,7 +880,6 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
       );
     }
 
-    // Safely parse before using in text
     final int kapasitasParkirMobilDisplay =
         (double.tryParse(kostData!['kapasitas_parkir_mobil'].toString()) ?? 0)
             .toInt();
@@ -842,7 +896,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       childAspectRatio: 3,
       crossAxisSpacing: 12,
       mainAxisSpacing: 8,
@@ -852,7 +906,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
 
   Widget _buildSpecItem(IconData icon, String label, String value) {
     return Container(
-      padding: EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
@@ -861,7 +915,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
       child: Row(
         children: [
           Icon(icon, size: 20, color: Colors.grey[600]),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -877,7 +931,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                 ),
                 Text(
                   value,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -897,13 +951,12 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
     final fasilitas = kostData?['kost_fasilitas'] as List?;
 
     if (fasilitas == null || fasilitas.isEmpty) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
 
     return Container(
-      // Margin diubah agar konsisten dengan padding
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -911,7 +964,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -925,31 +978,33 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Wrap(
-            spacing: 8, // Jarak horizontal antar chip
-            runSpacing: 8, // Jarak vertikal antar baris chip
-            alignment: WrapAlignment.start, // Agar chip dimulai dari kiri
-            crossAxisAlignment:
-                WrapCrossAlignment.start, // Agar chip sejajar atas
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.start,
             children:
                 fasilitas.map((f) {
                   final fasilitasData = f['fasilitas'];
                   return Container(
-                    // Menggunakan InkWell atau GestureDetector untuk respons sentuhan jika diperlukan
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: Colors.green.withOpacity(0.3)),
                     ),
                     child: Row(
-                      mainAxisSize:
-                          MainAxisSize
-                              .min, // Agar ukuran container sesuai konten
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle, size: 16, color: Colors.green),
-                        SizedBox(width: 6),
+                        const Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: Colors.green,
+                        ),
+                        const SizedBox(width: 6),
                         Text(
                           fasilitasData['nama_fasilitas'] ?? '',
                           style: TextStyle(
@@ -972,12 +1027,12 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
     final peraturan = kostData?['kost_peraturan'] as List?;
 
     if (peraturan == null || peraturan.isEmpty) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -985,7 +1040,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -999,14 +1054,14 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Column(
             children:
                 peraturan.map((p) {
                   final peraturanData = p['peraturan'];
                   return Container(
-                    margin: EdgeInsets.only(bottom: 8),
-                    padding: EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -1020,7 +1075,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                           size: 16,
                           color: Colors.orange[800],
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1035,7 +1090,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                               ),
                               if (p['keterangan_tambahan'] != null &&
                                   p['keterangan_tambahan'].isNotEmpty) ...[
-                                SizedBox(height: 4),
+                                const SizedBox(height: 4),
                                 Text(
                                   p['keterangan_tambahan'],
                                   style: TextStyle(
@@ -1059,7 +1114,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
 
   Widget _buildServiceMenus() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1071,11 +1126,11 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
               color: Colors.black87,
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             childAspectRatio: 1.2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
@@ -1085,7 +1140,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                 Icons.home_outlined,
                 Colors.blue,
                 () {
-                  Get.toNamed('/home-reservasi-owner', arguments: kostData);
+                  Get.toNamed(Routes.homeReservasiOwner, arguments: kostData);
                 },
               ),
               _buildServiceCard(
@@ -1115,7 +1170,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                 Icons.people_outlined,
                 Colors.purple,
                 () {
-                  Get.toNamed('/penghuni', arguments: kostData);
+                  Get.toNamed(Routes.penghuni, arguments: kostData);
                 },
               ),
             ],
@@ -1135,7 +1190,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1144,7 +1199,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -1160,7 +1215,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
               ),
               child: Icon(icon, size: 28, color: color),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
               title,
               style: GoogleFonts.poppins(

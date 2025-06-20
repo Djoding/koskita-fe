@@ -32,11 +32,6 @@ import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/add_screen.dart'
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/edit_screen.dart'; // Edit Menu Catering
 import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/owner_cek_pesanan.dart'; // Daftar Pesanan Catering
 import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/detail_pesanan_owner.dart'; // Detail Pesanan Catering
-import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/status_pesanan_makanan.dart'; // Status Pesanan Catering
-import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/edit_status_pesanan_makanan.dart'; // Edit Status Pesanan Catering
-import 'package:kosan_euy/screens/owner/makanan/pembayaran/metode_pembayaran.dart'; // Metode Pembayaran Catering
-import 'package:kosan_euy/screens/owner/makanan/pembayaran/add_metode_pembayaran.dart'; // Add Metode Pembayaran Catering
-import 'package:kosan_euy/screens/owner/makanan/pembayaran/edit_metode_pembayaran.dart'; // Edit Metode Pembayaran Catering
 
 part 'app_routes.dart';
 
@@ -101,7 +96,7 @@ class AppPages {
       page: () => LayananMakananScreen(),
     ), // Dashboard Layanan Makanan
     GetPage(
-      name: Routes.cateringMenuList,
+      name: Routes.foodListScreen,
       page: () => FoodListScreen(),
     ), // Daftar Menu Catering
     GetPage(
@@ -120,25 +115,5 @@ class AppPages {
       name: Routes.cateringOrderDetail,
       page: () => DetailPesananOwner(),
     ), // Detail Pesanan Catering
-    GetPage(
-      name: Routes.cateringOrderStatus,
-      page: () => StatusPesananMakananScreen(),
-    ), // Status Pesanan Catering
-    GetPage(
-      name: Routes.editCateringOrderStatus,
-      page: () => EditStatusPesananMakananScreen(),
-    ), // Edit Status Pesanan Catering
-    GetPage(
-      name: Routes.cateringPaymentMethods,
-      page: () => MetodePembayaranScreen(),
-    ), // Metode Pembayaran Catering
-    GetPage(
-      name: Routes.addCateringPaymentMethod,
-      page: () => AddMetodePembayaranScreen(),
-    ), // Add Metode Pembayaran Catering
-    GetPage(
-      name: Routes.editCateringPaymentMethod,
-      page: () => EditMetodePembayaranScreen(),
-    ), // Edit Metode Pembayaran Catering
   ];
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/makanan_screen.dart';
 import 'package:kosan_euy/screens/owner/makanan/status_pesanan/pesanan_masuk_makanan.dart';
 
 class LayananMakananScreen extends StatelessWidget {
@@ -12,14 +13,14 @@ class LayananMakananScreen extends StatelessWidget {
         label: 'Edit Layanan Makanan/Minuman',
         image: 'assets/icon_makanan.png',
         onTap: () {
-          Get.toNamed("/food-list");
+          Get.to(() => const FoodListScreen());
         },
       ),
       _MenuItem(
         label: 'Pesanan Masuk',
         image: 'assets/icon_order.png',
         onTap: () {
-          Get.to(() => const FoodListScreen());
+          Get.to(() => const PesananMasukMakananScreen());
         },
       ),
       

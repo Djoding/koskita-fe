@@ -3,14 +3,14 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/widgets/success_screen.dart';
 
-class FoodListScreen extends StatefulWidget {
-  const FoodListScreen({super.key});
+class PesananMasukMakananScreen extends StatefulWidget {
+  const PesananMasukMakananScreen({super.key});
 
   @override
-  State<FoodListScreen> createState() => _FoodListScreenState();
+  State<PesananMasukMakananScreen> createState() => _PesananMasukMakananScreenState();
 }
 
-class _FoodListScreenState extends State<FoodListScreen>
+class _PesananMasukMakananScreenState extends State<PesananMasukMakananScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
