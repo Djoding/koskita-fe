@@ -3,17 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/add_screen.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/edit_screen.dart';
-import 'package:kosan_euy/services/catering_menu_service.dart'; // Import service
-import 'package:kosan_euy/models/catering_model.dart'; // Import models
-import 'package:kosan_euy/routes/app_pages.dart'; // For navigation
+import 'package:kosan_euy/services/catering_menu_service.dart';
+import 'package:kosan_euy/models/catering_model.dart';
+import 'package:kosan_euy/routes/app_pages.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // To get user ID
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FoodListScreen extends StatefulWidget {
-  // Pass kostData for context, if needed. Assuming it's passed via Get.arguments
-  final Map<String, dynamic>? kostData;
-
-  const FoodListScreen({super.key, this.kostData});
+  const FoodListScreen({super.key});
 
   @override
   State<FoodListScreen> createState() => _FoodListScreenState();
@@ -22,18 +19,24 @@ class FoodListScreen extends StatefulWidget {
 class _FoodListScreenState extends State<FoodListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _showFoodTab = true; // True for Makanan, False for Minuman
+  int _currentTabIndex = 0;
   List<CateringMenuItem> _menuItems = [];
   bool _isLoadingMenus = true;
   String _errorMessage = '';
 
-  String? _cateringId; // The ID of the catering service
-  String? _pengelolaId; // Current logged in pengelola ID
+  String? _cateringId;
+  String? _pengelolaId;
+  Map<String, dynamic>? _kostData;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _currentTabIndex = _tabController.index;
+      });
+    });
     _initializeCateringData();
   }
 
@@ -44,20 +47,29 @@ class _FoodListScreenState extends State<FoodListScreen>
   }
 
   Future<void> _getPengelolaId() async {
-    final prefs =
-        await Get.find<SharedPreferences>(); // Get SharedPreferences instance
-    final token = prefs.getString('accessToken');
-    if (token != null) {
-      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-      _pengelolaId =
-          decodedToken["userId"]; // Assuming "userId" is the key in JWT for user ID
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('accessToken');
+      if (token != null) {
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+        _pengelolaId = decodedToken["userId"];
+        print('Pengelola ID: $_pengelolaId');
+      } else {
+        print('No access token found');
+      }
+    } catch (e) {
+      print('Error getting pengelola ID: $e');
     }
   }
 
   Future<void> _initializeCateringData() async {
-    await _getPengelolaId(); // Get pengelola ID first
+    await _getPengelolaId();
 
-    if (widget.kostData == null) {
+    _kostData = Get.arguments as Map<String, dynamic>?;
+
+    print('FoodListScreen kostData: $_kostData');
+
+    if (_kostData == null) {
       setState(() {
         _errorMessage = 'Kost data is missing. Cannot fetch catering menus.';
         _isLoadingMenus = false;
@@ -65,29 +77,64 @@ class _FoodListScreenState extends State<FoodListScreen>
       return;
     }
 
-    // First, get the catering service associated with this kost
     try {
+      print('Fetching caterings for kost: ${_kostData!['kost_id']}');
+
       final response = await CateringMenuService.getCateringsByKost(
-        widget.kostData!['kost_id'],
+        _kostData!['kost_id'],
       );
+
+      print('Catering response: $response');
+
       if (response['status'] && (response['data'] as List).isNotEmpty) {
         final List<Catering> caterings = response['data'];
-        _cateringId =
-            caterings
-                .first
-                .cateringId; // Assuming one catering per kost for simplicity
+        _cateringId = caterings.first.cateringId;
+        print('Found catering ID: $_cateringId');
+        await _fetchCateringMenus();
+      } else {
+        print('No catering found, creating new catering...');
+        await _createDefaultCatering();
+      }
+    } catch (e) {
+      print('Error in _initializeCateringData: $e');
+      setState(() {
+        _errorMessage = 'Error fetching catering service: $e';
+        _isLoadingMenus = false;
+      });
+    }
+  }
 
-        await _fetchCateringMenus(); // Then fetch menus for this catering
+  Future<void> _createDefaultCatering() async {
+    try {
+      print('Creating default catering for kost: ${_kostData!['kost_id']}');
+
+      final response = await CateringMenuService.createCatering(
+        kostId: _kostData!['kost_id'],
+        namaCatering: 'Layanan Catering ${_kostData!['nama_kost']}',
+        alamat: _kostData!['alamat'] ?? 'Alamat tidak tersedia',
+        whatsappNumber: null,
+        qrisImage: null,
+        rekeningInfo: null,
+        isPartner: false,
+      );
+
+      print('Create catering response: $response');
+
+      if (response['status']) {
+        final Catering newCatering = response['data'];
+        _cateringId = newCatering.cateringId;
+        await _fetchCateringMenus();
       } else {
         setState(() {
           _errorMessage =
-              response['message'] ?? 'No catering service found for this kost.';
+              response['message'] ?? 'Failed to create catering service.';
           _isLoadingMenus = false;
         });
       }
     } catch (e) {
+      print('Error creating default catering: $e');
       setState(() {
-        _errorMessage = 'Error fetching catering service: $e';
+        _errorMessage = 'Error creating catering service: $e';
         _isLoadingMenus = false;
       });
     }
@@ -108,30 +155,49 @@ class _FoodListScreenState extends State<FoodListScreen>
     });
 
     try {
+      print('Fetching menus for catering: $_cateringId');
+
       final response = await CateringMenuService.getCateringMenu(_cateringId!);
+
+      print('Menu response: $response');
+
       if (response['status']) {
         setState(() {
           _menuItems = response['data'];
+          _isLoadingMenus = false;
         });
       } else {
         setState(() {
           _errorMessage = response['message'] ?? 'Failed to load menu items.';
+          _isLoadingMenus = false;
         });
       }
     } catch (e) {
+      print('Error fetching catering menus: $e');
       setState(() {
         _errorMessage = 'Network error fetching menus: $e';
-      });
-    } finally {
-      setState(() {
         _isLoadingMenus = false;
       });
+    }
+  }
+
+  String get _currentTabTitle {
+    switch (_currentTabIndex) {
+      case 0:
+        return 'Daftar Menu Makanan Berat';
+      case 1:
+        return 'Daftar Menu Snack';
+      case 2:
+        return 'Daftar Menu Minuman';
+      default:
+        return 'Daftar Menu';
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF91B7DE),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -164,7 +230,6 @@ class _FoodListScreenState extends State<FoodListScreen>
                     child: IconButton(
                       icon: const Icon(Icons.add, color: Colors.black),
                       onPressed: () {
-                        // Pass cateringId to AddFoodScreen
                         if (_cateringId != null) {
                           Get.toNamed(
                             Routes.addCateringMenu,
@@ -183,12 +248,13 @@ class _FoodListScreenState extends State<FoodListScreen>
               ),
               const SizedBox(height: 20),
               Text(
-                _showFoodTab ? 'Daftar Menu Makanan' : 'Daftar Menu Minuman',
+                _currentTabTitle,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Container(
@@ -212,72 +278,38 @@ class _FoodListScreenState extends State<FoodListScreen>
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _showFoodTab = true;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            _showFoodTab
-                                ? const Color(0xFFE0BFFF)
-                                : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Makanan',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight:
-                              _showFoodTab
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                        ),
-                      ),
-                    ),
+
+              // Tab Bar dengan 3 tab
+              Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: const Color(0xFFE0BFFF),
+                    borderRadius: BorderRadius.circular(25),
                   ),
-                  const SizedBox(width: 10),
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _showFoodTab = false;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            !_showFoodTab
-                                ? const Color(0xFFE0BFFF)
-                                : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Minuman',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight:
-                              !_showFoodTab
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                        ),
-                      ),
-                    ),
+                  labelColor: Colors.black,
+                  unselectedLabelColor: Colors.white,
+                  labelStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.normal,
+                  ),
+                  tabs: const [
+                    Tab(text: 'Makanan'),
+                    Tab(text: 'Snack'),
+                    Tab(text: 'Minuman'),
+                  ],
+                ),
               ),
+
               const SizedBox(height: 16),
               _isLoadingMenus
                   ? const Expanded(
@@ -286,64 +318,68 @@ class _FoodListScreenState extends State<FoodListScreen>
                   : _errorMessage.isNotEmpty
                   ? Expanded(
                     child: Center(
-                      child: Text(
-                        _errorMessage,
-                        style: const TextStyle(color: Colors.white),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _errorMessage,
+                            style: const TextStyle(color: Colors.white),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _fetchCateringMenus,
+                            child: const Text('Coba Lagi'),
+                          ),
+                        ],
                       ),
                     ),
                   )
                   : Expanded(
-                    child:
-                        _showFoodTab
-                            ? MenuGridView(
-                              menuItems:
-                                  _menuItems
-                                      .where(
-                                        (item) =>
-                                            item.kategori == 'MAKANAN_BERAT' ||
-                                            item.kategori == 'SNACK',
-                                      ) // Filter based on category
-                                      .toList(),
-                              cateringId: _cateringId!,
-                              onRefresh: _fetchCateringMenus,
-                            )
-                            : MenuGridView(
-                              menuItems:
-                                  _menuItems
-                                      .where(
-                                        (item) => item.kategori == 'MINUMAN',
-                                      ) // Filter based on category
-                                      .toList(),
-                              cateringId: _cateringId!,
-                              onRefresh: _fetchCateringMenus,
-                            ),
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Tab Makanan Berat
+                        MenuGridView(
+                          menuItems:
+                              _menuItems
+                                  .where(
+                                    (item) => item.kategori == 'MAKANAN_BERAT',
+                                  )
+                                  .toList(),
+                          cateringId: _cateringId ?? '',
+                          onRefresh: _fetchCateringMenus,
+                          kategori: 'Makanan Berat',
+                        ),
+                        // Tab Snack
+                        MenuGridView(
+                          menuItems:
+                              _menuItems
+                                  .where((item) => item.kategori == 'SNACK')
+                                  .toList(),
+                          cateringId: _cateringId ?? '',
+                          onRefresh: _fetchCateringMenus,
+                          kategori: 'Snack',
+                        ),
+                        // Tab Minuman
+                        MenuGridView(
+                          menuItems:
+                              _menuItems
+                                  .where((item) => item.kategori == 'MINUMAN')
+                                  .toList(),
+                          cateringId: _cateringId ?? '',
+                          onRefresh: _fetchCateringMenus,
+                          kategori: 'Minuman',
+                        ),
+                      ],
+                    ),
                   ),
-              // The "Edit" button below should be per item, not global here.
-              // We will adjust FoodItemCard to have edit functionality directly.
-              // For now, removing this global Edit button if it was meant for item editing.
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(vertical: 16.0),
-              //   child: SizedBox(
-              //     width: double.infinity,
-              //     height: 50,
-              //     child: ElevatedButton(
-              //       style: ElevatedButton.styleFrom(
-              //         backgroundColor: const Color(0xFF4D9DAB),
-              //         shape: RoundedRectangleBorder(
-              //           borderRadius: BorderRadius.circular(25),
-              //         ),
-              //       ),
-              //       onPressed: () {
-              //         Get.to(() => const EditFoodScreen());
-              //       },
-              //       child: const Text(
-              //         'Edit',
-              //         style: TextStyle(color: Colors.white, fontSize: 16),
-              //       ),
-              //     ),
-              //   ),
-              // ),
             ],
           ),
         ),
@@ -355,26 +391,53 @@ class _FoodListScreenState extends State<FoodListScreen>
 class MenuGridView extends StatelessWidget {
   final List<CateringMenuItem> menuItems;
   final String cateringId;
-  final VoidCallback onRefresh; // Callback to refresh menus
+  final VoidCallback onRefresh;
+  final String kategori;
 
   const MenuGridView({
     super.key,
     required this.menuItems,
     required this.cateringId,
     required this.onRefresh,
+    required this.kategori,
   });
 
   @override
   Widget build(BuildContext context) {
     if (menuItems.isEmpty) {
-      return const Center(
-        child: Text(
-          'Tidak ada menu ditemukan.',
-          style: TextStyle(color: Colors.white),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.restaurant_menu,
+              size: 80,
+              color: Colors.white.withOpacity(0.7),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Belum ada menu $kategori.',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tambahkan menu $kategori pertama Anda!',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
       );
     }
+
     return GridView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 0.75,
@@ -394,15 +457,6 @@ class MenuGridView extends StatelessWidget {
   }
 }
 
-// Rename to MenuCard or similar to avoid confusion with FoodItemCard
-// class FoodItemCard extends StatelessWidget { // This will be the new FoodItemCard
-//   final String name;
-//   final String price;
-//   final String imagePath;
-//   // ... (constructor)
-// }
-
-// Create a new FoodItemCard that takes CateringMenuItem
 class FoodItemCard extends StatelessWidget {
   final CateringMenuItem menuItem;
   final String cateringId;
@@ -424,6 +478,9 @@ class FoodItemCard extends StatelessWidget {
       context: context,
       builder:
           (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text('Konfirmasi Hapus'),
             content: Text(
               'Apakah Anda yakin ingin menghapus menu "${menuItem.namaMenu}"?',
@@ -435,7 +492,7 @@ class FoodItemCard extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  Get.back(); // Close dialog
+                  Get.back();
                   try {
                     final response =
                         await CateringMenuService.deleteCateringMenuItem(
@@ -446,23 +503,49 @@ class FoodItemCard extends StatelessWidget {
                       Get.snackbar(
                         'Sukses',
                         response['message'] ?? 'Menu berhasil dihapus!',
+                        backgroundColor: Colors.green,
+                        colorText: Colors.white,
                       );
-                      onRefresh(); // Refresh the list after deletion
+                      onRefresh();
                     } else {
                       Get.snackbar(
                         'Error',
                         response['message'] ?? 'Gagal menghapus menu.',
+                        backgroundColor: Colors.red,
+                        colorText: Colors.white,
                       );
                     }
                   } catch (e) {
-                    Get.snackbar('Error', 'Terjadi kesalahan: $e');
+                    Get.snackbar(
+                      'Error',
+                      'Terjadi kesalahan: $e',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
                   }
                 },
-                child: const Text('Hapus'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text(
+                  'Hapus',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
     );
+  }
+
+  Color _getCategoryColor() {
+    switch (menuItem.kategori) {
+      case 'MAKANAN_BERAT':
+        return Colors.orange;
+      case 'SNACK':
+        return Colors.purple;
+      case 'MINUMAN':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
   }
 
   @override
@@ -472,15 +555,49 @@ class FoodItemCard extends StatelessWidget {
       children: [
         Text(
           menuItem.namaMenu,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        Text(
-          _formatCurrency(menuItem.harga),
-          style: const TextStyle(color: Colors.white, fontSize: 12),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            Text(
+              _formatCurrency(menuItem.harga),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getCategoryColor(),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                menuItem.kategori == 'MAKANAN_BERAT'
+                    ? 'MB'
+                    : menuItem.kategori == 'SNACK'
+                    ? 'S'
+                    : 'M',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 5),
+
         Expanded(
           child: Stack(
             children: [
@@ -492,74 +609,50 @@ class FoodItemCard extends StatelessWidget {
                     image:
                         menuItem.fotoMenuUrl != null
                             ? NetworkImage(menuItem.fotoMenuUrl!)
-                                as ImageProvider // Use NetworkImage for URL
-                            : const AssetImage(
-                              'assets/food_placeholder.png',
-                            ), // Placeholder asset
+                            : const AssetImage('assets/icon_makanan.png')
+                                as ImageProvider,
                     fit: BoxFit.cover,
                   ),
                 ),
                 child:
-                    menuItem
-                            .isAvailable // Overlay if not available
-                        ? null
-                        : Container(
+                    !menuItem.isAvailable
+                        ? Container(
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withOpacity(0.6),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Center(
-                            child: Text(
-                              'Tidak Tersedia',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                          child: const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.not_interested,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Tidak Tersedia',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           ),
-                        ),
+                        )
+                        : null,
               ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
-                  ),
-                  child: InkWell(
-                    onTap:
-                        () => _showDeleteConfirmation(
-                          context,
-                        ), // Use new delete function
-                    child: Row(
-                      children: const [
-                        Icon(Icons.delete, color: Colors.white, size: 14),
-                        SizedBox(width: 4),
-                        Text(
-                          'Hapus',
-                          style: TextStyle(color: Colors.white, fontSize: 10),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // Edit button overlay
+
               Positioned(
                 right: 0,
                 top: 0,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.blue,
                     borderRadius: BorderRadius.only(
                       topRight: Radius.circular(10),
@@ -572,11 +665,51 @@ class FoodItemCard extends StatelessWidget {
                         Routes.editCateringMenu,
                         arguments: {
                           'cateringId': cateringId,
-                          'menuItem': menuItem, // Pass the whole menu item
+                          'menuItem': menuItem,
                         },
                       );
                     },
-                    child: Icon(Icons.edit, color: Colors.white, size: 14),
+                    child: const Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ),
+
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
+                  ),
+                  child: InkWell(
+                    onTap: () => _showDeleteConfirmation(context),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.delete, color: Colors.white, size: 12),
+                        SizedBox(width: 2),
+                        Text(
+                          'Hapus',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -31,19 +31,31 @@ class CateringMenuService {
   // Get list of Caterings by Kost ID (for Pengelola/Penghuni)
   static Future<Map<String, dynamic>> getCateringsByKost(String kostId) async {
     try {
-      final uri = Uri.parse('$_baseUrl/catering?kost_id=$kostId');
+      final uri = Uri.parse('${_baseUrl}catering?kost_id=$kostId');
       final response = await http.get(uri, headers: await _headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        List<Catering> caterings =
-            (data['data'] as List)
-                .map((json) => Catering.fromJson(json))
-                .toList();
-        return {'status': true, 'data': caterings, 'message': data['message']};
+        if (data['success'] == true) {
+          List<Catering> caterings =
+              (data['data'] as List)
+                  .map((json) => Catering.fromJson(json))
+                  .toList();
+          return {
+            'status': true,
+            'data': caterings,
+            'message': data['message'],
+          };
+        } else {
+          return {'status': false, 'message': data['message'], 'data': []};
+        }
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch caterings');
+        return {
+          'status': false,
+          'message': errorData['message'] ?? 'Failed to fetch caterings',
+          'data': [],
+        };
       }
     } catch (e) {
       debugPrint('Error fetching caterings by kost: $e');
@@ -54,7 +66,7 @@ class CateringMenuService {
   // Get menu items for a specific Catering (Pengelola/Penghuni)
   static Future<Map<String, dynamic>> getCateringMenu(String cateringId) async {
     try {
-      final uri = Uri.parse('$_baseUrl/catering/$cateringId/menu');
+      final uri = Uri.parse('${_baseUrl}catering/$cateringId/menu');
       final response = await http.get(uri, headers: await _headers);
 
       if (response.statusCode == 200) {
@@ -82,6 +94,59 @@ class CateringMenuService {
     }
   }
 
+  // Create Catering (Pengelola only)
+  static Future<Map<String, dynamic>> createCatering({
+    required String kostId,
+    required String namaCatering,
+    required String alamat,
+    String? whatsappNumber,
+    File? qrisImage,
+    Map<String, dynamic>? rekeningInfo,
+    bool isPartner = false,
+  }) async {
+    try {
+      String? uploadedImageUrl;
+      if (qrisImage != null) {
+        final uploadThing = UploadThing(
+          "sk_live_08e0250b1aab76a8067be159691359dfb45a15f5fb0906fbacf6859866f1e199",
+        );
+        var uploadSuccess = await uploadThing.uploadFiles([qrisImage]);
+        if (uploadSuccess && uploadThing.uploadedFilesData.isNotEmpty) {
+          uploadedImageUrl = uploadThing.uploadedFilesData.first["url"];
+        }
+      }
+
+      final response = await http.post(
+        Uri.parse('${_baseUrl}catering'),
+        headers: await _headers,
+        body: jsonEncode({
+          'kost_id': kostId,
+          'nama_catering': namaCatering,
+          'alamat': alamat,
+          'whatsapp_number': whatsappNumber,
+          'qris_image': uploadedImageUrl,
+          'rekening_info': rekeningInfo,
+          'is_partner': isPartner,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return {
+          'status': true,
+          'data': Catering.fromJson(data['data']),
+          'message': data['message'],
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to create catering');
+      }
+    } catch (e) {
+      debugPrint('Error creating catering: $e');
+      return {'status': false, 'message': 'Network error: $e'};
+    }
+  }
+
   // Add a new menu item (Pengelola only)
   static Future<Map<String, dynamic>> addCateringMenuItem({
     required String cateringId,
@@ -106,7 +171,7 @@ class CateringMenuService {
       }
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/catering/$cateringId/menu'),
+        Uri.parse('${_baseUrl}catering/$cateringId/menu'),
         headers: await _headers,
         body: jsonEncode({
           'nama_menu': namaMenu,
@@ -172,7 +237,7 @@ class CateringMenuService {
       }
 
       final response = await http.put(
-        Uri.parse('$_baseUrl/catering/$cateringId/menu/$menuId'),
+        Uri.parse('${_baseUrl}catering/$cateringId/menu/$menuId'),
         headers: await _headers,
         body: jsonEncode(body),
       );
@@ -202,7 +267,7 @@ class CateringMenuService {
     try {
       // Backend's deleteMenuItem is a soft delete by setting is_available to false
       final response = await http.delete(
-        Uri.parse('$_baseUrl/catering/$cateringId/menu/$menuId'),
+        Uri.parse('${_baseUrl}catering/$cateringId/menu/$menuId'),
         headers: await _headers,
       );
 
@@ -245,7 +310,7 @@ class CateringMenuService {
         queryParams['end_date'] = endDate;
 
       final uri = Uri.parse(
-        '$_baseUrl/catering/orders',
+        '${_baseUrl}catering/orders',
       ).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
 
       final response = await http.get(uri, headers: await _headers);
@@ -276,7 +341,7 @@ class CateringMenuService {
     required String pengelolaId, // User ID of the pengelola
   }) async {
     try {
-      final uri = Uri.parse('$_baseUrl/catering/orders/$orderId');
+      final uri = Uri.parse('${_baseUrl}catering/orders/$orderId');
       final response = await http.get(uri, headers: await _headers);
 
       if (response.statusCode == 200) {
@@ -306,7 +371,7 @@ class CateringMenuService {
   }) async {
     try {
       final response = await http.patch(
-        Uri.parse('$_baseUrl/catering/orders/$orderId/status'),
+        Uri.parse('${_baseUrl}catering/orders/$orderId/status'),
         headers: await _headers,
         body: jsonEncode({'status': status}),
       );

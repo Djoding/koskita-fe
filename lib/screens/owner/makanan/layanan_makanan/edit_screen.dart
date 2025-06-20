@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/services/catering_menu_service.dart'; // Import service
 import 'package:kosan_euy/models/catering_model.dart'; // Import models
-import 'package:kosan_euy/widgets/success_screen.dart'
-    as GlobalSuccess; // Use alias for global success screen
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
@@ -118,12 +116,6 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
           response['message'] ?? 'Menu berhasil diperbarui!',
           backgroundColor: Colors.green,
           colorText: Colors.white,
-        );
-        Get.off(
-          () => const GlobalSuccess.SuccessScreen(
-            title: 'Menu Berhasil Diperbarui',
-            subtitle: 'Data menu catering berhasil disimpan.',
-          ),
         );
       } else {
         Get.snackbar(

@@ -1,29 +1,62 @@
+// lib/screens/owner/makanan/layanan_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/makanan_screen.dart';
-import 'package:kosan_euy/screens/owner/makanan/status_pesanan/pesanan_masuk_makanan.dart';
+import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/owner_cek_pesanan.dart';
 
 class LayananMakananScreen extends StatelessWidget {
   const LayananMakananScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Ambil kostData dari arguments
+    final Map<String, dynamic>? kostData =
+        Get.arguments as Map<String, dynamic>?;
+
+    // Debug print untuk memastikan data ada
+    print('LayananMakananScreen kostData: $kostData');
+
     final List<_MenuItem> menuItems = [
       _MenuItem(
         label: 'Edit Layanan Makanan/Minuman',
         image: 'assets/icon_makanan.png',
         onTap: () {
-          Get.to(() => const FoodListScreen());
+          // Pastikan kostData diteruskan ke FoodListScreen
+          if (kostData != null) {
+            Get.to(
+              () => const FoodListScreen(),
+              arguments: kostData, // Teruskan kostData
+            );
+          } else {
+            Get.snackbar(
+              'Error',
+              'Data kost tidak ditemukan. Kembali ke detail kost.',
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+            );
+          }
         },
       ),
       _MenuItem(
         label: 'Pesanan Masuk',
         image: 'assets/icon_order.png',
         onTap: () {
-          Get.to(() => const PesananMasukMakananScreen());
+          // Pastikan kostData diteruskan ke OwnerCekPesanan
+          if (kostData != null) {
+            Get.to(
+              () => const OwnerCekPesanan(),
+              arguments: kostData, // Teruskan kostData
+            );
+          } else {
+            Get.snackbar(
+              'Error',
+              'Data kost tidak ditemukan. Kembali ke detail kost.',
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+            );
+          }
         },
       ),
-      
     ];
 
     return Scaffold(
@@ -61,6 +94,32 @@ class LayananMakananScreen extends StatelessWidget {
                 ),
               ),
             ),
+
+            // Debug info - tampilkan nama kost jika ada
+            if (kostData != null) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Kost: ${kostData['nama_kost'] ?? 'Unknown'}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 32),
             Expanded(
               child: Padding(

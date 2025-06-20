@@ -32,6 +32,9 @@ import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/add_screen.dart'
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/edit_screen.dart'; // Edit Menu Catering
 import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/owner_cek_pesanan.dart'; // Daftar Pesanan Catering
 import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/detail_pesanan_owner.dart'; // Detail Pesanan Catering
+import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/edit_status_pesanan_makanan.dart';
+import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/status_pesanan_makanan.dart';
+
 
 part 'app_routes.dart';
 
@@ -115,5 +118,13 @@ class AppPages {
       name: Routes.cateringOrderDetail,
       page: () => DetailPesananOwner(),
     ), // Detail Pesanan Catering
+    GetPage(
+      name: Routes.editCateringOrderStatus,
+      page: () => EditStatusPesananMakananScreen(),
+    ),
+    GetPage(
+      name: Routes.cateringOrderStatus,
+      page: () => StatusPesananMakananScreen(),
+    ),
   ];
 }

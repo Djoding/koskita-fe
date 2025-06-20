@@ -22,12 +22,14 @@ class _DetailPesananOwnerState extends State<DetailPesananOwner> {
   @override
   void initState() {
     super.initState();
-    // Retrieve orderId and pengelolaId from arguments
-    if (Get.arguments != null &&
-        Get.arguments['orderId'] != null &&
-        Get.arguments['pengelolaId'] != null) {
-      _orderId = Get.arguments['orderId'];
-      _pengelolaId = Get.arguments['pengelolaId'];
+    // Perbaikan handling arguments
+    final arguments = Get.arguments;
+    if (arguments != null &&
+        arguments is Map<String, dynamic> &&
+        arguments['orderId'] != null &&
+        arguments['pengelolaId'] != null) {
+      _orderId = arguments['orderId'];
+      _pengelolaId = arguments['pengelolaId'];
       _fetchOrderDetail();
     } else {
       _errorMessage = 'Order ID or Pengelola ID not found.';
@@ -444,7 +446,8 @@ class _DetailPesananOwnerState extends State<DetailPesananOwner> {
                           child: ElevatedButton(
                             onPressed: () {
                               Get.toNamed(
-                                Routes.editCateringOrderStatus,
+                                Routes
+                                    .editCateringOrderStatus, // Gunakan routes yang sudah didefinisikan
                                 arguments: {
                                   'orderId': _orderDetail!['pesanan_id'],
                                   'currentStatus': _orderDetail!['status'],
@@ -453,9 +456,7 @@ class _DetailPesananOwnerState extends State<DetailPesananOwner> {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(
-                                0xFF119DB0,
-                              ), // Example color
+                              backgroundColor: const Color(0xFF119DB0),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),

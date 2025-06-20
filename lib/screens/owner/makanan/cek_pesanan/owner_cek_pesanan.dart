@@ -8,10 +8,8 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // To get user ID
 
 class OwnerCekPesanan extends StatefulWidget {
-  // Pass kostData for context, if needed. Assuming it's passed via Get.arguments
-  final Map<String, dynamic>? kostData;
-
-  const OwnerCekPesanan({super.key, this.kostData});
+  // Hapus constructor parameter
+  const OwnerCekPesanan({super.key});
 
   @override
   State<OwnerCekPesanan> createState() => _OwnerCekPesananState();
@@ -23,6 +21,7 @@ class _OwnerCekPesananState extends State<OwnerCekPesanan> {
   String _errorMessage = '';
   String? _pengelolaId;
   String? _cateringId; // Filter orders by catering ID
+  Map<String, dynamic>? _kostData;
 
   @override
   void initState() {
@@ -31,19 +30,28 @@ class _OwnerCekPesananState extends State<OwnerCekPesanan> {
   }
 
   Future<void> _getPengelolaId() async {
-    final prefs =
-        await Get.find<SharedPreferences>(); // Get SharedPreferences instance
-    final token = prefs.getString('accessToken');
-    if (token != null) {
-      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-      _pengelolaId = decodedToken["userId"];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('accessToken');
+      if (token != null) {
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+        _pengelolaId = decodedToken["userId"];
+        print('Pengelola ID: $_pengelolaId'); // Debug print
+      }
+    } catch (e) {
+      print('Error getting pengelola ID: $e');
     }
   }
 
   Future<void> _initializeOrdersData() async {
     await _getPengelolaId();
 
-    if (widget.kostData == null) {
+    // Ambil kostData dari Get.arguments
+    _kostData = Get.arguments as Map<String, dynamic>?;
+
+    print('OwnerCekPesanan kostData: $_kostData'); // Debug print
+
+    if (_kostData == null) {
       setState(() {
         _errorMessage = 'Kost data is missing. Cannot fetch catering orders.';
         _isLoadingOrders = false;
@@ -51,19 +59,14 @@ class _OwnerCekPesananState extends State<OwnerCekPesanan> {
       return;
     }
 
-    // First, get the catering service associated with this kost
     try {
       final response = await CateringMenuService.getCateringsByKost(
-        widget.kostData!['kost_id'],
+        _kostData!['kost_id'],
       );
       if (response['status'] && (response['data'] as List).isNotEmpty) {
         final List<Catering> caterings = response['data'];
-        _cateringId =
-            caterings
-                .first
-                .cateringId; // Assuming one catering per kost for simplicity
-
-        await _fetchCateringOrders(); // Then fetch orders for this catering
+        _cateringId = caterings.first.cateringId;
+        await _fetchCateringOrders();
       } else {
         setState(() {
           _errorMessage =

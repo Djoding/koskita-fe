@@ -1,13 +1,9 @@
 // lib/screens/owner/makanan/layanan_makanan/add_screen.dart
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/success_screen.dart'; // Maybe redundant now
 import 'package:image_picker/image_picker.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/services/catering_menu_service.dart'; // Import service
-import 'package:kosan_euy/widgets/success_screen.dart'
-    as GlobalSuccess; // Use alias for global success screen
 
 class AddFoodScreen extends StatefulWidget {
   const AddFoodScreen({super.key});
@@ -118,13 +114,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
           response['message'] ?? 'Menu berhasil ditambahkan!',
           backgroundColor: Colors.green,
           colorText: Colors.white,
-        );
-        // Navigate to a success screen or refresh the previous list
-        Get.off(
-          () => const GlobalSuccess.SuccessScreen(
-            title: 'Menu Berhasil Ditambah',
-            subtitle: 'Data menu catering berhasil disimpan.',
-          ),
         );
       } else {
         Get.snackbar(
