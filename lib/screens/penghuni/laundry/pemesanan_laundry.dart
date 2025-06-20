@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts
-import 'package:kosan_euy/screens/penghuni/pembayaran/menu_pembayaran_Penghuni.dart';
+import 'package:kosan_euy/screens/penghuni/pembayaran/menu_pembayaran_penghuni.dart';
 
 class PemesananLaundryScreen extends StatefulWidget {
   const PemesananLaundryScreen({super.key});
@@ -489,7 +489,7 @@ class _PemesananLaundryScreenState extends State<PemesananLaundryScreen> {
               );
               return;
             }
-            Get.to(() => MenuPembayaranPenghuni());
+            // Get.to(() => MenuPembayaranPenghuni());
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF119DB1), // Accent color

@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http_parser/http_parser.dart';
 
 class AuthService {
   static const String _baseUrl = 'http://localhost:3000/api/v1/auth';
@@ -16,7 +18,6 @@ class AuthService {
         '493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com',
     scopes: ['email', 'profile'],
   );
-
   Future<Map<String, dynamic>> register(
     String username,
     String fullName,
@@ -198,7 +199,6 @@ class AuthService {
     if (token == null) {
       throw Exception('Access token not found. Please log in.');
     }
-
     final url = Uri.parse('$_baseUrl/profile');
 
     try {
@@ -222,6 +222,99 @@ class AuthService {
       }
     } catch (e) {
       throw Exception('Failed to connect to the server or fetch profile: $e');
+    }
+  }
+
+  MediaType _getMediaTypeForFile(File file) {
+    final String extension = file.path.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return MediaType('image', 'jpeg');
+      case 'png':
+        return MediaType('image', 'png');
+      case 'gif':
+        return MediaType('image', 'gif');
+      default:
+        return MediaType('application', 'octet-stream');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateProfile({
+    String? fullName,
+    String? phone,
+    String? whatsappNumber,
+    File? avatarFile,
+    bool clearAvatar = false,
+  }) async {
+    final token = await _getAccessToken();
+
+    if (token == null) {
+      throw Exception('Access token not found. Please log in.');
+    }
+    final url = Uri.parse('$_baseUrl/profile');
+
+    try {
+      final request = http.MultipartRequest('PUT', url);
+
+      request.headers['Authorization'] = 'Bearer $token';
+
+      if (fullName != null) {
+        request.fields['full_name'] = fullName;
+      }
+      if (phone != null) {
+        request.fields['phone'] = phone;
+      }
+      if (whatsappNumber != null) {
+        request.fields['whatsapp_number'] = whatsappNumber;
+      }
+
+      if (avatarFile != null) {
+        final MediaType contentType = _getMediaTypeForFile(avatarFile);
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'avatar',
+            avatarFile.path,
+            filename: avatarFile.path.split('/').last,
+            contentType: contentType,
+          ),
+        );
+      } else if (clearAvatar) {
+        request.fields['avatar'] = '';
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+        if (responseBody['success'] == true && responseBody['data'] != null) {
+          final data = responseBody['data'] as Map<String, dynamic>;
+          final Map<String, dynamic>? user =
+              data['user'] as Map<String, dynamic>?;
+
+          if (user != null) {
+            await _storage.write(key: _userDataKey, value: jsonEncode(user));
+            return user;
+          } else {
+            throw Exception('Updated user data not found in response.');
+          }
+        } else {
+          throw Exception(
+            responseBody['message'] ??
+                'Profile update failed due to unexpected response.',
+          );
+        }
+      } else {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(
+          errorBody['message'] ??
+              'Profile update failed with status: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to the server or update profile: $e');
     }
   }
 

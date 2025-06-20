@@ -17,6 +17,7 @@ class _SettingScreenState extends State<SettingScreen> {
   String _fullName = 'Memuat...';
   String _userRole = 'Memuat...';
   String? _avatarUrl;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -25,13 +26,29 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final userData = await _authService.getStoredUserData();
       if (userData != null) {
         setState(() {
           _fullName = userData['full_name'] ?? 'Nama Pengguna';
           _userRole = userData['role'] ?? 'Peran Pengguna';
-          _avatarUrl = userData['avatar'];
+          String? rawAvatarPath = userData['avatar_url'] ?? userData['avatar'];
+
+          if (rawAvatarPath != null && rawAvatarPath.isNotEmpty) {
+            if (rawAvatarPath.startsWith('http://') ||
+                rawAvatarPath.startsWith('https://')) {
+              _avatarUrl = rawAvatarPath;
+            } else if (rawAvatarPath.startsWith('/')) {
+              _avatarUrl = 'http://localhost:3000$rawAvatarPath';
+            } else {
+              _avatarUrl = 'http://localhost:3000/$rawAvatarPath';
+            }
+          } else {
+            _avatarUrl = null;
+          }
 
           if (_userRole == 'ADMIN') {
             _userRole = 'Admin';
@@ -48,186 +65,209 @@ class _SettingScreenState extends State<SettingScreen> {
         _userRole = 'Error';
         _avatarUrl = null;
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat data pengguna: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF3C4D82), Color(0xFF6A82FB)],
-          ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 10.0,
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF3C4D82), Color(0xFF6A82FB)],
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ),
+                child: SafeArea(
+                  child: Stack(
                     children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new,
-                            color: Colors.white,
-                            size: 20,
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20.0,
+                            vertical: 10.0,
                           ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back_ios_new,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ),
+                              Text(
+                                'Pengaturan',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      Text(
-                        'Pengaturan',
-                        style: GoogleFonts.poppins(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(15),
+                      Positioned(
+                        top: 100,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: double.infinity,
+                          decoration: const BoxDecoration(
+                            color: Color.fromRGBO(241, 255, 243, 1.0),
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(30),
+                              topRight: Radius.circular(30),
+                            ),
+                          ),
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                              vertical: 30.0,
+                            ),
+                            child: Column(
+                              children: [
+                                _buildProfileInfo(),
+                                const SizedBox(height: 30),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(15),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.1),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 5),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      menuItem(
+                                        icon: Icons.person_outline,
+                                        iconColor: Colors.blue,
+                                        iconBackground: Colors.blue.withAlpha(
+                                          (0.1 * 255).toInt(),
+                                        ),
+                                        title: 'Edit Profil',
+                                        onTap: () async {
+                                          await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) =>
+                                                      const EditProfileScreen(),
+                                            ),
+                                          );
+                                          _loadUserData();
+                                        },
+                                      ),
+                                      Divider(
+                                        height: 1,
+                                        color: Colors.grey[200],
+                                      ),
+                                      menuItem(
+                                        icon: Icons.shield_outlined,
+                                        iconColor: Colors.blue,
+                                        iconBackground: Colors.blue.withAlpha(
+                                          (0.1 * 255).toInt(),
+                                        ),
+                                        title: 'Keamanan',
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) =>
+                                                      const SecurityScreen(),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      Divider(
+                                        height: 1,
+                                        color: Colors.grey[200],
+                                      ),
+                                      menuItem(
+                                        icon: Icons.logout,
+                                        iconColor: Colors.redAccent,
+                                        iconBackground: Colors.redAccent
+                                            .withAlpha((0.1 * 255).toInt()),
+                                        title: 'Keluar',
+                                        onTap: () async {
+                                          final bool? confirmed =
+                                              await showLogoutConfirmationDialog(
+                                                context,
+                                              );
+                                          if (confirmed == true) {
+                                            await _authService.logout();
+                                            if (mounted) {
+                                              Navigator.pushReplacement(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:
+                                                      (context) =>
+                                                          const HomeScreenPage(),
+                                                ),
+                                              );
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              Positioned(
-                top: 100,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color.fromRGBO(241, 255, 243, 1.0),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 30.0,
-                    ),
-                    child: Column(
-                      children: [
-                        _buildProfileInfo(),
-                        const SizedBox(height: 30),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              menuItem(
-                                icon: Icons.person_outline,
-                                iconColor: Colors.blue,
-                                iconBackground: Colors.blue.withAlpha(
-                                  (0.1 * 255).toInt(),
-                                ),
-                                title: 'Edit Profil',
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              const EditProfileScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              Divider(height: 1, color: Colors.grey[200]),
-                              menuItem(
-                                icon: Icons.shield_outlined,
-                                iconColor: Colors.blue,
-                                iconBackground: Colors.blue.withAlpha(
-                                  (0.1 * 255).toInt(),
-                                ),
-                                title: 'Keamanan',
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => const SecurityScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              Divider(height: 1, color: Colors.grey[200]),
-                              menuItem(
-                                icon: Icons.logout,
-                                iconColor: Colors.redAccent,
-                                iconBackground: Colors.redAccent.withAlpha(
-                                  (0.1 * 255).toInt(),
-                                ),
-                                title: 'Keluar',
-                                onTap: () async {
-                                  final bool? confirmed =
-                                      await showLogoutConfirmationDialog(
-                                        context,
-                                      );
-                                  if (confirmed == true) {
-                                    await _authService.logout();
-                                    if (mounted) {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) =>
-                                                  const HomeScreenPage(),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -239,7 +279,7 @@ class _SettingScreenState extends State<SettingScreen> {
           backgroundColor: Colors.grey[200],
           backgroundImage:
               (_avatarUrl != null && _avatarUrl!.isNotEmpty)
-                  ? NetworkImage(_avatarUrl!) as ImageProvider<Object>?
+                  ? NetworkImage(_avatarUrl!)
                   : null,
           child:
               (_avatarUrl == null || _avatarUrl!.isEmpty)

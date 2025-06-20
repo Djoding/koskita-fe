@@ -1,83 +1,205 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts
-import 'package:intl/intl.dart'; // For date formatting
-
-// Assuming this is your payment screen
-import 'package:kosan_euy/screens/penghuni/pembayaran/menu_pembayaran_Penghuni.dart';
-
-// A simple data model for an active kosan reservation
-class ActiveKosan {
-  final String image;
-  final String nama;
-  final String alamat;
-  final int monthlyPrice; // Store price as int for calculations
-  final DateTime startDate;
-  final DateTime endDate;
-
-  ActiveKosan({
-    required this.image,
-    required this.nama,
-    required this.alamat,
-    required this.monthlyPrice,
-    required this.startDate,
-    required this.endDate,
-  });
-
-  // Helper to format currency
-  String get formattedPrice => NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  ).format(monthlyPrice);
-
-  // Helper to format date range
-  String get formattedDateRange {
-    final DateFormat formatter = DateFormat('d MMM yyyy');
-    return '${formatter.format(startDate)} - ${formatter.format(endDate)}';
-  }
-}
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:kosan_euy/screens/penghuni/pembayaran/menu_pembayaran_penghuni.dart';
+import 'package:kosan_euy/services/reservation_service.dart';
 
 class DashboardReservasiScreen extends StatefulWidget {
-  // You might pass the activeKosan object here in a real app
-  // For this example, we'll use a hardcoded activeKosan.
   const DashboardReservasiScreen({super.key});
 
   @override
   State<DashboardReservasiScreen> createState() =>
-      _ActiveReservationDetailScreenState();
+      _DashboardReservasiScreenState();
 }
 
-class _ActiveReservationDetailScreenState
-    extends State<DashboardReservasiScreen> {
-  // Hardcoded active kosan data for demonstration
-  final ActiveKosan activeKosan = ActiveKosan(
-    image: 'assets/kapling40.png',
-    nama: 'Kost Kapling40',
-    alamat: 'Jalan hj Umayah II, Citereup Bandung',
-    monthlyPrice: 1000000, // Example monthly price
-    startDate: DateTime(2024, 5, 1),
-    endDate: DateTime(2025, 5, 1), // Currently ends in 1 year
-  );
+class _DashboardReservasiScreenState extends State<DashboardReservasiScreen> {
+  final ReservationService _reservationService = ReservationService();
 
-  int _selectedExtensionMonths = 1; // Default extension is 1 month
+  Map<String, dynamic>? _reservationDetail;
+  String? _reservasiId;
+
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  int _selectedExtensionMonths = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    final args = Get.arguments as Map<String, dynamic>?;
+    if (args != null && args['reservasiId'] != null) {
+      _reservasiId = args['reservasiId'] as String;
+      _fetchReservationDetail(_reservasiId!);
+    } else {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'ID Reservasi tidak ditemukan.';
+      });
+    }
+  }
+
+  Future<void> _fetchReservationDetail(String reservasiId) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final result = await _reservationService.getReservationDetailById(
+        reservasiId,
+      );
+      if (result['status'] == true && result['data'] != null) {
+        setState(() {
+          _reservationDetail = Map<String, dynamic>.from(result['data']);
+        });
+      } else {
+        setState(() {
+          _errorMessage =
+              result['message'] ?? 'Gagal mengambil detail reservasi.';
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching reservation detail: $e");
+      _errorMessage = 'Terjadi kesalahan: ${e.toString()}';
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _formatPrice(dynamic price) {
+    if (price == null) return 'N/A';
+    try {
+      final numPrice = num.parse(price.toString());
+      return NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      ).format(numPrice);
+    } catch (e) {
+      return price.toString();
+    }
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty || dateString == 'N/A') {
+      return 'N/A';
+    }
+    try {
+      DateTime date = DateTime.parse(dateString);
+      return DateFormat('d MMMM yyyy', 'id_ID').format(date);
+    } catch (e) {
+      debugPrint('Error parsing date: $e');
+      return dateString;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Calculate new end date based on extension
-    final newEndDate = DateTime(
-      activeKosan.endDate.year,
-      activeKosan.endDate.month + _selectedExtensionMonths,
-      activeKosan.endDate.day,
+    if (_isLoading) {
+      return Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF89B3DE), Color(0xFF6B9EDD)],
+            ),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
+    if (_errorMessage != null || _reservationDetail == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Detail Reservasi',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 22,
+            ),
+          ),
+          backgroundColor: const Color(0xFF89B3DE),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF89B3DE), Color(0xFF6B9EDD)],
+            ),
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Error: $_errorMessage',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_reservasiId != null) {
+                        _fetchReservationDetail(_reservasiId!);
+                      } else {
+                        Get.back();
+                      }
+                    },
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final Map<String, dynamic> kostData = _reservationDetail!['kost'] ?? {};
+    final String kostImage =
+        kostData['foto_kost'] != null && kostData['foto_kost'].isNotEmpty
+            ? _cleanImageUrl(kostData['foto_kost'][0].toString())
+            : 'assets/placeholder_image.png';
+    final String kostNama = kostData['nama_kost'] ?? 'Nama Kost Tidak Tersedia';
+    final String kostAlamat = kostData['alamat'] ?? 'Alamat Tidak Tersedia';
+    final String hargaBulanan = kostData['harga_bulanan'] ?? '0';
+    final String tanggalCheckIn = _formatDate(
+      _reservationDetail!['tanggal_check_in'],
+    );
+    final String tanggalKeluar = _formatDate(
+      _reservationDetail!['tanggal_keluar'],
     );
 
-    // Calculate total price for extension
-    final extensionPrice = activeKosan.monthlyPrice * _selectedExtensionMonths;
-    final formattedExtensionPrice = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    ).format(extensionPrice);
+    final int monthlyPriceValue = int.tryParse(hargaBulanan) ?? 0;
+    final int extensionPrice = monthlyPriceValue * _selectedExtensionMonths;
+    final String formattedExtensionPrice = _formatPrice(extensionPrice);
+
+    final DateTime currentEndDate = DateTime.parse(
+      _reservationDetail!['tanggal_keluar'] ?? DateTime.now().toIso8601String(),
+    );
+    final newEndDate = DateTime(
+      currentEndDate.year,
+      currentEndDate.month + _selectedExtensionMonths,
+      currentEndDate.day,
+    );
+    final String? qrisImageFromKost = kostData['qris_image'] as String?;
+    final Map<String, dynamic>? rekeningInfoFromKost =
+        kostData['rekening_info'] as Map<String, dynamic>?;
 
     return Scaffold(
       body: Container(
@@ -85,24 +207,25 @@ class _ActiveReservationDetailScreenState
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF89B3DE), // Lighter blue
-              Color(0xFF6B9EDD), // Deeper blue
-            ],
+            colors: [Color(0xFF89B3DE), Color(0xFF6B9EDD)],
           ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-              ), // Consistent padding
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(),
                   const SizedBox(height: 25),
-                  _buildKosanDetailsCard(),
+                  _buildKosanDetailsCard(
+                    kostImage,
+                    kostNama,
+                    kostAlamat,
+                    _formatPrice(hargaBulanan),
+                    '$tanggalCheckIn - $tanggalKeluar',
+                  ),
                   const SizedBox(height: 30),
                   _buildExtensionSectionTitle(),
                   const SizedBox(height: 20),
@@ -113,8 +236,15 @@ class _ActiveReservationDetailScreenState
                     formattedExtensionPrice,
                   ),
                   const SizedBox(height: 30),
-                  _buildExtendButton(extensionPrice),
-                  const SizedBox(height: 30), // Bottom padding
+                  _buildExtendButton(
+                    currentExtensionPrice: extensionPrice,
+                    qrisImage: qrisImageFromKost,
+                    rekeningInfo: rekeningInfoFromKost,
+                    durasiBulan: _selectedExtensionMonths,
+                    kostId: kostData['kost_id'] as String?,
+                    reservasiId: _reservationDetail!['reservasi_id'] as String?,
+                  ),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
@@ -124,7 +254,12 @@ class _ActiveReservationDetailScreenState
     );
   }
 
-  // --- UI Building Methods ---
+  String _cleanImageUrl(String rawUrl) {
+    if (rawUrl.startsWith('http://localhost:3000http')) {
+      return rawUrl.substring('http://localhost:3000'.length);
+    }
+    return rawUrl;
+  }
 
   Widget _buildHeader() {
     return Padding(
@@ -174,7 +309,14 @@ class _ActiveReservationDetailScreenState
     );
   }
 
-  Widget _buildKosanDetailsCard() {
+  Widget _buildKosanDetailsCard(
+    String image,
+    String nama,
+    String alamat,
+    String formattedMonthlyPrice,
+    String formattedDateRange,
+  ) {
+    final bool isAsset = image.startsWith('assets/');
     return Card(
       elevation: 8,
       shadowColor: Colors.black.withOpacity(0.25),
@@ -187,26 +329,46 @@ class _ActiveReservationDetailScreenState
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
-              child: Image.asset(
-                activeKosan.image,
-                height: 180, // Larger image
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder:
-                    (context, error, stackTrace) => Container(
-                      height: 180,
-                      color: Colors.grey[200],
-                      child: Icon(
-                        Icons.broken_image,
-                        size: 60,
-                        color: Colors.grey[400],
+              child:
+                  isAsset
+                      ? Image.asset(
+                        image,
+                        height: 180,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (context, error, stackTrace) =>
+                                _buildErrorImagePlaceholder(height: 180),
+                      )
+                      : Image.network(
+                        image,
+                        height: 180,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 180,
+                            color: Colors.grey[200],
+                            alignment: Alignment.center,
+                            child: CircularProgressIndicator(
+                              value:
+                                  loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                              color: const Color(0xFF119DB1),
+                            ),
+                          );
+                        },
+                        errorBuilder:
+                            (context, error, stackTrace) =>
+                                _buildErrorImagePlaceholder(height: 180),
                       ),
-                    ),
-              ),
             ),
             const SizedBox(height: 20),
             Text(
-              activeKosan.nama,
+              nama,
               style: GoogleFonts.poppins(
                 color: Colors.black87,
                 fontWeight: FontWeight.w800,
@@ -225,7 +387,7 @@ class _ActiveReservationDetailScreenState
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    activeKosan.alamat,
+                    alamat,
                     style: GoogleFonts.poppins(
                       color: Colors.grey[700],
                       fontSize: 15,
@@ -238,18 +400,30 @@ class _ActiveReservationDetailScreenState
             _buildDetailRow(
               icon: Icons.calendar_month,
               label: 'Periode Sewa Saat Ini:',
-              value: activeKosan.formattedDateRange,
+              value: formattedDateRange,
             ),
             const SizedBox(height: 10),
             _buildDetailRow(
               icon: Icons.attach_money,
               label: 'Harga Per Bulan:',
-              value: activeKosan.formattedPrice,
+              value: formattedMonthlyPrice,
               valueColor: const Color(0xFF4D9DAB),
               valueWeight: FontWeight.bold,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorImagePlaceholder({double? height}) {
+    return Container(
+      height: height,
+      color: Colors.grey[200],
+      child: Icon(
+        Icons.broken_image,
+        size: (height ?? 180) / 3, // Ukuran ikon sesuai tinggi
+        color: Colors.grey[400],
       ),
     );
   }
@@ -280,11 +454,11 @@ class _ActiveReservationDetailScreenState
   }
 
   Widget _buildExtensionDurationSelector() {
-    final List<int> durations = [1, 3, 6, 12]; // in months
+    final List<int> durations = [1, 3, 6, 12];
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2), // Semi-transparent container
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withOpacity(0.3)),
         boxShadow: [
@@ -316,9 +490,7 @@ class _ActiveReservationDetailScreenState
                     decoration: BoxDecoration(
                       color:
                           _selectedExtensionMonths == months
-                              ? const Color(
-                                0xFFE0BFFF,
-                              ) // Accent color for selected
+                              ? const Color(0xFFE0BFFF)
                               : Colors.transparent,
                       borderRadius: BorderRadius.circular(15),
                       border:
@@ -326,7 +498,7 @@ class _ActiveReservationDetailScreenState
                               ? Border.all(
                                 color: const Color(0xFF119DB1),
                                 width: 1.5,
-                              ) // Accent border
+                              )
                               : null,
                     ),
                     child: Center(
@@ -387,7 +559,7 @@ class _ActiveReservationDetailScreenState
             _buildDetailRow(
               icon: Icons.calendar_today,
               label: 'Tanggal Berakhir Baru:',
-              value: DateFormat('d MMM yyyy').format(newEndDate),
+              value: DateFormat('d MMMM y').format(newEndDate),
               valueColor: Colors.black87,
             ),
             const SizedBox(height: 10),
@@ -404,23 +576,44 @@ class _ActiveReservationDetailScreenState
     );
   }
 
-  Widget _buildExtendButton(int currentExtensionPrice) {
+  Widget _buildExtendButton({
+    required int currentExtensionPrice,
+    String? qrisImage,
+    Map<String, dynamic>? rekeningInfo,
+    int? durasiBulan,
+    String? kostId,
+    String? reservasiId,
+  }) {
     return Center(
       child: SizedBox(
         width: double.infinity,
         height: 58,
         child: ElevatedButton(
           onPressed: () {
-            // In a real app, you would pass the calculated extensionPrice and newEndDate
-            // to the payment screen. For now, it navigates to a dummy payment screen.
-            // Get.to(
-            //   () => MenuPembayaranPenghuni(
-            //     // Example of passing data (adjust MenuPembayaranPenghuni to receive this)
-            //     amount: currentExtensionPrice,
-            //     description:
-            //         'Perpanjangan Kost ${activeKosan.nama} selama $_selectedExtensionMonths bulan',
-            //   ),
-            // );
+            if (_reservationDetail == null) {
+              Get.snackbar(
+                'Error',
+                'Detail reservasi belum dimuat. Mohon coba lagi.',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.red,
+                colorText: Colors.white,
+              );
+              return;
+            }
+
+            Get.to(
+              () => MenuPembayaranPenghuni(
+                amount: currentExtensionPrice,
+                description:
+                    'Perpanjangan Kost ${(_reservationDetail!['kost']?['nama_kost'] ?? 'N/A')} selama $durasiBulan bulan',
+                qrisImage: qrisImage,
+                rekeningInfo: rekeningInfo,
+                durasiBulan: durasiBulan,
+                kostId: kostId,
+                reservasiId: reservasiId,
+                paymentPurpose: 'extend_reservation',
+              ),
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF119DB1),
@@ -443,7 +636,6 @@ class _ActiveReservationDetailScreenState
     );
   }
 
-  // Helper method for consistent detail rows
   Widget _buildDetailRow({
     required IconData icon,
     required String label,

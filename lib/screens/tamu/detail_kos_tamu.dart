@@ -2,32 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:kosan_euy/screens/penghuni/reservasi/reservation_form_screen.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:get/get.dart';
 import 'dart:ui';
-import 'package:kosan_euy/services/auth_service.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
 import 'package:kosan_euy/services/kost_service.dart';
-import 'package:intl/intl.dart';
 
-class DetailKos extends StatefulWidget {
-  const DetailKos({super.key});
+class DetailKosTamu extends StatefulWidget {
+  const DetailKosTamu({super.key});
 
   @override
-  State<DetailKos> createState() => _DetailKosState();
+  State<DetailKosTamu> createState() => _DetailKosTamuState();
 }
 
-class _DetailKosState extends State<DetailKos> {
+class _DetailKosTamuState extends State<DetailKosTamu> {
   int _currentIndex = 0;
   final CarouselSliderController _carouselController =
       CarouselSliderController();
 
-  final LatLng _kostLocation = const LatLng(-6.9731, 107.6291);
+  LatLng _kostLocation = const LatLng(
+    -6.9731,
+    107.6291,
+  ); // Default atau placeholder lokasi map
 
-  final AuthService _authService = AuthService();
-  final KostService _kostService = KostService();
-  bool _isLoggedIn = false;
+  final KostService _kostService = KostService(); // Hanya perlu KostService
 
   Map<String, dynamic>? _kostDetailData;
   String? _currentKostId;
@@ -38,8 +36,6 @@ class _DetailKosState extends State<DetailKos> {
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
-
     final args = Get.arguments as Map<String, dynamic>?;
     if (args != null && args['id'] != null) {
       _currentKostId = args['id'] as String;
@@ -52,20 +48,13 @@ class _DetailKosState extends State<DetailKos> {
     }
   }
 
-  Future<void> _checkLoginStatus() async {
-    final loggedIn = await _authService.isLoggedIn();
-    setState(() {
-      _isLoggedIn = loggedIn;
-    });
-  }
-
   Future<void> _fetchKostDetail(String kostId) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
-      final result = await _kostService.getKostById(kostId);
+      final result = await _kostService.getKostTamuById(kostId);
       if (result['status'] == true && result['data'] != null) {
         setState(() {
           _kostDetailData = Map<String, dynamic>.from(result['data']);
@@ -90,12 +79,18 @@ class _DetailKosState extends State<DetailKos> {
     super.dispose();
   }
 
-  String _formatPriceDisplay(int price) {
-    return NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: '',
-      decimalDigits: 0,
-    ).format(price);
+  String _formatPrice(String price) {
+    try {
+      final numPrice = num.parse(price);
+      return numPrice
+          .toStringAsFixed(0)
+          .replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]}.',
+          );
+    } catch (e) {
+      return price;
+    }
   }
 
   @override
@@ -188,7 +183,6 @@ class _DetailKosState extends State<DetailKos> {
     final String hargaBulananDisplay = _kostDetailData!['harga_bulanan'] ?? '0';
     final List<dynamic> fotoKostRaw = _kostDetailData!['foto_kost'] ?? [];
     final String deskripsi = _kostDetailData!['deskripsi'] ?? 'Tidak tersedia';
-    // final String gmapsLink = _kostDetailData!['gmaps_link'] ?? '';
     final String totalKamar =
         _kostDetailData!['total_kamar']?.toString() ?? 'N/A';
     final String availableRooms =
@@ -214,17 +208,28 @@ class _DetailKosState extends State<DetailKos> {
         organizedFasilitas['KAMAR']?.join('\n') ?? 'Tidak tersedia';
     final String fasilitasKamarMandi =
         organizedFasilitas['KAMAR_MANDI']?.join('\n') ?? 'Tidak tersedia';
+
     String fasilitasUmumContent = organizedFasilitas['UMUM']?.join('\n') ?? '';
-    fasilitasUmumContent +=
-        '\nDaya Listrik: ${_kostDetailData!['daya_listrik'] ?? 'Tidak tersedia'}';
-    fasilitasUmumContent += '\nSumber Air: $sumberAir';
-    fasilitasUmumContent += '\nKecepatan WiFi: $wifiSpeed';
-    fasilitasUmumContent += '\nParkir Motor: $parkirMotor';
-    fasilitasUmumContent += '\nParkir Mobil: $parkirMobil';
-    fasilitasUmumContent += '\nParkir Sepeda: $parkirSepeda';
+    if (sumberAir != 'Tidak tersedia') {
+      fasilitasUmumContent += '\nSumber Air: $sumberAir';
+    }
+    if (wifiSpeed != 'Tidak tersedia') {
+      fasilitasUmumContent += '\nKecepatan WiFi: $wifiSpeed';
+    }
+    if (parkirMotor != '0' || parkirMobil != '0' || parkirSepeda != '0') {
+      fasilitasUmumContent +=
+          '\nParkir: Motor ($parkirMotor), Mobil ($parkirMobil), Sepeda ($parkirSepeda)';
+    }
     if (fasilitasUmumContent.trim().isEmpty) {
       fasilitasUmumContent = 'Tidak tersedia';
     }
+
+    final String kebijakanPropertiApi =
+        _kostDetailData!['kebijakan_properti'] ?? 'Tidak tersedia';
+    final String kebijakanFasilitasApi =
+        _kostDetailData!['kebijakan_fasilitas'] ?? 'Tidak tersedia';
+    final String informasiJarakApi =
+        _kostDetailData!['informasi_jarak'] ?? 'Tidak tersedia';
 
     final Map<String, dynamic>? tipeData =
         _kostDetailData!['tipe'] as Map<String, dynamic>?;
@@ -434,7 +439,7 @@ class _DetailKosState extends State<DetailKos> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    "Rp ${_formatPriceDisplay(int.parse(hargaBulananDisplay))} / Per Bulan",
+                    "Rp ${_formatPrice(hargaBulananDisplay)} / Per Bulan",
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -447,13 +452,24 @@ class _DetailKosState extends State<DetailKos> {
                     content: deskripsi,
                   ),
                   const SizedBox(height: 15),
+                  if (fasilitasKamar.isNotEmpty &&
+                      fasilitasKamar != 'Tidak tersedia')
+                    _buildSectionCard(
+                      title: "Fasilitas Kamar:",
+                      content: fasilitasKamar,
+                    ),
+                  if (fasilitasKamarMandi.isNotEmpty &&
+                      fasilitasKamarMandi != 'Tidak tersedia')
+                    const SizedBox(height: 15),
                   if (fasilitasKamarMandi.isNotEmpty &&
                       fasilitasKamarMandi != 'Tidak tersedia')
                     _buildSectionCard(
                       title: "Fasilitas Kamar Mandi:",
                       content: fasilitasKamarMandi,
                     ),
-                  const SizedBox(height: 15),
+                  if (fasilitasUmumContent.isNotEmpty &&
+                      fasilitasUmumContent != 'Tidak tersedia')
+                    const SizedBox(height: 15),
                   if (fasilitasUmumContent.isNotEmpty &&
                       fasilitasUmumContent != 'Tidak tersedia')
                     _buildSectionCard(
@@ -472,12 +488,15 @@ class _DetailKosState extends State<DetailKos> {
                     content: peraturanKos,
                   ),
                   const SizedBox(height: 15),
-                  if (fasilitasKamar.isNotEmpty &&
-                      fasilitasKamar != 'Tidak tersedia')
-                    _buildSectionCard(
-                      title: "Fasilitas Kamar:",
-                      content: fasilitasKamar,
-                    ),
+                  _buildSectionCard(
+                    title: "Kebijakan Properti:",
+                    content: kebijakanPropertiApi,
+                  ),
+                  const SizedBox(height: 15),
+                  _buildSectionCard(
+                    title: "Kebijakan Fasilitas:",
+                    content: kebijakanFasilitasApi,
+                  ),
                   const SizedBox(height: 25),
                   Text(
                     "Lokasi Kost:",
@@ -540,6 +559,11 @@ class _DetailKosState extends State<DetailKos> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 25),
+                  _buildSectionCard(
+                    title: "Informasi Jarak:",
+                    content: informasiJarakApi,
+                  ),
                   const SizedBox(height: 30),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -552,51 +576,12 @@ class _DetailKosState extends State<DetailKos> {
                       shadowColor: const Color(0xFF4A99BD).withOpacity(0.4),
                     ),
                     onPressed: () {
-                      if (_isLoggedIn) {
-                        if (_kostDetailData == null) {
-                          Get.snackbar(
-                            'Error',
-                            'Detail kos belum dimuat. Mohon coba lagi.',
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: Colors.redAccent,
-                            colorText: Colors.white,
-                          );
-                          return;
-                        }
-
-                        final int? totalKamar = int.tryParse(
-                          _kostDetailData!['total_kamar']?.toString() ?? '0',
-                        );
-                        final int? availableRooms = int.tryParse(
-                          _kostDetailData!['available_rooms']?.toString() ??
-                              '0',
-                        );
-
-                        // Validasi ketersediaan kamar
-                        if (totalKamar == null ||
-                            availableRooms == null ||
-                            availableRooms <= 0) {
-                          Get.snackbar(
-                            'Peringatan',
-                            'Tidak ada kamar yang tersedia saat ini.',
-                            snackPosition: SnackPosition.TOP,
-                            backgroundColor: Colors.orange,
-                            colorText: Colors.white,
-                          );
-                          return;
-                        }
-                        Get.to(
-                          () => InitialReservationFormScreen(
-                            kostDetailData: _kostDetailData!,
-                            currentKostId: _currentKostId!,
-                          ),
-                        );
-                      } else {
-                        Get.to(() => const HomeScreenPage());
-                      }
+                      Get.to(
+                        () => const HomeScreenPage(),
+                      ); // Arahkan ke HomeScreenPage
                     },
                     child: Text(
-                      "Pesan Sekarang",
+                      "Masuk untuk Pesan", // Ubah teks tombol
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 18,
