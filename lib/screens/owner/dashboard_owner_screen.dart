@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:kosan_euy/screens/owner/kost_detail_screen.dart';
 import 'package:kosan_euy/screens/owner/laundry/dashboard_laundry.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_screen.dart';
-
+import 'package:kosan_euy/services/pengelola_service.dart';
 import 'package:kosan_euy/widgets/profile_section.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
-import '../../services/auth_service.dart';
-
 import 'package:kosan_euy/routes/app_pages.dart';
 
 class DashboardOwnerScreen extends StatefulWidget {
@@ -19,35 +18,16 @@ class DashboardOwnerScreen extends StatefulWidget {
 }
 
 class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
-  bool isExists = false;
-  late List<Map<String, dynamic>> daftarKost = [];
+  bool isLoading = true;
+  List<Map<String, dynamic>> daftarKost = [];
   String? userId;
+  String errorMessage = '';
 
   @override
   void initState() {
-    // _fetchKostData(); // KOMEN: slicing UI, data dummy
-    _getUserId();
-    // --- DATA DUMMY UNTUK SLICING UI ---
-    daftarKost = [
-      {
-        'Nama_Kost': 'Kost Mawar',
-        'Lokasi_Alamat': 'Jalan hj Umayah II, Citereup Bandung',
-        'jumlahKamar': 10,
-        'harga': 1000000,
-        'Thumbnail': 'assets/kapling40.png',
-        'ID_Pengguna': null,
-      },
-      {
-        'Nama_Kost': 'Kost Melati',
-        'Lokasi_Alamat': 'Jl. Melati No. 2',
-        'jumlahKamar': 8,
-        'harga': 900000,
-        'Thumbnail': 'assets/kapling40.png',
-        'ID_Pengguna': null,
-      },
-    ];
-    isExists = true;
     super.initState();
+    _getUserId();
+    _fetchKostData();
   }
 
   Future<void> _getUserId() async {
@@ -61,12 +41,40 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
     }
   }
 
+  Future<void> _fetchKostData() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
+    try {
+      final response = await PengelolaService.getKostByOwner();
+
+      if (response['status']) {
+        setState(() {
+          daftarKost = List<Map<String, dynamic>>.from(response['data'] ?? []);
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage = response['message'] ?? 'Failed to load kost data';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Network error: $e';
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return _buildListKost();
   }
 
-  Widget _buildMenuCard() {
+  Widget _buildMenuCard(Map<String, dynamic> kostData) {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -78,36 +86,115 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.notifications_outlined, size: 32),
-                      enableFeedback: true,
-                      color: Colors.white,
-                      onPressed: () {
-                        Get.toNamed(Routes.notificationOwner);
-                      },
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.black,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.settings_outlined, size: 32),
-                      enableFeedback: true,
-                      color: Colors.white,
-                      onPressed: () {
-                        Get.toNamed(Routes.setting);
-                      },
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.notifications_outlined,
+                            size: 32,
+                          ),
+                          enableFeedback: true,
+                          color: Colors.white,
+                          onPressed: () {
+                            Get.toNamed(Routes.notificationOwner);
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.settings_outlined, size: 32),
+                          enableFeedback: true,
+                          color: Colors.white,
+                          onPressed: () {
+                            Get.toNamed(Routes.setting);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 40), // Spacing
+              const SizedBox(height: 40),
               ProfileSection(),
-              const SizedBox(height: 40), // Spacing
+              const SizedBox(height: 20),
+
+              // Kost Info Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      kostData['nama_kost'] ?? 'Nama Kost',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      kostData['alamat'] ?? 'Alamat',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          'Total Kamar: ${kostData['total_kamar'] ?? 0}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          'Tersedia: ${kostData['available_rooms'] ?? 0}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
               // Menu (Expanded)
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    //Menu Data Penghuni
+                    // Menu Data Penghuni
                     Container(
                       width: MediaQuery.of(context).size.width * 0.8,
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -155,7 +242,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
 
                     SizedBox(height: 30),
 
-                    //Menu Layanan Reservasi Kamar
+                    // Menu Layanan Reservasi Kamar
                     Container(
                       width: MediaQuery.of(context).size.width * 0.8,
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -203,7 +290,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
 
                     SizedBox(height: 30),
 
-                    //Menu Pemesanan Makanan
+                    // Menu Pemesanan Makanan
                     Container(
                       width: MediaQuery.of(context).size.width * 0.8,
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -251,7 +338,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
 
                     SizedBox(height: 30),
 
-                    //Menu Layanan Laundry
+                    // Menu Layanan Laundry
                     Container(
                       width: MediaQuery.of(context).size.width * 0.8,
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -336,16 +423,27 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                       },
                     ),
                   ),
-
-                  IconButton(
-                    icon: Icon(
-                      Icons.notifications_none,
-                      color: Colors.black,
-                      size: 28,
-                    ),
-                    onPressed: () {
-                      Get.toNamed(Routes.notification);
-                    },
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.refresh,
+                          color: Colors.black,
+                          size: 28,
+                        ),
+                        onPressed: _fetchKostData,
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.notifications_none,
+                          color: Colors.black,
+                          size: 28,
+                        ),
+                        onPressed: () {
+                          Get.toNamed(Routes.notification);
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -366,100 +464,83 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(vertical: 15),
                   ),
+                  onChanged: (value) {
+                    // Implement search functionality if needed
+                  },
                 ),
               ),
 
               // Kost listings
               SizedBox(height: 24),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: daftarKost.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final kost = daftarKost[index];
-
-                    return InkWell(
-                      onTap: () {
-                        if (kost["ID_Pengguna"] == userId) {
-                          Get.to(_buildMenuCard());
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Anda tidak berhak untuk masuk kost ini",
-                              ),
-                              duration: const Duration(seconds: 2),
-                              action: SnackBarAction(
-                                label: 'Dismiss',
-                                onPressed: () {
-                                  // Code to execute when the action button is pressed
-                                },
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Color(0xFF9EBFED),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.white.withAlpha((0.4 * 255).toInt()),
-                            width: 1,
+              if (isLoading)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Memuat data kost...'),
+                      ],
+                    ),
+                  ),
+                )
+              else if (errorMessage.isNotEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          errorMessage,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _fetchKostData,
+                          child: Text('Coba Lagi'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (daftarKost.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.home_outlined, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'Belum ada kost yang terdaftar',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[600],
                           ),
                         ),
-                        margin: EdgeInsets.symmetric(vertical: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              // Kost image with rounded corners
-                              Container(
-                                width: 110,
-                                height: 110,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  image: DecorationImage(
-                                    image: AssetImage(
-                                      kost["Thumbnail"] as String,
-                                    ),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              // Kost details
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      kost["Nama_Kost"] as String,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      kost["Lokasi_Alamat"] as String,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Daftarkan kost pertama Anda',
+                          style: TextStyle(color: Colors.grey[500]),
                         ),
-                      ),
-                    );
-                  },
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: daftarKost.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final kost = daftarKost[index];
+                      return _buildKostCard(kost);
+                    },
+                  ),
                 ),
-              ),
 
               // Register button
               Container(
@@ -502,6 +583,198 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildKostCard(Map<String, dynamic> kost) {
+    return InkWell(
+      onTap: () {
+        // Navigate to detail instead of menu card directly
+        Get.to(() => KostDetailScreen(kostId: kost['kost_id']));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Color(0xFF9EBFED),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withAlpha((0.4 * 255).toInt()),
+            width: 1,
+          ),
+        ),
+        margin: EdgeInsets.symmetric(vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              // Kost image with rounded corners
+              Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey[300],
+                ),
+                child:
+                    kost['foto_kost'] != null &&
+                            (kost['foto_kost'] as List).isNotEmpty
+                        ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            (kost['foto_kost'] as List).first,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.grey[300],
+                                ),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.grey[600]!,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.grey[300],
+                                ),
+                                child: Icon(
+                                  Icons.home,
+                                  size: 50,
+                                  color: Colors.grey[600],
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                        : Icon(Icons.home, size: 50, color: Colors.grey[600]),
+              ),
+              SizedBox(width: 16),
+              // Kost details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      kost["nama_kost"] ?? 'Nama Kost',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      kost["alamat"] ?? 'Alamat tidak tersedia',
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.home_outlined,
+                          size: 16,
+                          color: Colors.white70,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Kamar: ${kost["total_kamar"] ?? 0}',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                        SizedBox(width: 16),
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 16,
+                          color: Colors.white70,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Tersedia: ${kost["available_rooms"] ?? 0}',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    if (kost["harga_bulanan"] != null)
+                      Text(
+                        'Rp ${_formatCurrency(kost["harga_bulanan"])}/bulan',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Status indicator and arrow
+              Column(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color:
+                          kost["is_approved"] == true
+                              ? Colors.green.withOpacity(0.8)
+                              : Colors.orange.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      kost["is_approved"] == true ? 'Aktif' : 'Pending',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.white70,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatCurrency(dynamic amount) {
+    if (amount == null) return '0';
+
+    double value;
+    if (amount is String) {
+      value = double.tryParse(amount) ?? 0;
+    } else if (amount is num) {
+      value = amount.toDouble();
+    } else {
+      return '0';
+    }
+
+    // Format to Indonesian currency style
+    String formatted = value
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        );
+
+    return formatted;
   }
 
   Future<void> _onLogout(BuildContext context) async {
