@@ -37,7 +37,7 @@ abstract class Routes {
   static const editKost = '/edit-kost';
   // NEW Catering Routes
   static const layananMakanan = '/layanan-makanan'; // Dashboard Catering
-  static const cateringMenuList =
+  static const foodListScreen =
       '/catering-menu-list'; // Daftar Menu Makanan/Minuman
   static const addCateringMenu = '/add-catering-menu'; // Tambah Menu
   static const editCateringMenu = '/edit-catering-menu'; // Edit Menu
