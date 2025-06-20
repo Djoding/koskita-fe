@@ -1148,9 +1148,10 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                 Icons.restaurant_outlined,
                 Colors.orange,
                 () {
+                  // Pastikan kostData dikirim dengan benar
                   Get.to(
                     () => const LayananMakananScreen(),
-                    arguments: kostData,
+                    arguments: kostData, // kostData dari response API
                   );
                 },
               ),
