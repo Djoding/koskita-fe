@@ -409,7 +409,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Tersedia: ${kost["available_rooms"] ?? 0}',
+                          'Tersedia: ${kost['available_rooms'] ?? 0}',
                           style: GoogleFonts.poppins(
                             color: Colors.white70,
                             fontSize: 12,

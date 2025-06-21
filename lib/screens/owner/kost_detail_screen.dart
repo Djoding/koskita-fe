@@ -6,6 +6,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:kosan_euy/screens/owner/laundry/dashboard_laundry_screen.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_screen.dart';
 import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
+import 'package:kosan_euy/screens/owner/reservasi/validasi_reservasi_screen.dart';
 import 'package:kosan_euy/services/api_service.dart';
 import 'package:kosan_euy/services/pengelola_service.dart';
 import 'package:kosan_euy/routes/app_pages.dart';
@@ -1140,7 +1141,11 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                 Icons.home_outlined,
                 Colors.blue,
                 () {
-                  Get.toNamed(Routes.homeReservasiOwner, arguments: kostData);
+                  // Navigasi ke reservasi management dengan data kost
+                  Get.to(
+                    () => const ValidasiReservasiScreen(),
+                    arguments: kostData, // Pass kostData
+                  );
                 },
               ),
               _buildServiceCard(
@@ -1165,14 +1170,6 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                         const DashboardLaundryScreen(), // Gunakan screen yang baru
                     arguments: kostData,
                   );
-                },
-              ),
-              _buildServiceCard(
-                'Data Penghuni',
-                Icons.people_outlined,
-                Colors.purple,
-                () {
-                  Get.toNamed(Routes.penghuni, arguments: kostData);
                 },
               ),
             ],

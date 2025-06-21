@@ -59,16 +59,7 @@ class HomeReservasiOwner extends StatelessWidget {
                       crossAxisSpacing: 24,
                       childAspectRatio: 1,
                       children: [
-                        _MenuCard(
-                          iconPath: 'assets/icon_reservasi.png',
-                          label: 'Edit Layanan Reservasi Kamar',
-                          onTap: () => Get.toNamed('/reservasi'),
-                        ),
-                        _MenuCard(
-                          iconPath: 'assets/icon_pembayaran.png',
-                          label: 'Edit Pembayaran',
-                          onTap: () => Get.to(() => const AddPembayaran()),
-                        ),
+                        
                         _MenuCard(
                           iconPath: 'assets/icon_order.png',
                           label: 'Cek semua  Pesanan',
