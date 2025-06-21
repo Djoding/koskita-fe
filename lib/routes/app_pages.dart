@@ -19,7 +19,6 @@ import 'package:kosan_euy/screens/owner/reservasi/home_reservasi_owner.dart';
 import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
 import 'package:kosan_euy/screens/owner/reservasi/validasi_reservasi_screen.dart'; // NEW
 import 'package:kosan_euy/screens/owner/pembayaran/qris_payment_screen.dart'; // NEW
-import 'package:kosan_euy/screens/owner/laundry/layanan_laundry_screen.dart';
 // Admin imports
 import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
 import 'package:kosan_euy/screens/admin/pengelola_detail_screen.dart';
@@ -35,6 +34,14 @@ import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/detail_pesanan_owner
 import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/edit_status_pesanan_makanan.dart';
 import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/status_pesanan_makanan.dart';
 
+// Laundry Specific Screens
+import 'package:kosan_euy/screens/owner/laundry/dashboard_laundry_screen.dart';
+import 'package:kosan_euy/screens/owner/laundry/laundry_list_screen.dart';
+import 'package:kosan_euy/screens/owner/laundry/add_edit_laundry_screen.dart';
+import 'package:kosan_euy/screens/owner/laundry/laundry_detail_screen.dart';
+import 'package:kosan_euy/screens/owner/laundry/orders/laundry_orders_screen.dart';
+import 'package:kosan_euy/screens/owner/laundry/services/laundry_services_screen.dart';
+import 'package:kosan_euy/screens/owner/laundry/services/add_edit_service_screen.dart';
 
 part 'app_routes.dart';
 
@@ -84,7 +91,6 @@ class AppPages {
       page: () => ValidasiReservasiScreen(),
     ),
     GetPage(name: Routes.qrisPayment, page: () => QrisPaymentScreen()),
-    GetPage(name: Routes.layananLaundry, page: () => LayananLaundryScreen()),
 
     // Admin routes
     GetPage(name: Routes.dashboardAdmin, page: () => DashboardAdminScreen()),
@@ -125,6 +131,33 @@ class AppPages {
     GetPage(
       name: Routes.cateringOrderStatus,
       page: () => StatusPesananMakananScreen(),
+    ),
+
+    // Laundry Routes
+    GetPage(
+      name: Routes.dashboardLaundry,
+      page: () => const DashboardLaundryScreen(),
+    ),
+    GetPage(name: Routes.laundryList, page: () => const LaundryListScreen()),
+    GetPage(
+      name: Routes.addEditLaundry,
+      page: () => const AddEditLaundryScreen(),
+    ),
+    GetPage(
+      name: Routes.laundryDetail,
+      page: () => const LaundryDetailScreen(),
+    ),
+    GetPage(
+      name: Routes.laundryOrders,
+      page: () => const LaundryOrdersScreen(),
+    ),
+    GetPage(
+      name: Routes.laundryServices,
+      page: () => const LaundryServicesScreen(),
+    ),
+    GetPage(
+      name: Routes.addEditService,
+      page: () => const AddEditServiceScreen(),
     ),
   ];
 }
