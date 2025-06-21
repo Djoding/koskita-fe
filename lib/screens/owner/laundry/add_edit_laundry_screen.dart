@@ -115,6 +115,8 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
       if (_bankController.text.trim().isNotEmpty ||
           _rekeningController.text.trim().isNotEmpty ||
           _atasNamaController.text.trim().isNotEmpty) {
+        // Hapus jsonEncode di sini, kirim sebagai Map<String, dynamic>
+        // Backend akan mengonversinya.
         formData['rekening_info'] = {
           'bank': _bankController.text.trim(),
           'nomor': _rekeningController.text.trim(),

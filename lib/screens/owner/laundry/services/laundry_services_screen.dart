@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/owner/laundry/services/add_edit_service_screen.dart';
 import 'package:kosan_euy/services/laundry_service.dart';
-import 'package:kosan_euy/widgets/success_screen.dart';
 
 class LaundryServicesScreen extends StatefulWidget {
   const LaundryServicesScreen({super.key});
@@ -130,11 +129,11 @@ class _LaundryServicesScreenState extends State<LaundryServicesScreen> {
       );
 
       if (response['status']) {
-        Get.to(
-          () => const SuccessScreen(
-            title: 'Layanan Berhasil Dihapus',
-            subtitle: 'Layanan telah dihapus dari daftar',
-          ),
+        Get.snackbar(
+          'Berhasil',
+          'Layanan ${layanan['nama_layanan']} berhasil dihapus',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
         );
         _refreshServices();
       } else {
