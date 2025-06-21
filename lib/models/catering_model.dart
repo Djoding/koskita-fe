@@ -1,14 +1,13 @@
-// lib/models/catering_model.dart
 import 'package:kosan_euy/services/api_service.dart';
 
 class CateringMenuItem {
   final String menuId;
   final String cateringId;
   final String namaMenu;
-  final String kategori; // ENUM: MAKANAN_BERAT, SNACK, MINUMAN
+  final String kategori;
   final double harga;
-  final String? fotoMenu; // Relative path from backend
-  final String? fotoMenuUrl; // Full URL for display
+  final String? fotoMenu;
+  final String? fotoMenuUrl;
   final bool isAvailable;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -27,8 +26,7 @@ class CateringMenuItem {
   });
 
   factory CateringMenuItem.fromJson(Map<String, dynamic> json) {
-    // Helper function to safely parse double
-    double _safeParseDouble(dynamic value) {
+    double safeParseDouble(dynamic value) {
       if (value == null) return 0.0;
       if (value is double) return value;
       if (value is int) return value.toDouble();
@@ -40,12 +38,10 @@ class CateringMenuItem {
     String? fullFotoMenuUrl;
     if (rawFotoMenu != null && rawFotoMenu.isNotEmpty) {
       if (rawFotoMenu.startsWith('http')) {
-        // Already a full URL
         fullFotoMenuUrl = rawFotoMenu;
       } else {
-        // Assume relative path
         fullFotoMenuUrl =
-            '${ApiService.baseUrl.replaceFirst('/api/v1/', '')}${rawFotoMenu}';
+            '${ApiService.baseUrl.replaceFirst('/api/v1/', '')}$rawFotoMenu';
       }
     }
 
@@ -54,9 +50,9 @@ class CateringMenuItem {
       cateringId: json['catering_id'] ?? '',
       namaMenu: json['nama_menu'] ?? '',
       kategori: json['kategori'] ?? '',
-      harga: _safeParseDouble(json['harga']),
-      fotoMenu: rawFotoMenu, // Store raw path
-      fotoMenuUrl: fullFotoMenuUrl, // Store full URL for display
+      harga: safeParseDouble(json['harga']),
+      fotoMenu: rawFotoMenu,
+      fotoMenuUrl: fullFotoMenuUrl,
       isAvailable: json['is_available'] ?? true,
       createdAt: DateTime.parse(
         json['created_at'] ?? DateTime.now().toIso8601String(),
@@ -74,7 +70,7 @@ class CateringMenuItem {
       'nama_menu': namaMenu,
       'kategori': kategori,
       'harga': harga,
-      'foto_menu': fotoMenu, // Send raw path back to backend
+      'foto_menu': fotoMenu,
       'is_available': isAvailable,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -89,7 +85,7 @@ class Catering {
   final String alamat;
   final String? whatsappNumber;
   final String? qrisImage;
-  final String? qrisImageUrl; // Full URL for display
+  final String? qrisImageUrl;
   final Map<String, dynamic>? rekeningInfo;
   final bool isPartner;
   final bool isActive;
@@ -121,7 +117,7 @@ class Catering {
         fullQrisImageUrl = rawQrisImage;
       } else {
         fullQrisImageUrl =
-            '${ApiService.baseUrl.replaceFirst('/api/v1/', '')}${rawQrisImage}';
+            ApiService.baseUrl.replaceFirst('/api/v1/', '') + rawQrisImage;
       }
     }
 

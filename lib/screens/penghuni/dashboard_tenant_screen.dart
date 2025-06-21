@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
 import 'package:kosan_euy/screens/penghuni/laundry/laundry_penghuni.dart';
 import 'package:kosan_euy/screens/penghuni/makanan/menu_makanan.dart';
-import 'package:kosan_euy/screens/penghuni/reservasi/dashboard_reservasi.dart'; // Untuk perpanjangan
-import 'package:kosan_euy/screens/penghuni/reservasi/reservasi_detail_screen.dart'; // Untuk detail reservasi
+import 'package:kosan_euy/screens/penghuni/reservasi/dashboard_reservasi.dart';
+import 'package:kosan_euy/screens/penghuni/reservasi/reservasi_detail_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/auth_service.dart';
 import 'package:kosan_euy/services/reservation_service.dart';
@@ -32,6 +32,8 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
   String _kostImageUrl = 'assets/placeholder_image.png';
   String? _statusPenghunian;
   String? _activeReservationId;
+  String? _cateringId;
+  String? _laundryId;
 
   bool _isLoadingProfile = true;
   bool _isLoadingReservationDetail = true;
@@ -117,6 +119,19 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
             }
           }
 
+          final List<dynamic>? cateringServices = kostInfo['catering_services'];
+          final List<dynamic>? laundryServices = kostInfo['laundry_services'];
+
+          String? tempCateringId;
+          String? tempLaundryId;
+
+          if (cateringServices != null && cateringServices.isNotEmpty) {
+            tempCateringId = cateringServices[0]['catering_id'] as String?;
+          }
+          if (laundryServices != null && laundryServices.isNotEmpty) {
+            tempLaundryId = laundryServices[0]['laundry_id'] as String?;
+          }
+
           setState(() {
             _kostName = kostInfo['nama_kost'] ?? 'Nama Kost Tidak Tersedia';
             _kostAddress = kostInfo['alamat'] ?? 'Alamat Tidak Tersedia';
@@ -125,6 +140,8 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
             _kostImageUrl = imageUrl;
             _statusPenghunian = reservationData['status_penghunian'] as String?;
             _activeReservationId = reservationData['reservasi_id'] as String?;
+            _cateringId = tempCateringId;
+            _laundryId = tempLaundryId;
           });
         } else {
           _errorMessage = 'Data kos untuk reservasi tidak ditemukan.';
@@ -135,6 +152,8 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
           _kostImageUrl = 'assets/placeholder_image.png';
           _statusPenghunian = null;
           _activeReservationId = null;
+          _cateringId = null;
+          _laundryId = null;
         }
       } else {
         _errorMessage =
@@ -146,6 +165,8 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
         _kostImageUrl = 'assets/placeholder_image.png';
         _statusPenghunian = null;
         _activeReservationId = null;
+        _cateringId = null; 
+        _laundryId = null;
       }
     } catch (e) {
       debugPrint("Error loading reservation detail: $e");
@@ -490,7 +511,22 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
               title: 'Layanan Pemesanan Makanan',
               imageAsset: 'assets/icon_makanan.png',
               onTap: () {
-                Get.to(() => const MenuMakanan());
+                if (_cateringId != null && _activeReservationId != null) {
+                  Get.to(
+                    () => MenuMakanan(
+                      cateringId: _cateringId!,
+                      reservasiId: _activeReservationId!,
+                    ),
+                  );
+                } else {
+                  Get.snackbar(
+                    'Informasi',
+                    'Layanan catering tidak tersedia untuk kost aktif Anda.',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.blueAccent,
+                    colorText: Colors.white,
+                  );
+                }
               },
             ),
 
