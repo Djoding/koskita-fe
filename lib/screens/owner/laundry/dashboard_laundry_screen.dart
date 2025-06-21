@@ -43,7 +43,7 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
         kostData!['kost_id'].toString(),
       );
 
-      // PERBAIKAN: Gunakan endpoint baru yang sudah filter berdasarkan kost
+      // Get orders data menggunakan endpoint yang sudah diperbaiki
       final ordersResponse = await LaundryService.getLaundryOrdersByKost(
         kostId: kostData!['kost_id'].toString(),
       );
@@ -64,13 +64,13 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
         if (ordersResponse['status']) {
           final orders = ordersResponse['data'] as List;
 
-          // Calculate stats
+          // Calculate stats berdasarkan status yang benar
           final pendingOrders =
               orders.where((order) => order['status'] == 'PENDING').length;
           final processingOrders =
-              orders.where((order) => order['status'] == 'PROCESSING').length;
+              orders.where((order) => order['status'] == 'PROSES').length;
           final completedOrders =
-              orders.where((order) => order['status'] == 'COMPLETED').length;
+              orders.where((order) => order['status'] == 'DITERIMA').length;
 
           stats = {
             'total_laundries': laundries.length,
@@ -188,6 +188,7 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
                 ),
               )
             else ...[
+
               // Menu Grid
               Expanded(
                 child: Padding(
@@ -225,6 +226,47 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 24, color: color),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

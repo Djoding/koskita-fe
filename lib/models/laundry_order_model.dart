@@ -9,17 +9,13 @@ class LaundryOrder {
   final double? beratActual;
   final String status;
   final String? catatan;
-  final String? catatanPengelola;
   final DateTime tanggalAntar;
   final DateTime? estimasiSelesai;
-  final DateTime? acceptedAt;
-  final DateTime? completedAt;
-  final DateTime? pickedUpAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   final LaundryUser? user;
   final LaundryProvider? laundry;
-  final List<LaundryOrderDetail> detailPesanan;
+  final List<LaundryOrderDetail> detailPesananLaundry;
   final LaundryPayment? pembayaran;
 
   LaundryOrder({
@@ -32,17 +28,13 @@ class LaundryOrder {
     this.beratActual,
     required this.status,
     this.catatan,
-    this.catatanPengelola,
     required this.tanggalAntar,
     this.estimasiSelesai,
-    this.acceptedAt,
-    this.completedAt,
-    this.pickedUpAt,
     required this.createdAt,
     required this.updatedAt,
     this.user,
     this.laundry,
-    this.detailPesanan = const [],
+    this.detailPesananLaundry = const [],
     this.pembayaran,
   });
 
@@ -57,25 +49,12 @@ class LaundryOrder {
       beratActual: _parseToDouble(json['berat_actual']),
       status: json['status'] ?? '',
       catatan: json['catatan'],
-      catatanPengelola: json['catatan_pengelola'],
       tanggalAntar: DateTime.parse(
         json['tanggal_antar'] ?? DateTime.now().toIso8601String(),
       ),
       estimasiSelesai:
           json['estimasi_selesai'] != null
               ? DateTime.parse(json['estimasi_selesai'])
-              : null,
-      acceptedAt:
-          json['accepted_at'] != null
-              ? DateTime.parse(json['accepted_at'])
-              : null,
-      completedAt:
-          json['completed_at'] != null
-              ? DateTime.parse(json['completed_at'])
-              : null,
-      pickedUpAt:
-          json['picked_up_at'] != null
-              ? DateTime.parse(json['picked_up_at'])
               : null,
       createdAt: DateTime.parse(
         json['created_at'] ?? DateTime.now().toIso8601String(),
@@ -88,7 +67,7 @@ class LaundryOrder {
           json['laundry'] != null
               ? LaundryProvider.fromJson(json['laundry'])
               : null,
-      detailPesanan:
+      detailPesananLaundry:
           json['detail_pesanan_laundry'] != null
               ? (json['detail_pesanan_laundry'] as List)
                   .map((detail) => LaundryOrderDetail.fromJson(detail))
