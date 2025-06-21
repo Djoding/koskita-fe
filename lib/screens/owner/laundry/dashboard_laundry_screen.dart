@@ -200,9 +200,9 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
                     childAspectRatio: 1.1,
                     children: [
                       _buildMenuCard(
-                        'Daftar Laundry',
+                        'Daftar Layanan',
                         'Kelola penyedia layanan laundry',
-                        Icons.local_laundry_service_outlined,
+                        'assets/icon_laundry.png',
                         Colors.blue,
                         () => Get.to(
                           () => const LaundryListScreen(),
@@ -212,7 +212,7 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
                       _buildMenuCard(
                         'Pesanan Masuk',
                         'Kelola pesanan dari penghuni',
-                        Icons.inbox_outlined,
+                        'assets/icon_order.png',
                         Colors.orange,
                         () => Get.to(
                           () => const LaundryOrdersScreen(),
@@ -230,51 +230,10 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 24, color: color),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-          Text(
-            title,
-            style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMenuCard(
     String title,
     String subtitle,
-    IconData icon,
+    String imageAsset, // Ubah dari IconData ke String untuk asset path
     Color color,
     VoidCallback onTap,
   ) {
@@ -297,24 +256,38 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(25),
+            // Ubah bagian icon untuk menggunakan image asset seperti KostDetailScreen
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                imageAsset,
+                width: 50,
+                height: 50,
+                fit: BoxFit.contain,
+                errorBuilder:
+                    (context, error, stackTrace) => Container(
+                      width: 50,
+                      height: 50,
+                      color: Colors.grey[300],
+                      child: Icon(
+                        Icons.broken_image,
+                        size: 25,
+                        color: Colors.grey[500],
+                      ),
+                    ),
               ),
-              child: Icon(icon, size: 28, color: color),
             ),
             const SizedBox(height: 12),
             Text(
               title,
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(

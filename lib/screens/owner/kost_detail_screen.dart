@@ -7,6 +7,7 @@ import 'package:kosan_euy/screens/owner/laundry/dashboard_laundry_screen.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_screen.dart';
 import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
 import 'package:kosan_euy/screens/owner/reservasi/validasi_reservasi_screen.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/api_service.dart';
 import 'package:kosan_euy/services/pengelola_service.dart';
 import 'package:kosan_euy/routes/app_pages.dart';
@@ -440,61 +441,90 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                   onPressed: () => Get.back(),
                 ),
               ),
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: PopupMenuButton<String>(
-                  icon: const Icon(
-                    Icons.more_vert,
-                    color: Colors.black,
-                    size: 20,
+              Row(
+                children: [
+                  // Edit button dengan background
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.more_vert,
+                        color: Colors.black,
+                        size: 20,
+                      ),
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'edit':
+                            Get.to(() => EditKosScreen(kostData: kostData!));
+                            break;
+                          case 'delete':
+                            _showDeleteConfirmation();
+                            break;
+                        }
+                      },
+                      itemBuilder:
+                          (BuildContext context) => [
+                            PopupMenuItem<String>(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.edit,
+                                    size: 20,
+                                    color: Colors.blue,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Edit Kost',
+                                    style: GoogleFonts.poppins(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.delete,
+                                    size: 20,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Hapus Kost',
+                                    style: GoogleFonts.poppins(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                    ),
                   ),
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'edit':
-                        Get.to(() => EditKosScreen(kostData: kostData!));
-                        break;
-                      case 'delete':
-                        _showDeleteConfirmation();
-                        break;
-                    }
-                  },
-                  itemBuilder:
-                      (BuildContext context) => [
-                        PopupMenuItem<String>(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.edit,
-                                size: 20,
-                                color: Colors.blue,
-                              ),
-                              const SizedBox(width: 12),
-                              Text('Edit Kost', style: GoogleFonts.poppins()),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.delete,
-                                size: 20,
-                                color: Colors.red,
-                              ),
-                              const SizedBox(width: 12),
-                              Text('Hapus Kost', style: GoogleFonts.poppins()),
-                            ],
-                          ),
-                        ),
-                      ],
-                ),
+                  const SizedBox(width: 8), // Spasi antara kedua button
+                  // Settings button dengan background
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.settings,
+                        color: Colors.black,
+                        size: 20, // Ubah dari 28 ke 20 untuk konsistensi
+                      ),
+                      onPressed: () => Get.to(() => SettingScreen()),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -571,9 +601,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-      ),
+      decoration: const BoxDecoration(color: Colors.white),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1138,7 +1166,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
             children: [
               _buildServiceCard(
                 'Reservasi Kamar',
-                Icons.home_outlined,
+                'assets/icon_reservasi.png',
                 Colors.blue,
                 () {
                   // Navigasi ke reservasi management dengan data kost
@@ -1150,7 +1178,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
               ),
               _buildServiceCard(
                 'Manajemen Catering',
-                Icons.restaurant_outlined,
+                'assets/icon_makanan.png',
                 Colors.orange,
                 () {
                   // Pastikan kostData dikirim dengan benar
@@ -1162,7 +1190,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
               ),
               _buildServiceCard(
                 'Manajemen Laundry',
-                Icons.local_laundry_service_outlined,
+                'assets/icon_laundry.png',
                 Colors.green,
                 () {
                   Get.to(
@@ -1181,7 +1209,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
 
   Widget _buildServiceCard(
     String title,
-    IconData icon,
+    dynamic icon,
     Color color,
     VoidCallback onTap,
   ) {
@@ -1205,14 +1233,37 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Icon(icon, size: 28, color: color),
+            // Ubah bagian ini untuk menyamakan dengan _LayananCard
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child:
+                  icon is IconData
+                      ? Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(icon, size: 28, color: color),
+                      )
+                      : Image.asset(
+                        icon,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.contain, // Ubah dari cover ke contain
+                        errorBuilder:
+                            (context, error, stackTrace) => Container(
+                              width: 50,
+                              height: 50,
+                              color: Colors.grey[300],
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 25,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                      ),
             ),
             const SizedBox(height: 12),
             Text(
