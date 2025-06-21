@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:kosan_euy/screens/owner/laundry/dashboard_laundry.dart';
+import 'package:kosan_euy/screens/owner/laundry/dashboard_laundry_screen.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_screen.dart';
 import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
 import 'package:kosan_euy/services/api_service.dart';
@@ -1161,7 +1161,8 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                 Colors.green,
                 () {
                   Get.to(
-                    () => const DashboardLaundryScreen(),
+                    () =>
+                        const DashboardLaundryScreen(), // Gunakan screen yang baru
                     arguments: kostData,
                   );
                 },
