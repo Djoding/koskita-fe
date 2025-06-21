@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/services/laundry_service.dart';
-import 'package:kosan_euy/widgets/success_screen.dart';
 
 class AddEditServiceScreen extends StatefulWidget {
   const AddEditServiceScreen({super.key});
@@ -126,11 +125,11 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
         if (response['status']) {
           Get.back(result: true);
-          Get.to(
-            () => const SuccessScreen(
-              title: 'Layanan Berhasil Diperbarui',
-              subtitle: 'Data layanan telah diperbarui',
-            ),
+          Get.snackbar(
+            'Success',
+            'Layanan berhasil diperbarui',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
           );
         } else {
           throw Exception(response['message'] ?? 'Gagal memperbarui layanan');
@@ -148,7 +147,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
         }
 
         // PERBAIKAN: Pastikan layanan_id dikirim sebagai integer
-        formData['layanan_id'] = int.parse(selectedLayananId!);
+        formData['layanan_id'] = selectedLayananId!;
 
         final response = await LaundryService.createLaundryService(
           laundryData!['laundry_id'].toString(),
@@ -157,11 +156,11 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
         if (response['status']) {
           Get.back(result: true);
-          Get.to(
-            () => const SuccessScreen(
-              title: 'Layanan Berhasil Ditambahkan',
-              subtitle: 'Layanan baru telah ditambahkan',
-            ),
+          Get.snackbar(
+            'Success',
+            'Layanan berhasil ditambahkan',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
           );
         } else {
           throw Exception(response['message'] ?? 'Gagal menambahkan layanan');
