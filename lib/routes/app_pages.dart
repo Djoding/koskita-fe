@@ -3,22 +3,15 @@ import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
 import 'package:kosan_euy/screens/owner/daftar_kos_screen.dart';
-import 'package:kosan_euy/screens/owner/penghuni_screen.dart';
-import 'package:kosan_euy/screens/owner/add_penghuni_screen.dart';
-import 'package:kosan_euy/screens/owner/edit_penghuni_screen.dart';
-import 'package:kosan_euy/screens/owner/reservasi/reservasi_screen.dart';
+import 'package:kosan_euy/screens/owner/reservasi/detail_validasi_reservasi_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/screens/settings/notification_screen.dart';
 import 'package:kosan_euy/screens/settings/edit_profile_screen.dart';
 import 'package:kosan_euy/screens/settings/change_password_screen.dart';
 import 'package:kosan_euy/widgets/success_screen.dart';
-import 'package:kosan_euy/screens/owner/reservasi/delete_user.dart';
-import 'package:kosan_euy/screens/owner/reservasi/edit_user.dart';
-import 'package:kosan_euy/screens/owner/reservasi/form_edit_penghuni.dart';
 import 'package:kosan_euy/screens/owner/reservasi/home_reservasi_owner.dart';
 import 'package:kosan_euy/screens/owner/reservasi/edit_kos.dart';
 import 'package:kosan_euy/screens/owner/reservasi/validasi_reservasi_screen.dart'; // NEW
-import 'package:kosan_euy/screens/owner/pembayaran/qris_payment_screen.dart'; // NEW
 // Admin imports
 import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
 import 'package:kosan_euy/screens/admin/pengelola_detail_screen.dart';
@@ -54,10 +47,6 @@ class AppPages {
     GetPage(name: Routes.dashboardOwner, page: () => DashboardOwnerScreen()),
     GetPage(name: Routes.home, page: () => HomeScreenPage()),
     GetPage(name: Routes.daftarKos, page: () => DaftarKosScreen()),
-    GetPage(name: Routes.penghuni, page: () => PenghuniScreen()),
-    GetPage(name: Routes.addPenghuni, page: () => AddPenghuniScreen()),
-    GetPage(name: Routes.editPenghuni, page: () => EditPenghuniScreen()),
-    GetPage(name: Routes.reservasi, page: () => ReservasiScreen()),
     GetPage(name: Routes.setting, page: () => SettingScreen()),
     GetPage(name: Routes.notification, page: () => NotificationScreen()),
     GetPage(name: Routes.editProfile, page: () => EditProfileScreen()),
@@ -70,12 +59,6 @@ class AppPages {
             subtitle: 'Aksi berhasil dilakukan',
           ),
     ),
-    GetPage(name: Routes.deleteUser, page: () => DeleteUserScreen()),
-    GetPage(name: Routes.editUser, page: () => EditUserScreen()),
-    GetPage(
-      name: Routes.formEditPenghuni,
-      page: () => FormEditPenghuniScreen(),
-    ),
     GetPage(name: Routes.homeReservasiOwner, page: () => HomeReservasiOwner()),
     GetPage(
       name: Routes.kostDetail,
@@ -85,12 +68,20 @@ class AppPages {
       name: Routes.editKost,
       page: () => EditKosScreen(kostData: Get.arguments),
     ),
-    // NEW ROUTES
+
+    // Reservasi Routes
     GetPage(
       name: Routes.validasiReservasi,
       page: () => ValidasiReservasiScreen(),
     ),
-    GetPage(name: Routes.qrisPayment, page: () => QrisPaymentScreen()),
+    GetPage(
+      name: Routes.detailReservasi,
+      page:
+          () => DetailValidasiReservasiScreen(
+            reservasi: Get.arguments['reservasi'],
+            kostData: Get.arguments['kostData'],
+          ),
+    ),
 
     // Admin routes
     GetPage(name: Routes.dashboardAdmin, page: () => DashboardAdminScreen()),

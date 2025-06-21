@@ -26,6 +26,7 @@ abstract class Routes {
   static const homeReservasiOwner = '/home-reservasi-owner';
   static const notifikasiLaundry = '/notifikasi-laundry';
   static const validasiReservasi = '/validasi-reservasi'; // NEW
+  static const detailReservasi = '/detail-reservasi';
   static const qrisPayment = '/qris-payment'; // NEW
   static const layananLaundry = '/layanan-laundry'; // NEW
 
