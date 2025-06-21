@@ -20,6 +20,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
 
   Map<String, dynamic>? kostData;
   bool showAll = false;
+  int? laundryFilter;
   List<dynamic> orders = [];
   bool isLoading = true;
   String errorMessage = '';
@@ -30,14 +31,14 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
     'Menunggu',
     'Diproses',
     'Selesai',
-    
+    'Dibatalkan',
   ];
   final Map<String, String> statusMapping = {
     'Semua': '',
     'Menunggu': 'PENDING',
     'Diproses': 'PROSES',
     'Selesai': 'DITERIMA',
-    
+    'Dibatalkan': 'CANCELLED',
   };
 
   @override
@@ -46,10 +47,11 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
     _tabController = TabController(length: statusTabs.length, vsync: this);
     _tabController.addListener(_onTabChanged);
 
-    // PERBAIKAN: Parse arguments dengan benar
+    // Parse arguments
     final arguments = Get.arguments as Map<String, dynamic>? ?? {};
     kostData = arguments['kost_data'];
     showAll = arguments['show_all'] ?? widget.showAll;
+    laundryFilter = arguments['laundry_filter'];
 
     _loadOrders();
   }
@@ -61,6 +63,14 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
   }
 
   Future<void> _loadOrders() async {
+    if (kostData == null) {
+      setState(() {
+        errorMessage = 'Data kost tidak ditemukan';
+        isLoading = false;
+      });
+      return;
+    }
+
     setState(() {
       isLoading = true;
       errorMessage = '';
@@ -70,26 +80,16 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
       final selectedStatus =
           statusMapping[statusTabs[_tabController.index]] ?? '';
 
-      // PERBAIKAN: Gunakan endpoint baru
-      final response = await LaundryService.getAllLaundryOrders(
+      // PERBAIKAN: Gunakan endpoint baru dengan kost_id
+      final response = await LaundryService.getLaundryOrdersByKost(
+        kostId: kostData!['kost_id'].toString(),
         status: selectedStatus.isNotEmpty ? selectedStatus : null,
+        laundryId: laundryFilter?.toString(),
       );
 
       if (response['status']) {
-        List<dynamic> allOrders = response['data'] as List? ?? [];
-
-        // PERBAIKAN: Filter berdasarkan kost jika tidak showAll
-        if (!showAll && kostData != null) {
-          allOrders =
-              allOrders.where((order) {
-                final laundry = order['laundry'] as Map<String, dynamic>?;
-                return laundry?['kost_id']?.toString() ==
-                    kostData!['kost_id'].toString();
-              }).toList();
-        }
-
         setState(() {
-          orders = allOrders;
+          orders = response['data'] as List? ?? [];
           isLoading = false;
         });
       } else {
@@ -108,7 +108,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
 
   Future<void> _updateOrderStatus(String orderId, String newStatus) async {
     try {
-      // PERBAIKAN: Gunakan method baru
+      // PERBAIKAN: Gunakan endpoint baru untuk update status
       final response = await LaundryService.updateLaundryOrderStatus(orderId, {
         'status': newStatus,
       });
@@ -197,22 +197,23 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
   List<String> _getAvailableStatuses(String currentStatus) {
     switch (currentStatus) {
       case 'PENDING':
-        return ['PROSES'];
+        return ['PROSES', 'CANCELLED'];
       case 'PROSES':
-        return ['DITERIMA'];
+        return ['DITERIMA', 'CANCELLED'];
       case 'DITERIMA':
-        return []; // Tidak ada status yang bisa diubah
+      case 'CANCELLED':
+        return [];
       default:
-        return ['PROSES'];
+        return ['PROSES', 'CANCELLED'];
     }
   }
 
   void _goToOrderDetail(Map<String, dynamic> order) {
     Get.to(
-      () => LaundryOrderDetailScreen(),
+      () => const LaundryOrderDetailScreen(),
       arguments: {
         'pesanan_id': order['pesanan_id'].toString(),
-        'order_data': order,
+        'order_data': order, // Pass cached data
       },
     )?.then((result) {
       // Refresh jika ada perubahan dari detail screen
@@ -511,7 +512,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user['name'] ?? 'Customer',
+                          user['full_name'] ?? 'Customer',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -560,6 +561,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
                 ],
               ),
               const SizedBox(height: 16),
+
               // Order Items Summary
               Container(
                 padding: const EdgeInsets.all(12),
@@ -748,6 +750,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
     final laundryService =
         item['laundry_service'] as Map<String, dynamic>? ?? {};
     final layanan = laundryService['layanan'] as Map<String, dynamic>? ?? {};
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -787,7 +790,8 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
         return Colors.blue;
       case 'DITERIMA':
         return Colors.green;
-      
+      case 'CANCELLED':
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -801,7 +805,8 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
         return Icons.autorenew;
       case 'DITERIMA':
         return Icons.check_circle;
-      
+      case 'CANCELLED':
+        return Icons.cancel;
       default:
         return Icons.help_outline;
     }
@@ -815,6 +820,8 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
         return 'Diproses';
       case 'DITERIMA':
         return 'Selesai';
+      case 'CANCELLED':
+        return 'Dibatalkan';
       default:
         return 'Tidak Diketahui';
     }
@@ -836,6 +843,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
 
   String _formatCurrency(dynamic amount) {
     if (amount == null) return '0';
+
     double value;
     if (amount is String) {
       value = double.tryParse(amount) ?? 0;

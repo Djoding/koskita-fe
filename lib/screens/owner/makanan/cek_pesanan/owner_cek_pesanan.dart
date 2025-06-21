@@ -1,126 +1,109 @@
 // lib/screens/owner/makanan/cek_pesanan/owner_cek_pesanan.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:kosan_euy/models/catering_order_model.dart';
+import 'package:kosan_euy/services/catering_menu_service.dart';
 import 'package:kosan_euy/models/catering_model.dart';
 import 'package:kosan_euy/routes/app_pages.dart';
-import 'package:kosan_euy/services/catering_menu_service.dart'; // Import service
-import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // To get user ID
 
 class OwnerCekPesanan extends StatefulWidget {
-  // Hapus constructor parameter
   const OwnerCekPesanan({super.key});
 
   @override
   State<OwnerCekPesanan> createState() => _OwnerCekPesananState();
 }
 
-class _OwnerCekPesananState extends State<OwnerCekPesanan> {
-  List<Map<String, dynamic>> _orders = []; // Raw map from backend
-  bool _isLoadingOrders = true;
+class _OwnerCekPesananState extends State<OwnerCekPesanan>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  List<CateringOrder> _allOrders = [];
+  bool _isLoading = true;
   String _errorMessage = '';
-  String? _pengelolaId;
-  String? _cateringId; // Filter orders by catering ID
   Map<String, dynamic>? _kostData;
+  String? _cateringId;
 
   @override
   void initState() {
     super.initState();
-    _initializeOrdersData();
+    _tabController = TabController(length: 3, vsync: this);
+    _initializeData();
   }
 
-  Future<void> _getPengelolaId() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('accessToken');
-      if (token != null) {
-        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-        _pengelolaId = decodedToken["userId"];
-        print('Pengelola ID: $_pengelolaId'); // Debug print
-      }
-    } catch (e) {
-      print('Error getting pengelola ID: $e');
-    }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
-  Future<void> _initializeOrdersData() async {
-    await _getPengelolaId();
-
-    // Ambil kostData dari Get.arguments
+  Future<void> _initializeData() async {
     _kostData = Get.arguments as Map<String, dynamic>?;
-
-    print('OwnerCekPesanan kostData: $_kostData'); // Debug print
 
     if (_kostData == null) {
       setState(() {
-        _errorMessage = 'Kost data is missing. Cannot fetch catering orders.';
-        _isLoadingOrders = false;
+        _errorMessage = 'Kost data is missing.';
+        _isLoading = false;
       });
       return;
     }
 
     try {
-      final response = await CateringMenuService.getCateringsByKost(
+      // Get catering for this kost
+      final cateringResponse = await CateringMenuService.getCateringsByKost(
         _kostData!['kost_id'],
       );
-      if (response['status'] && (response['data'] as List).isNotEmpty) {
-        final List<Catering> caterings = response['data'];
+
+      if (cateringResponse['status'] &&
+          (cateringResponse['data'] as List).isNotEmpty) {
+        final List<Catering> caterings = cateringResponse['data'];
         _cateringId = caterings.first.cateringId;
-        await _fetchCateringOrders();
+        await _fetchOrders();
       } else {
         setState(() {
-          _errorMessage =
-              response['message'] ?? 'No catering service found for this kost.';
-          _isLoadingOrders = false;
+          _errorMessage = 'No catering service found for this kost.';
+          _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error fetching catering service: $e';
-        _isLoadingOrders = false;
+        _errorMessage = 'Error fetching data: $e';
+        _isLoading = false;
       });
     }
   }
 
-  Future<void> _fetchCateringOrders() async {
-    if (_pengelolaId == null || _cateringId == null) {
-      setState(() {
-        _errorMessage = 'Pengelola ID or Catering ID is not available.';
-        _isLoadingOrders = false;
-      });
-      return;
-    }
-
+  Future<void> _fetchOrders() async {
     setState(() {
-      _isLoadingOrders = true;
+      _isLoading = true;
       _errorMessage = '';
     });
 
     try {
       final response = await CateringMenuService.getCateringOrders(
-        pengelolaId: _pengelolaId!,
-        cateringId: _cateringId, // Filter by cateringId
-        // You can add other filters like status, startDate, endDate here
+        cateringId: _cateringId,
       );
+
       if (response['status']) {
         setState(() {
-          _orders = List<Map<String, dynamic>>.from(response['data']);
+          _allOrders = response['data'];
+          _isLoading = false;
         });
       } else {
         setState(() {
-          _errorMessage =
-              response['message'] ?? 'Failed to load catering orders.';
+          _errorMessage = response['message'] ?? 'Failed to load orders.';
+          _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Network error fetching orders: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoadingOrders = false;
+        _errorMessage = 'Network error: $e';
+        _isLoading = false;
       });
     }
+  }
+
+  List<CateringOrder> _getOrdersByStatus(String status) {
+    return _allOrders.where((order) => order.status == status).toList();
   }
 
   @override
@@ -128,200 +111,378 @@ class _OwnerCekPesananState extends State<OwnerCekPesanan> {
     return Scaffold(
       backgroundColor: const Color(0xFF91B7DE),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              // Tombol back
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.black,
+                      ),
+                      onPressed: () => Get.back(),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Pesanan Catering',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.refresh, color: Colors.black),
+                      onPressed: _fetchOrders,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Summary Cards
+            if (!_isLoading && _errorMessage.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildSummaryCard(
+                        'Pending',
+                        _getOrdersByStatus('PENDING').length,
+                        Colors.orange,
+                        Icons.pending,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildSummaryCard(
+                        'Proses',
+                        _getOrdersByStatus('PROSES').length,
+                        Colors.blue,
+                        Icons.hourglass_empty,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildSummaryCard(
+                        'Diterima',
+                        _getOrdersByStatus('DITERIMA').length,
+                        Colors.green,
+                        Icons.check_circle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 24),
+
+            // Tab Bar
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Colors.black,
-                  ),
-                  onPressed: () => Get.back(),
+                labelColor: const Color(0xFF91B7DE),
+                unselectedLabelColor: Colors.white,
+                labelStyle: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
+                tabs: const [
+                  Tab(text: 'Pending'),
+                  Tab(text: 'Proses'),
+                  Tab(text: 'Diterima'),
+                ],
               ),
-              const SizedBox(height: 24),
-              const Center(
-                child: Text(
-                  'Pesanan Masuk',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              // You might want to filter orders by month or show current month only
-              // For simplicity, let's just show all fetched orders.
-              const Text(
-                'Daftar Pesanan',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${_orders.length} item',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 18),
-              _isLoadingOrders
-                  ? const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                  : _errorMessage.isNotEmpty
-                  ? Expanded(
-                    child: Center(
-                      child: Text(
-                        _errorMessage,
-                        style: const TextStyle(color: Colors.white),
-                        textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Content
+            Expanded(
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _errorMessage.isNotEmpty
+                      ? _buildErrorState()
+                      : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildOrdersList(_getOrdersByStatus('PENDING')),
+                          _buildOrdersList(_getOrdersByStatus('PROSES')),
+                          _buildOrdersList(_getOrdersByStatus('DITERIMA')),
+                        ],
                       ),
-                    ),
-                  )
-                  : Expanded(
-                    child:
-                        _orders.isEmpty
-                            ? const Center(
-                              child: Text(
-                                'Tidak ada pesanan masuk.',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            )
-                            : ListView.builder(
-                              itemCount: _orders.length,
-                              itemBuilder: (context, index) {
-                                final order = _orders[index];
-                                return OrderCard(
-                                  order: order,
-                                  pengelolaId: _pengelolaId!,
-                                );
-                              },
-                            ),
-                  ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class OrderCard extends StatelessWidget {
-  final Map<String, dynamic> order;
-  final String pengelolaId; // Pass pengelolaId to detail screen
+  Widget _buildSummaryCard(
+    String title,
+    int count,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            count.toString(),
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 
-  const OrderCard({super.key, required this.order, required this.pengelolaId});
+  Widget _buildOrdersList(List<CateringOrder> orders) {
+    if (orders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 80,
+              color: Colors.white.withOpacity(0.6),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Tidak ada pesanan',
+              style: GoogleFonts.poppins(color: Colors.white70, fontSize: 16),
+            ),
+          ],
+        ),
+      );
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    // Safely parse created_at for display
-    final DateTime createdAt = DateTime.parse(order['created_at']);
-    final String formattedDate =
-        '${createdAt.day} ${getMonthName(createdAt.month)} ${createdAt.year}';
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+        final order = orders[index];
+        return _buildOrderCard(order);
+      },
+    );
+  }
 
-    // Get user full name, default to 'Unknown User'
-    final String userName =
-        order['user']?['full_name'] ?? 'Pengguna Tidak Dikenal';
+  Widget _buildOrderCard(CateringOrder order) {
+    Color statusColor;
+    switch (order.status) {
+      case 'PENDING':
+        statusColor = Colors.orange;
+        break;
+      case 'PROSES':
+        statusColor = Colors.blue;
+        break;
+      case 'DITERIMA':
+        statusColor = Colors.green;
+        break;
+      default:
+        statusColor = Colors.grey;
+    }
 
     return Container(
-      width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        title: Text(
-          userName,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            color: Colors.black,
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 2.0),
-          child: Text(
-            formattedDate,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            Get.toNamed(
+              Routes.cateringOrderDetail,
+              arguments: {'orderId': order.pesananId, 'order': order},
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            order.user?.fullName ?? 'Unknown User',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                          ),
+                          Text(
+                            _formatDate(order.createdAt),
+                            style: GoogleFonts.poppins(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        order.status,
+                        style: GoogleFonts.poppins(
+                          color: statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${order.detailPesanan.length} item(s)',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total:',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      _formatCurrency(order.totalHarga),
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
-        trailing: const Icon(
-          Icons.chevron_right,
-          color: Colors.black,
-          size: 28,
-        ),
-        onTap: () {
-          Get.toNamed(
-            Routes.cateringOrderDetail,
-            arguments: {
-              'orderId': order['pesanan_id'],
-              'pengelolaId': pengelolaId, // Pass pengelolaId
-            },
-          );
-        },
       ),
     );
   }
 
-  String getMonthName(int month) {
-    switch (month) {
-      case 1:
-        return 'Januari';
-      case 2:
-        return 'Februari';
-      case 3:
-        return 'Maret';
-      case 4:
-        return 'April';
-      case 5:
-        return 'Mei';
-      case 6:
-        return 'Juni';
-      case 7:
-        return 'Juli';
-      case 8:
-        return 'Agustus';
-      case 9:
-        return 'September';
-      case 10:
-        return 'Oktober';
-      case 11:
-        return 'November';
-      case 12:
-        return 'Desember';
-      default:
-        return '';
-    }
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 80,
+            color: Colors.white.withOpacity(0.6),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _errorMessage,
+            style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _fetchOrders,
+            child: const Text('Coba Lagi'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatCurrency(double amount) {
+    return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 }
