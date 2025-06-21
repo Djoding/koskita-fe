@@ -4,16 +4,15 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
-import 'package:kosan_euy/services/api_service.dart'; // Import ApiService
-import 'package:kosan_euy/models/catering_model.dart'; // Import Catering models
-import 'package:uploadthing/uploadthing.dart'; // For image upload
+import 'package:kosan_euy/services/api_service.dart';
+import 'package:kosan_euy/models/catering_model.dart';
+import 'package:uploadthing/uploadthing.dart';
 
 class CateringMenuService {
   static const String _baseUrl =
-      ApiService.baseUrl; // Use base URL from ApiService
+      ApiService.baseUrl;
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
-  // Headers dengan token
   static Future<Map<String, String>> get _headers async {
     final token = await _storage.read(key: 'accessToken');
     return {
@@ -22,13 +21,6 @@ class CateringMenuService {
     };
   }
 
-  // Headers untuk multipart (tanpa Content-Type)
-  static Future<Map<String, String>> get _multipartHeaders async {
-    final token = await _storage.read(key: 'accessToken');
-    return {if (token != null) 'Authorization': 'Bearer $token'};
-  }
-
-  // Get list of Caterings by Kost ID (for Pengelola/Penghuni)
   static Future<Map<String, dynamic>> getCateringsByKost(String kostId) async {
     try {
       final uri = Uri.parse('${_baseUrl}catering?kost_id=$kostId');
@@ -63,7 +55,6 @@ class CateringMenuService {
     }
   }
 
-  // Get menu items for a specific Catering (Pengelola/Penghuni)
   static Future<Map<String, dynamic>> getCateringMenu(String cateringId) async {
     try {
       final uri = Uri.parse('${_baseUrl}catering/$cateringId/menu');
@@ -94,7 +85,6 @@ class CateringMenuService {
     }
   }
 
-  // Create Catering (Pengelola only)
   static Future<Map<String, dynamic>> createCatering({
     required String kostId,
     required String namaCatering,
@@ -147,7 +137,6 @@ class CateringMenuService {
     }
   }
 
-  // Add a new menu item (Pengelola only)
   static Future<Map<String, dynamic>> addCateringMenuItem({
     required String cateringId,
     required String namaMenu,
@@ -178,7 +167,7 @@ class CateringMenuService {
           'kategori': kategori,
           'harga': harga,
           'foto_menu':
-              uploadedImageUrl, // This will be relative path from UploadThing if it's external, or full if it's mapped directly by backend. Backend handles this.
+              uploadedImageUrl, 
           'is_available': isAvailable,
         }),
       );
@@ -200,7 +189,6 @@ class CateringMenuService {
     }
   }
 
-  // Update a menu item (Pengelola only)
   static Future<Map<String, dynamic>> updateCateringMenuItem({
     required String cateringId,
     required String menuId,
@@ -208,11 +196,11 @@ class CateringMenuService {
     String? kategori,
     double? harga,
     File? newFotoMenu,
-    String? existingFotoMenuUrl, // This will be the full URL for the old image
+    String? existingFotoMenuUrl,
     bool? isAvailable,
   }) async {
     try {
-      String? finalFotoMenuUrl = existingFotoMenuUrl; // Default to existing URL
+      String? finalFotoMenuUrl = existingFotoMenuUrl;
       if (newFotoMenu != null) {
         final uploadThing = UploadThing(
           "sk_live_08e0250b1aab76a8067be159691359dfb45a15f5fb0906fbacf6859866f1e199",
@@ -259,13 +247,11 @@ class CateringMenuService {
     }
   }
 
-  // Delete a menu item (soft delete - set is_available to false) (Pengelola only)
   static Future<Map<String, dynamic>> deleteCateringMenuItem({
     required String cateringId,
     required String menuId,
   }) async {
     try {
-      // Backend's deleteMenuItem is a soft delete by setting is_available to false
       final response = await http.delete(
         Uri.parse('${_baseUrl}catering/$cateringId/menu/$menuId'),
         headers: await _headers,
@@ -289,9 +275,8 @@ class CateringMenuService {
     }
   }
 
-  // Get Catering Orders (for Pengelola)
   static Future<Map<String, dynamic>> getCateringOrders({
-    required String pengelolaId, // User ID of the pengelola
+    required String pengelolaId, 
     String? status,
     String? cateringId,
     String? startDate,
@@ -299,15 +284,18 @@ class CateringMenuService {
   }) async {
     try {
       final Map<String, String> queryParams = {};
-      // Note: Backend's getCateringOrders does filtering by pengelola_id implicitly
-      // based on the authenticated user.
-      if (status != null && status.isNotEmpty) queryParams['status'] = status;
-      if (cateringId != null && cateringId.isNotEmpty)
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+      if (cateringId != null && cateringId.isNotEmpty) {
         queryParams['catering_id'] = cateringId;
-      if (startDate != null && startDate.isNotEmpty)
+      }
+      if (startDate != null && startDate.isNotEmpty) {
         queryParams['start_date'] = startDate;
-      if (endDate != null && endDate.isNotEmpty)
+      }
+      if (endDate != null && endDate.isNotEmpty) {
         queryParams['end_date'] = endDate;
+      }
 
       final uri = Uri.parse(
         '${_baseUrl}catering/orders',
@@ -317,10 +305,9 @@ class CateringMenuService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // The data structure here is list of raw orders from backend
         return {
           'status': true,
-          'data': data['data'], // This will be a list of raw maps
+          'data': data['data'],
           'message': data['message'],
         };
       } else {
@@ -335,10 +322,9 @@ class CateringMenuService {
     }
   }
 
-  // Get Catering Order Detail (for Pengelola)
   static Future<Map<String, dynamic>> getCateringOrderDetail({
     required String orderId,
-    required String pengelolaId, // User ID of the pengelola
+    required String pengelolaId, 
   }) async {
     try {
       final uri = Uri.parse('${_baseUrl}catering/orders/$orderId');
@@ -348,7 +334,7 @@ class CateringMenuService {
         final data = jsonDecode(response.body);
         return {
           'status': true,
-          'data': data['data'], // This will be a raw map of the order
+          'data': data['data'], 
           'message': data['message'],
         };
       } else {
@@ -363,11 +349,10 @@ class CateringMenuService {
     }
   }
 
-  // Update Catering Order Status (for Pengelola)
   static Future<Map<String, dynamic>> updateCateringOrderStatus({
     required String orderId,
-    required String status, // PENDING, PROSES, DITERIMA
-    required String pengelolaId, // User ID of the pengelola
+    required String status, 
+    required String pengelolaId,
   }) async {
     try {
       final response = await http.patch(

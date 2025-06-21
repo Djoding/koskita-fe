@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts for better typography
+import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/penghuni/makanan/keranjang.dart';
 import 'package:kosan_euy/screens/penghuni/makanan/order_food_history.dart';
+import 'package:kosan_euy/services/catering_menu_service.dart';
+import 'package:kosan_euy/models/catering_model.dart'; // Pastikan model Catering ada qrisImage dan rekeningInfo
 
 class MenuMakanan extends StatefulWidget {
-  const MenuMakanan({super.key});
+  final String cateringId;
+  final String reservasiId;
+
+  const MenuMakanan({
+    super.key,
+    required this.cateringId,
+    required this.reservasiId,
+  });
 
   @override
   State<MenuMakanan> createState() => _MenuMakananScreenState();
@@ -15,9 +24,14 @@ class _MenuMakananScreenState extends State<MenuMakanan>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _showFoodTab = true;
-  final TextEditingController _searchController =
-      TextEditingController(); // Added search controller for UI
-  String _searchQuery = ''; // Added search query state for UI
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  List<CateringMenuItem> _allMenus = [];
+  Catering? _cateringInfo; // Ini akan berisi rekening_info dan qrisImage
+  bool _isLoading = true;
+  String? _errorMessage;
+  final Map<String, Map<String, dynamic>> _selectedItems = {};
 
   @override
   void initState() {
@@ -25,46 +39,289 @@ class _MenuMakananScreenState extends State<MenuMakanan>
     _tabController = TabController(length: 2, vsync: this);
     _searchController.addListener(() {
       setState(() {
-        _searchQuery =
-            _searchController.text; // Update search query for UI changes
+        _searchQuery = _searchController.text;
       });
     });
+    _loadCateringMenus();
+  }
+
+  void _handleAddToCart(
+    String menuId,
+    String name,
+    double price,
+    String imagePath,
+    String kategori,
+  ) {
+    int quantity = 1;
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Pilih Kuantitas $name',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            StatefulBuilder(
+              builder: (BuildContext context, StateSetter setModalState) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle),
+                      onPressed: () {
+                        if (quantity > 1) {
+                          setModalState(() {
+                            quantity--;
+                          });
+                        }
+                      },
+                    ),
+                    Text(
+                      '$quantity',
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle),
+                      onPressed: () {
+                        setModalState(() {
+                          quantity++;
+                        });
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4D9DAB),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                onPressed: () {
+                  setState(() {
+                    if (_selectedItems.containsKey(menuId)) {
+                      _selectedItems.update(menuId, (value) {
+                        value['jumlah'] =
+                            (value['jumlah'] as int) +
+                            quantity;
+                        return value;
+                      });
+                    } else {
+                      _selectedItems[menuId] = {
+                        'menu_id': menuId,
+                        'image': imagePath,
+                        'nama': name,
+                        'harga': price,
+                        'jumlah': quantity,
+                        'kategori': kategori,
+                      };
+                    }
+                    Get.back();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '$quantity x $name berhasil ditambahkan!',
+                        ),
+                        backgroundColor: const Color(0xFF0B8FAC),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  });
+                },
+                child: Text(
+                  'Tambahkan ke Keranjang',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Future<void> _loadCateringMenus() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final result = await CateringMenuService.getCateringMenu(
+        widget.cateringId,
+      );
+      if (result['status'] == true) {
+        setState(() {
+          _cateringInfo = result['catering_info'] as Catering;
+          _allMenus = result['data'] as List<CateringMenuItem>;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = result['message'] ?? 'Gagal memuat menu catering.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading catering menus: $e");
+      setState(() {
+        _errorMessage = 'Terjadi kesalahan: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _searchController.dispose(); // Dispose search controller
+    _searchController.dispose();
     super.dispose();
+  }
+
+  List<CateringMenuItem> _getFilteredMenus(bool isFoodTab) {
+    final String category = isFoodTab ? 'MAKANAN_BERAT' : 'MINUMAN';
+    List<CateringMenuItem> filteredByCategory =
+        _allMenus
+            .where((menu) => menu.kategori == category && menu.isAvailable)
+            .toList();
+
+    if (_searchQuery.isEmpty) {
+      return filteredByCategory;
+    } else {
+      return filteredByCategory
+          .where(
+            (menu) => menu.namaMenu.toLowerCase().contains(
+              _searchQuery.toLowerCase(),
+            ),
+          )
+          .toList();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        // Elegant gradient background
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF89B3DE), // Lighter blue
-              Color(0xFF6B9EDD), // Deeper blue
-            ],
+            colors: [Color(0xFF89B3DE), Color(0xFF6B9EDD)],
           ),
         ),
         child: SafeArea(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start, // Align content to start
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
+              if (_cateringInfo != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  child: Text(
+                    'Menu dari ${_cateringInfo!.namaCatering}',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               _buildTitleAndSearchBar(),
               _buildFoodDrinkToggle(),
               const SizedBox(height: 16),
               Expanded(
                 child:
-                    _showFoodTab ? const FoodGridView() : const DrinkGridView(),
+                    _isLoading
+                        ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                        : _errorMessage != null
+                        ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Error: $_errorMessage',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: _loadCateringMenus, // Coba lagi
+                                  child: const Text('Coba Lagi'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        : _getFilteredMenus(_showFoodTab).isEmpty
+                        ? Center(
+                          child: Text(
+                            _searchQuery.isNotEmpty
+                                ? 'Menu "$_searchQuery" tidak ditemukan.'
+                                : 'Tidak ada menu ${_showFoodTab ? 'makanan' : 'minuman'} yang tersedia.',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                        : GridView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.78,
+                                crossAxisSpacing: 15,
+                                mainAxisSpacing: 15,
+                              ),
+                          itemCount: _getFilteredMenus(_showFoodTab).length,
+                          itemBuilder: (context, index) {
+                            final menu = _getFilteredMenus(_showFoodTab)[index];
+                            return FoodItemCard(
+                              name: menu.namaMenu,
+                              price: menu.harga.toStringAsFixed(2),
+                              imagePath:
+                                  menu.fotoMenu ??
+                                  'assets/placeholder_food.png',
+                              kategori: menu.kategori,
+                              menuId: menu.menuId,
+                              onAddToCart: _handleAddToCart,
+                            );
+                          },
+                        ),
               ),
               _buildNextButton(),
             ],
@@ -74,18 +331,15 @@ class _MenuMakananScreenState extends State<MenuMakanan>
     );
   }
 
-  // --- UI Building Methods ---
-
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0), // Adjusted padding
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Back Button
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2), // Semi-transparent white
+              color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -98,15 +352,33 @@ class _MenuMakananScreenState extends State<MenuMakanan>
             child: IconButton(
               icon: const Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.white, // White icon
+                color: Colors.white,
               ),
-              onPressed: () => Navigator.pop(context), // Original functionality
+              onPressed: () => Navigator.pop(context),
             ),
           ),
           Row(
-            // Wrap cart and history buttons in a Row
             children: [
-              // Order History Button
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.history, color: Colors.white),
+                  onPressed: () {
+                    Get.to(() => const OrderHistoryScreen());
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
@@ -121,41 +393,35 @@ class _MenuMakananScreenState extends State<MenuMakanan>
                 ),
                 child: IconButton(
                   icon: const Icon(
-                    Icons.history, // History icon
+                    Icons.shopping_cart_outlined,
                     color: Colors.white,
                   ),
                   onPressed: () {
+                    final List<Map<String, dynamic>> itemsToSend =
+                        _selectedItems.values.toList();
+
+                    if (itemsToSend.isEmpty) {
+                      Get.snackbar(
+                        'Keranjang Kosong',
+                        'Tambahkan item ke keranjang sebelum melanjutkan.',
+                        snackPosition: SnackPosition.BOTTOM,
+                        backgroundColor: const Color(
+                          0xFF119DB1,
+                        ).withAlpha((0.9 * 255).toInt()),
+                        colorText: Colors.white,
+                      );
+                      return;
+                    }
+
                     Get.to(
-                      () => const OrderHistoryScreen(),
-                    ); // Navigate to OrderHistoryScreen
-                  },
-                ),
-              ),
-              const SizedBox(width: 10), // Spacing between buttons
-              // Cart Button
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(
-                    0.2,
-                  ), // Semi-transparent white
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.shopping_cart_outlined, // Cart icon
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    Get.to(
-                      () => const KeranjangScreen(),
-                    ); // Original functionality
+                      () => KeranjangScreen(
+                        selectedItems: itemsToSend,
+                        cateringId: widget.cateringId,
+                        reservasiId: widget.reservasiId,
+                        qrisImage: _cateringInfo?.qrisImage,
+                        rekeningInfo: _cateringInfo?.rekeningInfo,
+                      ),
+                    );
                   },
                 ),
               ),
@@ -168,10 +434,7 @@ class _MenuMakananScreenState extends State<MenuMakanan>
 
   Widget _buildTitleAndSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 25,
-      ), // Adjusted padding
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -181,7 +444,7 @@ class _MenuMakananScreenState extends State<MenuMakanan>
                 : 'Segarkan dengan Minumanmu!',
             style: GoogleFonts.poppins(
               color: Colors.white,
-              fontSize: 26, // Larger title
+              fontSize: 26,
               fontWeight: FontWeight.bold,
               shadows: [
                 Shadow(
@@ -196,9 +459,7 @@ class _MenuMakananScreenState extends State<MenuMakanan>
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(
-                30,
-              ), // More rounded search bar
+              borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
@@ -208,21 +469,18 @@ class _MenuMakananScreenState extends State<MenuMakanan>
               ],
             ),
             child: TextField(
-              controller: _searchController, // Link controller
+              controller: _searchController,
               onChanged: (value) {
-                // This will trigger setState via the listener in initState, updating _searchQuery
-                // No functional filtering implemented as per instructions
+                setState(() {
+                  _searchQuery = value; // Update search query
+                });
               },
               decoration: InputDecoration(
                 hintText: _showFoodTab ? 'Cari makanan...' : 'Cari minuman...',
                 hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: Color(0xFF4D9DAB),
-                ), // Icon color
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF4D9DAB)),
                 suffixIcon:
-                    _searchQuery
-                            .isNotEmpty // Show clear icon if text is not empty
+                    _searchQuery.isNotEmpty
                         ? IconButton(
                           icon: const Icon(Icons.clear, color: Colors.grey),
                           onPressed: () {
@@ -230,7 +488,7 @@ class _MenuMakananScreenState extends State<MenuMakanan>
                           },
                         )
                         : null,
-                border: InputBorder.none, // Remove default border
+                border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 16,
@@ -249,9 +507,7 @@ class _MenuMakananScreenState extends State<MenuMakanan>
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(
-            0.2,
-          ), // Semi-transparent background for toggle
+          color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(25),
           border: Border.all(color: Colors.white.withOpacity(0.3)),
           boxShadow: [
@@ -279,8 +535,7 @@ class _MenuMakananScreenState extends State<MenuMakanan>
       onTap: () {
         setState(() {
           _showFoodTab = isFood;
-          _searchController
-              .clear(); // Clear search when changing tab for cleaner UI
+          _searchController.clear();
         });
       },
       child: AnimatedContainer(
@@ -310,30 +565,50 @@ class _MenuMakananScreenState extends State<MenuMakanan>
 
   Widget _buildNextButton() {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 25,
-      ), // Adjusted padding
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
       child: SizedBox(
         width: double.infinity,
-        height: 55, // Slightly taller button
+        height: 55,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF4D9DAB), // Primary accent color
+            backgroundColor: const Color(0xFF4D9DAB),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30), // More rounded corners
+              borderRadius: BorderRadius.circular(30),
             ),
-            elevation: 8, // Add elevation for depth
+            elevation: 8,
             shadowColor: Colors.black.withOpacity(0.3),
           ),
           onPressed: () {
-            Get.to(() => const KeranjangScreen()); // Original functionality
+            final List<Map<String, dynamic>> itemsToSend =
+                _selectedItems.values.toList();
+
+            if (itemsToSend.isEmpty) {
+              Get.snackbar(
+                'Keranjang Kosong',
+                'Tambahkan item ke keranjang sebelum melanjutkan.',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.orangeAccent.withOpacity(0.9),
+                colorText: Colors.white,
+              );
+              return;
+            }
+
+            Get.to(
+              () => KeranjangScreen(
+                selectedItems: itemsToSend,
+                cateringId: widget.cateringId,
+                reservasiId: widget.reservasiId,
+                qrisImage: _cateringInfo?.qrisImage,
+                rekeningInfo: _cateringInfo?.rekeningInfo,
+                // ------------------------------------
+              ),
+            );
           },
           child: Text(
-            'Lanjutkan ke Keranjang', // More descriptive text
+            'Lanjutkan ke Keranjang',
             style: GoogleFonts.poppins(
               color: Colors.white,
-              fontSize: 18, // Larger font
+              fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -344,47 +619,42 @@ class _MenuMakananScreenState extends State<MenuMakanan>
 }
 
 class FoodGridView extends StatelessWidget {
-  const FoodGridView({super.key});
+  final List<CateringMenuItem> menus;
+  final Function(
+    String menuId,
+    String name,
+    double price,
+    String imagePath,
+    String kategori,
+  )
+  onAddToCart;
+
+  const FoodGridView({
+    super.key,
+    required this.menus,
+    required this.onAddToCart,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Note: 'price' is kept as String here, as per your original code.
-    // For functional price calculations, it's better to use double/int.
-    final List<Map<String, dynamic>> foodItems = [
-      {
-        'name': 'Indomie kuah/goreng Spesial',
-        'price': 'RP 8.000',
-        'image': 'assets/food6.png',
-      },
-      {
-        'name': 'Nasi Goreng Telur',
-        'price': 'RP 12.000',
-        'image': 'assets/food5.png',
-      },
-      {'name': 'Telur Dadar', 'price': 'RP 6.000', 'image': 'assets/food4.png'},
-      {
-        'name': 'Telur Ceplok',
-        'price': 'RP 7.000',
-        'image': 'assets/food3.png',
-      },
-      {'name': 'Nasi Putih', 'price': 'RP 5.000', 'image': 'assets/food2.png'},
-      {'name': 'Midog', 'price': 'RP 5.000', 'image': 'assets/food1.png'},
-    ];
-
     return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.78, // Adjusted aspect ratio for better card fit
-        crossAxisSpacing: 15, // Increased spacing
-        mainAxisSpacing: 15, // Increased spacing
+        childAspectRatio: 0.78,
+        crossAxisSpacing: 15,
+        mainAxisSpacing: 15,
       ),
-      itemCount: foodItems.length,
+      itemCount: menus.length,
       itemBuilder: (context, index) {
-        // Pass individual properties as per original FoodItemCard constructor
+        final menu = menus[index];
         return FoodItemCard(
-          name: foodItems[index]['name'],
-          price: foodItems[index]['price'],
-          imagePath: foodItems[index]['image'],
+          menuId: menu.menuId,
+          name: menu.namaMenu,
+          price: menu.harga.toStringAsFixed(2),
+          imagePath: menu.fotoMenu ?? 'assets/placeholder_food.png',
+          kategori: menu.kategori,
+          onAddToCart: onAddToCart,
         );
       },
     );
@@ -392,45 +662,42 @@ class FoodGridView extends StatelessWidget {
 }
 
 class DrinkGridView extends StatelessWidget {
-  const DrinkGridView({super.key});
+  final List<CateringMenuItem> menus;
+  final Function(
+    String menuId,
+    String name,
+    double price,
+    String imagePath,
+    String kategori,
+  )
+  onAddToCart;
+
+  const DrinkGridView({
+    super.key,
+    required this.menus,
+    required this.onAddToCart,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> drinkItems = [
-      {
-        'name': 'Es Teh/hangat',
-        'price': 'RP 4.000',
-        'image': 'assets/drink1.png',
-      },
-      {
-        'name': 'Es Nutrisari',
-        'price': 'RP 5.000',
-        'image': 'assets/drink2.png',
-      },
-      {
-        'name': 'Es Kopi Good Day',
-        'price': 'RP 5.000',
-        'image': 'assets/drink3.png',
-      },
-      {'name': 'Es Milo', 'price': 'RP 7.000', 'image': 'assets/drink4.png'},
-      {'name': 'Es Sirsir', 'price': 'RP 5.000', 'image': 'assets/drink5.png'},
-      {'name': 'Es Dancow', 'price': 'RP 7.000', 'image': 'assets/drink6.png'},
-    ];
-
     return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.78, // Adjusted aspect ratio for better card fit
-        crossAxisSpacing: 15, // Increased spacing
-        mainAxisSpacing: 15, // Increased spacing
+        childAspectRatio: 0.78,
+        crossAxisSpacing: 15,
+        mainAxisSpacing: 15,
       ),
-      itemCount: drinkItems.length,
+      itemCount: menus.length,
       itemBuilder: (context, index) {
-        // Pass individual properties as per original FoodItemCard constructor
+        final menu = menus[index];
         return FoodItemCard(
-          name: drinkItems[index]['name'],
-          price: drinkItems[index]['price'],
-          imagePath: drinkItems[index]['image'],
+          menuId: menu.menuId,
+          name: menu.namaMenu,
+          price: menu.harga.toStringAsFixed(2),
+          imagePath: menu.fotoMenu ?? 'assets/placeholder_drink.png',
+          kategori: menu.kategori,
+          onAddToCart: onAddToCart,
         );
       },
     );
@@ -441,80 +708,116 @@ class FoodItemCard extends StatelessWidget {
   final String name;
   final String price;
   final String imagePath;
+  final Function(
+    String menuId,
+    String name,
+    double price,
+    String imagePath,
+    String kategori,
+  )
+  onAddToCart;
+  final String menuId;
+  final String kategori;
 
   const FoodItemCard({
     super.key,
     required this.name,
     required this.price,
     required this.imagePath,
+    required this.onAddToCart,
+    required this.menuId,
+    required this.kategori,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 6, // Added elevation for depth
-      shadowColor: Colors.black.withOpacity(0.2), // Subtle shadow
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18), // More rounded card corners
-      ),
-      color: Colors.white, // White card background
+      elevation: 6,
+      shadowColor: Colors.black.withOpacity(0.2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(12.0), // Increased padding
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               flex: 3,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  12,
-                ), // Rounded image corners
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorBuilder:
-                      (context, error, stackTrace) => Container(
-                        color: Colors.grey[200],
-                        child: Icon(
-                          Icons.broken_image,
-                          size: 50,
-                          color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(12),
+                child:
+                    imagePath.startsWith('http')
+                        ? Image.network(
+                          imagePath,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                color: const Color(0xFF4D9DAB),
+                              ),
+                            );
+                          },
+                          errorBuilder:
+                              (context, error, stackTrace) => Container(
+                                color: Colors.grey[200],
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 50,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                        )
+                        : Image.asset(
+                          // Fallback to asset if not a network URL
+                          imagePath,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          errorBuilder:
+                              (context, error, stackTrace) => Container(
+                                color: Colors.grey[200],
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 50,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
                         ),
-                      ),
-                ),
               ),
             ),
             const SizedBox(height: 10),
             Text(
               name,
               style: GoogleFonts.poppins(
-                // Use Google Fonts
                 color: Colors.black87,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
-              maxLines: 2, // Allow two lines for name
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
-              price, // Price as String
+              'Rp ${price.replaceAll('RP ', '')}',
               style: GoogleFonts.poppins(
-                // Use Google Fonts
-                color: const Color(0xFF4D9DAB), // Accent color for price
+                color: const Color(0xFF4D9DAB),
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            // 'Tambah' button for adding to cart
             Container(
               decoration: BoxDecoration(
                 color: const Color(0xFF0B8FAC),
-                borderRadius: BorderRadius.circular(20), // Rounded button
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  // Subtle shadow for button
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 5,
@@ -525,14 +828,14 @@ class FoodItemCard extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(20),
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '$name berhasil ditambahkan!',
-                      ), // Dynamic message
-                      backgroundColor: const Color(0xFF0B8FAC),
-                      duration: const Duration(milliseconds: 1000),
+                  onAddToCart(
+                    menuId,
+                    name,
+                    double.parse(
+                      price.replaceAll('Rp ', '').replaceAll('.', ''),
                     ),
+                    imagePath,
+                    kategori,
                   );
                 },
                 child: Padding(
@@ -541,13 +844,13 @@ class FoodItemCard extends StatelessWidget {
                     vertical: 8,
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min, // Keep row tight to content
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
                         Icons.add_shopping_cart,
                         color: Colors.white,
                         size: 16,
-                      ), // Shopping cart icon
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'Tambah',
@@ -594,7 +897,7 @@ class DeleteSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               Text(
-                'Menu Midog Berhasil Dihapus', // Using GoogleFonts for consistency
+                'Menu Midog Berhasil Dihapus',
                 style: GoogleFonts.poppins(
                   color: const Color(0xFFA51C1C),
                   fontWeight: FontWeight.bold,
@@ -617,7 +920,7 @@ class DeleteSuccessScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Kembali', // Using GoogleFonts for consistency
+                    'Kembali',
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

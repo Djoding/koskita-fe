@@ -1,76 +1,126 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts
-import 'package:kosan_euy/screens/penghuni/pembayaran/menu_pembayaran_penghuni.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:kosan_euy/screens/penghuni/pembayaran/menu_pembayaran_order.dart';
 
 class KeranjangScreen extends StatefulWidget {
-  // Added optional selectedItems to simulate receiving data from MenuMakanan
   final List<Map<String, dynamic>>? selectedItems;
+  final String cateringId;
+  final String reservasiId;
+  final String? qrisImage;
+  final Map<String, dynamic>? rekeningInfo;
 
-  const KeranjangScreen({super.key, this.selectedItems});
+  const KeranjangScreen({
+    super.key,
+    this.selectedItems,
+    required this.cateringId,
+    required this.reservasiId,
+    this.qrisImage, // TAMBAH INI
+    this.rekeningInfo, // TAMBAH INI
+  }) : assert(true, 'A cateringId (or laundryId) must be provided.');
 
   @override
   State<KeranjangScreen> createState() => _KeranjangScreenState();
 }
 
 class _KeranjangScreenState extends State<KeranjangScreen> {
-  // Use a mutable list for pesanan (cart items)
   List<Map<String, dynamic>> pesanan = [];
+
+  // Variabel untuk menyimpan ID dan info pembayaran
+  late String _currentCateringId;
+  late String _currentReservasiId;
+  String? _currentQrisImage; // TAMBAH INI
+  Map<String, dynamic>? _currentRekeningInfo; // TAMBAH INI
+  // String? _currentLaundryId; // Jika relevan
 
   @override
   void initState() {
     super.initState();
-    // Initialize pesanan with selectedItems if provided, otherwise use mock data
+
+    _currentCateringId = widget.cateringId;
+    _currentReservasiId = widget.reservasiId;
+    _currentQrisImage = widget.qrisImage; // INISIALISASI
+    _currentRekeningInfo = widget.rekeningInfo; // INISIALISASI
+    // _currentLaundryId = widget.laundryId; // Jika relevan
+
     if (widget.selectedItems != null && widget.selectedItems!.isNotEmpty) {
-      pesanan = List.from(widget.selectedItems!);
+      for (var newItem in widget.selectedItems!) {
+        final existingItemIndex = pesanan.indexWhere(
+          (p) => p['menu_id'] == newItem['menu_id'],
+        );
+
+        if (existingItemIndex != -1) {
+          pesanan[existingItemIndex]['jumlah'] =
+              (pesanan[existingItemIndex]['jumlah'] as int) +
+              (newItem['jumlah'] as int);
+        } else {
+          pesanan.add(Map<String, dynamic>.from(newItem));
+        }
+      }
+      debugPrint('KeranjangScreen received items: ${pesanan.length}');
+      debugPrint(
+        'Catering ID: $_currentCateringId, Reservasi ID: $_currentReservasiId',
+      );
+      debugPrint(
+        'QRIS Image: $_currentQrisImage, Rekening Info: $_currentRekeningInfo',
+      );
     } else {
-      // Default mock data if no items are passed (for direct access/testing)
+      // Default mock data (sesuaikan dengan format baru, termasuk 'menu_id' dan harga double)
       pesanan = [
         {
+          'menu_id': 'mock_indomie_id',
           'image': 'assets/food6.png',
           'nama': 'Indomie Kuah Special',
-          'harga': 8000,
+          'harga': 8000.0,
           'jumlah': 1,
+          'kategori': 'MAKANAN_BERAT',
         },
         {
+          'menu_id': 'mock_esteh_id',
           'image': 'assets/drink5.png',
           'nama': 'Es Teh',
-          'harga': 4000,
+          'harga': 4000.0,
           'jumlah': 1,
+          'kategori': 'MINUMAN',
         },
         {
+          'menu_id': 'mock_midog_id',
           'image': 'assets/food1.png',
           'nama': 'Midog',
-          'harga': 5000,
+          'harga': 5000.0,
           'jumlah': 2,
+          'kategori': 'MAKANAN_BERAT',
         },
       ];
+      debugPrint('KeranjangScreen using mock data.');
+      // Untuk mock data, set juga info pembayaran dummy
+      _currentQrisImage = 'https://i.stack.imgur.com/yvS1s.png';
+      _currentRekeningInfo = {
+        'bank': 'Dummy Bank',
+        'nomor': '123456',
+        'atas_nama': 'Dummy A/N',
+      };
     }
   }
 
-  // Calculate total price
-  int get totalHarga => pesanan.fold(
-    0,
-    (int sum, item) => sum + (item['harga'] as int) * (item['jumlah'] as int),
+  double get totalHarga => pesanan.fold(
+    0.0,
+    (double sum, item) =>
+        sum + (item['harga'] as double) * (item['jumlah'] as int),
   );
 
-  // Calculate total number of items (quantities combined)
   int get totalItem =>
       pesanan.fold(0, (int sum, item) => sum + (item['jumlah'] as int));
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Gradient background for modern look
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF89B3DE), // Lighter blue
-              Color(0xFF6B9EDD), // Deeper blue
-            ],
+            colors: [Color(0xFF89B3DE), Color(0xFF6B9EDD)],
           ),
         ),
         child: SafeArea(
@@ -86,9 +136,7 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
                     pesanan.isEmpty
                         ? _buildEmptyCartState()
                         : ListView.separated(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                          ), // Consistent padding
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           itemCount: pesanan.length,
                           separatorBuilder:
                               (context, index) => const SizedBox(height: 16),
@@ -98,19 +146,25 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
                               item: item,
                               onQuantityChanged: (change) {
                                 setState(() {
-                                  item['jumlah'] = (item['jumlah'] + change)
-                                      .clamp(0, 99);
-                                  if (item['jumlah'] == 0) {
-                                    pesanan.removeAt(
-                                      index,
-                                    ); // Remove if quantity drops to 0
+                                  item['jumlah'] =
+                                      (item['jumlah'] as int) + change;
+                                  if (item['jumlah'] <= 0) {
+                                    pesanan.removeAt(index);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '${item['nama']} dihapus dari keranjang.',
+                                        ),
+                                        backgroundColor: Colors.redAccent,
+                                        duration: const Duration(seconds: 1),
+                                      ),
+                                    );
                                   }
                                 });
                               },
                               onDelete: () {
                                 setState(() {
                                   pesanan.removeAt(index);
-                                  // Optional: Show a snackbar after deletion
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
@@ -126,34 +180,28 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
                           },
                         ),
               ),
-              // Spacer to ensure bottom sheet is always at the bottom
-              // Replaced with Align widget for the bottom sheet
             ],
           ),
         ),
       ),
-      // Use a custom bottom sheet that sits outside the main column
       bottomNavigationBar: _buildBottomSummary(),
     );
   }
-
-  // --- UI Building Methods ---
 
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Row(
         children: [
-          // Back Button
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2), // Semi-transparent white
+              color: const Color(0xFF119DB1).withAlpha((0.9 * 255).toInt()),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: const Color(0xFF119DB1).withAlpha((0.9 * 255).toInt()),
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
@@ -169,17 +217,16 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
           ),
           const SizedBox(width: 16),
           Text(
-            'Keranjang Anda', // More personal title
+            'Keranjang Anda',
             style: GoogleFonts.poppins(
               color: Colors.white,
               fontWeight: FontWeight.w700,
-              fontSize: 22, // Slightly larger
+              fontSize: 22,
               shadows: [
-                // Subtle text shadow
                 Shadow(
                   offset: const Offset(1, 1),
                   blurRadius: 3.0,
-                  color: Colors.black.withOpacity(0.3),
+                  color: const Color(0xFF119DB1).withAlpha((0.9 * 255).toInt()),
                 ),
               ],
             ),
@@ -197,13 +244,12 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
         style: GoogleFonts.poppins(
           color: Colors.white,
           fontWeight: FontWeight.w600,
-          fontSize: 18, // Larger title
+          fontSize: 18,
           shadows: [
-            // Subtle text shadow
             Shadow(
               offset: const Offset(0.5, 0.5),
               blurRadius: 2.0,
-              color: Colors.black.withOpacity(0.2),
+              color: const Color(0xFF119DB1).withAlpha((0.9 * 255).toInt()),
             ),
           ],
         ),
@@ -221,20 +267,22 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
             Icon(
               Icons.shopping_cart_outlined,
               size: 100,
-              color: Colors.white.withOpacity(0.6),
+              color: const Color(0xFF119DB1).withAlpha((0.9 * 255).toInt()),
             ),
             const SizedBox(height: 20),
             Text(
               'Keranjang Anda kosong!',
               style: GoogleFonts.poppins(
-                color: Colors.white.withOpacity(0.8),
+                color: const Color(0xFFFFFFFF).withAlpha((0.8 * 255).toInt()),
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 shadows: [
                   Shadow(
                     offset: const Offset(0.5, 0.5),
                     blurRadius: 2.0,
-                    color: Colors.black.withOpacity(0.1),
+                    color: const Color(
+                      0xFF000000,
+                    ).withAlpha((0.1 * 255).toInt()),
                   ),
                 ],
               ),
@@ -244,7 +292,7 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
             Text(
               'Tambahkan makanan atau minuman untuk memulai pesanan.',
               style: GoogleFonts.poppins(
-                color: Colors.white.withOpacity(0.7),
+                color: const Color(0xFFFFFFFF).withAlpha((0.7 * 255).toInt()),
                 fontSize: 16,
               ),
               textAlign: TextAlign.center,
@@ -252,8 +300,7 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
             const SizedBox(height: 30),
             ElevatedButton.icon(
               onPressed: () {
-                // Navigate back to menu to add items
-                Get.back(); // Assumes previous screen is the menu
+                Get.back();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -286,23 +333,20 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF119DB1).withOpacity(0.9), // Slightly transparent
+        color: const Color(0xFF119DB1).withAlpha((0.9 * 255).toInt()),
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30), // More rounded corners
+          topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withAlpha((0.3 * 255).toInt()),
             blurRadius: 15,
             offset: const Offset(0, -5),
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 25,
-        vertical: 25,
-      ), // Increased padding
+      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -323,7 +367,7 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12), // Increased spacing
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -333,22 +377,22 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                ), // Bolder total
+                ),
               ),
               Text(
-                'Rp ${totalHarga.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}',
+                'Rp ${totalHarga.toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18, // Bolder total price
+                  fontWeight: FontWeight.w700, // Make total price bolder
+                  fontSize: 18,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24), // Increased spacing before button
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
-            height: 55, // Taller button
+            height: 55,
             child: ElevatedButton(
               onPressed: () {
                 if (pesanan.isEmpty) {
@@ -356,29 +400,49 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
                     'Keranjang Kosong',
                     'Tambahkan item ke keranjang sebelum melanjutkan pembayaran.',
                     snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.orangeAccent.withOpacity(0.9),
+                    backgroundColor: Colors.orangeAccent.withAlpha(
+                      (0.9 * 255).toInt(),
+                    ),
                     colorText: Colors.white,
                   );
                 } else {
-                  // Get.to(() => MenuPembayaranPenghuni());
+                  debugPrint(
+                    '--- KeranjangScreen sending to OrderPaymentScreen ---',
+                  );
+                  for (var item in pesanan) {
+                    debugPrint(
+                      '  Menu ID: ${item['menu_id']}, Nama: ${item['nama']}, Jumlah: ${item['jumlah']} (Tipe: ${item['jumlah']?.runtimeType})',
+                    );
+                  }
+                  debugPrint(
+                    '----------------------------------------------------',
+                  );
+                  Get.to(
+                    () => OrderPaymentScreen(
+                      reservasiId: _currentReservasiId,
+                      cateringId: _currentCateringId,
+                      orderItems: pesanan,
+                      totalAmount: totalHarga,
+                      qrisImage: _currentQrisImage,
+                      rekeningInfo: _currentRekeningInfo,
+                    ),
+                  );
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white, // White button
-                foregroundColor: const Color(
-                  0xFF119DB1,
-                ), // Text color matches theme
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF119DB1),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30), // More rounded
+                  borderRadius: BorderRadius.circular(30),
                 ),
                 elevation: 5,
-                shadowColor: Colors.black.withOpacity(0.2),
+                shadowColor: Colors.black.withAlpha((0.2 * 255).toInt()),
               ),
               child: Text(
                 'Pesan Sekarang',
                 style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w700, // Bolder text
-                  fontSize: 18, // Larger font
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
                 ),
               ),
             ),
@@ -389,11 +453,10 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
   }
 }
 
-// --- Cart Item Card Widget ---
 class _CartItemCard extends StatelessWidget {
   final Map<String, dynamic> item;
-  final ValueChanged<int> onQuantityChanged; // Callback for quantity change
-  final VoidCallback onDelete; // Callback for deletion
+  final ValueChanged<int> onQuantityChanged;
+  final VoidCallback onDelete;
 
   const _CartItemCard({
     required this.item,
@@ -404,40 +467,68 @@ class _CartItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 6, // Added elevation
-      shadowColor: Colors.black.withOpacity(0.15), // Subtle shadow
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18), // More rounded corners
-      ),
-      color: Colors.white, // White card background
+      elevation: 6,
+      shadowColor: const Color(0xFF4D9DAB).withAlpha((0.1 * 255).toInt()),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16.0), // Increased padding
+        padding: const EdgeInsets.all(16.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Item Image
             ClipRRect(
-              borderRadius: BorderRadius.circular(12), // Rounded image corners
-              child: Image.asset(
-                item['image'],
-                width: 90, // Slightly larger image
-                height: 90,
-                fit: BoxFit.cover,
-                errorBuilder:
-                    (context, error, stackTrace) => Container(
-                      width: 90,
-                      height: 90,
-                      color: Colors.grey[200],
-                      child: Icon(
-                        Icons.broken_image,
-                        size: 45,
-                        color: Colors.grey[400],
+              borderRadius: BorderRadius.circular(12),
+              child:
+                  item['image'].startsWith('http')
+                      ? Image.network(
+                        item['image'],
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value:
+                                  loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                              color: const Color(0xFF4D9DAB),
+                            ),
+                          );
+                        },
+                        errorBuilder:
+                            (context, error, stackTrace) => Container(
+                              width: 90,
+                              height: 90,
+                              color: Colors.grey[200],
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 45,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                      )
+                      : Image.asset(
+                        item['image'],
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (context, error, stackTrace) => Container(
+                              width: 90,
+                              height: 90,
+                              color: Colors.grey[200],
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 45,
+                                color: Colors.grey[400],
+                              ),
+                            ),
                       ),
-                    ),
-              ),
             ),
-            const SizedBox(width: 16), // Spacing between image and text
-            // Item Details and Quantity Controls
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,36 +537,33 @@ class _CartItemCard extends StatelessWidget {
                     item['nama'],
                     style: GoogleFonts.poppins(
                       color: Colors.black87,
-                      fontWeight: FontWeight.w700, // Bolder name
-                      fontSize: 17, // Larger font
+                      fontWeight: FontWeight.w700,
+                      fontSize: 17,
                     ),
-                    maxLines: 2, // Allow multiple lines for long names
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Rp ${item['harga'].toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}',
+                    'Rp ${item['harga'].toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}',
                     style: GoogleFonts.poppins(
-                      color: const Color(0xFF4D9DAB), // Accent color for price
+                      color: const Color(0xFF4D9DAB),
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(
-                    height: 10,
-                  ), // Spacing before quantity controls
-                  // Quantity Adjuster
+                  const SizedBox(height: 10),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey[100], // Light background for controls
-                      borderRadius: BorderRadius.circular(25), // Fully rounded
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(25),
                       border: Border.all(
                         color: Colors.grey.shade300,
                         width: 0.8,
                       ),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min, // Wrap content tightly
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         _buildQuantityButton(
                           Icons.remove,
@@ -503,15 +591,14 @@ class _CartItemCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // Delete Button
             IconButton(
               icon: Icon(
-                Icons.delete_forever, // More impactful delete icon
-                color: Colors.red.shade400, // Red color for delete
+                Icons.delete_forever,
+                color: Colors.red.shade400,
                 size: 32,
               ),
               onPressed: onDelete,
-              splashRadius: 28, // Larger splash area
+              splashRadius: 28,
             ),
           ],
         ),
@@ -522,20 +609,14 @@ class _CartItemCard extends StatelessWidget {
   Widget _buildQuantityButton(IconData icon, VoidCallback onPressed) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(20), // Circular splash
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(6), // Padding inside button
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: const Color(
-            0xFF4D9DAB,
-          ).withOpacity(0.1), // Light accent background
+          color: const Color(0xFF4D9DAB).withAlpha((0.1 * 255).toInt()),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          color: const Color(0xFF4D9DAB), // Accent color for icons
-          size: 20,
-        ),
+        child: Icon(icon, color: const Color(0xFF4D9DAB), size: 20),
       ),
     );
   }
