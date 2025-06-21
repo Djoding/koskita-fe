@@ -3,7 +3,9 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/home_screen.dart';
 import 'package:kosan_euy/screens/penghuni/laundry/laundry_penghuni.dart';
+import 'package:kosan_euy/screens/penghuni/laundry/order_laundry_history.dart';
 import 'package:kosan_euy/screens/penghuni/makanan/menu_makanan.dart';
+import 'package:kosan_euy/screens/penghuni/makanan/order_food_history.dart';
 import 'package:kosan_euy/screens/penghuni/reservasi/dashboard_reservasi.dart';
 import 'package:kosan_euy/screens/penghuni/reservasi/reservasi_detail_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
@@ -165,7 +167,7 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
         _kostImageUrl = 'assets/placeholder_image.png';
         _statusPenghunian = null;
         _activeReservationId = null;
-        _cateringId = null; 
+        _cateringId = null;
         _laundryId = null;
       }
     } catch (e) {
@@ -537,7 +539,22 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
               title: 'Layanan Laundry',
               imageAsset: 'assets/icon_laundry.png',
               onTap: () {
-                Get.to(() => const LaundryPenghuni());
+                if (_laundryId != null && _activeReservationId != null) {
+                  Get.to(
+                    () => LaundryPenghuni(
+                      laundryId: _laundryId!,
+                      reservasiId: _activeReservationId!,
+                    ),
+                  );
+                } else {
+                  Get.snackbar(
+                    'Informasi',
+                    'Layanan laundry tidak tersedia untuk kost aktif Anda.',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.blueAccent,
+                    colorText: Colors.white,
+                  );
+                }
               },
             ),
 
@@ -546,13 +563,20 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
               title: 'Riwayat Pemesanan Makanan',
               imageAsset: 'assets/icon_makanan.png',
               onTap: () {
-                Get.snackbar(
-                  'Informasi',
-                  'Fungsi riwayat pemesanan makanan belum diimplementasikan.',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.blueAccent,
-                  colorText: Colors.white,
-                );
+                if (_activeReservationId != null) {
+                  Get.to(
+                    () =>
+                        OrderHistoryScreen(reservasiId: _activeReservationId!),
+                  );
+                } else {
+                  Get.snackbar(
+                    'Informasi',
+                    'Fungsi riwayat pemesanan makanan belum diimplementasikan.',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.blueAccent,
+                    colorText: Colors.white,
+                  );
+                }
               },
             ),
 
@@ -563,13 +587,21 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
               title: 'Riwayat Pemesanan Laundry',
               imageAsset: 'assets/icon_laundry.png',
               onTap: () {
-                Get.snackbar(
-                  'Informasi',
-                  'Fungsi riwayat pemesanan laundry belum diimplementasikan.',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.blueAccent,
-                  colorText: Colors.white,
-                );
+                if (_activeReservationId != null) {
+                  Get.to(
+                    () => LaundryOrderHistoryScreen(
+                      reservasiId: _activeReservationId!,
+                    ),
+                  );
+                } else {
+                  Get.snackbar(
+                    'Informasi',
+                    'Fungsi riwayat pemesanan laundry belum diimplementasikan.',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.blueAccent,
+                    colorText: Colors.white,
+                  );
+                }
               },
             ),
         ],

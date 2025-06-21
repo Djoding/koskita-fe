@@ -213,7 +213,7 @@ class ReservationService {
     } catch (e) {
       debugPrint("Error extending reservation: $e");
       throw Exception(
-        'Failed to connect to the server or extend reservation: $e',
+        '$e',
       );
     }
   }
