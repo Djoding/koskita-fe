@@ -271,7 +271,7 @@ class LaundryService {
         throw Exception('Token tidak ditemukan');
       }
 
-      final queryParams = <String, String>{'kost_id': kostId};
+      final queryParams = <String, String>{};
 
       if (status != null && status.isNotEmpty) {
         queryParams['status'] = status;
@@ -296,16 +296,9 @@ class LaundryService {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        // Format data untuk konsistensi
-        final orders =
-            (data['data'] as List?)?.map((order) {
-              return _formatOrderData(order);
-            }).toList() ??
-            [];
-
         return {
           'status': true,
-          'data': orders,
+          'data': data['data'] ?? [],
           'message': data['message'] ?? 'Success',
         };
       } else {
@@ -323,74 +316,138 @@ class LaundryService {
     String orderId,
   ) async {
     try {
-      final token = await _storage.read(key: 'accessToken');
-      if (token == null) {
-        throw Exception('Token tidak ditemukan');
-      }
-
+      final headers = await _headers;
       final response = await http.get(
         Uri.parse('$_baseUrl/laundry/orders/$orderId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       );
 
-      final data = json.decode(response.body);
+      print('=== GET ORDER DETAIL DEBUG ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {'success': false, 'message': 'Response kosong dari server'};
+      }
+
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
+
+      bool isSuccess = false;
+      String message = '';
+      dynamic data;
 
       if (response.statusCode == 200) {
-        return {
-          'status': true,
-          'data': _formatOrderData(data['data']),
-          'message': data['message'] ?? 'Success',
-        };
+        if (responseData.containsKey('status')) {
+          isSuccess =
+              responseData['status'] == true ||
+              responseData['status'] == 'true' ||
+              responseData['status'] == 'success';
+        } else if (responseData.containsKey('success')) {
+          isSuccess =
+              responseData['success'] == true ||
+              responseData['success'] == 'true';
+        } else {
+          isSuccess = true;
+        }
+
+        message = responseData['message']?.toString() ?? 'Data berhasil dimuat';
+        data = responseData['data'] ?? responseData;
       } else {
-        return {
-          'status': false,
-          'message': data['message'] ?? 'Failed to fetch order detail',
-        };
+        isSuccess = false;
+        message = responseData['message']?.toString() ?? 'Gagal memuat data';
       }
+
+      return {'success': isSuccess, 'message': message, 'data': data};
     } catch (e) {
-      return {'status': false, 'message': 'Error: $e'};
+      print('=== ERROR IN GET ORDER DETAIL ===');
+      print('Error: $e');
+
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
     }
   }
 
-  // PERBAIKAN: Endpoint untuk update status order
   static Future<Map<String, dynamic>> updateLaundryOrderStatus(
     String orderId,
     Map<String, dynamic> statusData,
   ) async {
     try {
-      final token = await _storage.read(key: 'accessToken');
-      if (token == null) {
-        return {'status': false, 'message': 'Token tidak ditemukan'};
-      }
-
-      final response = await http.put(
+      final headers = await _headers;
+      final response = await http.patch(
         Uri.parse('$_baseUrl/laundry/orders/$orderId/status'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: headers,
         body: json.encode(statusData),
       );
 
-      final responseData = json.decode(response.body);
+      print('=== UPDATE STATUS DEBUG ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+      print('Headers: ${response.headers}');
 
-      if (response.statusCode == 200) {
-        return {
-          'status': true,
-          'data': responseData['data'],
-          'message': responseData['message'] ?? 'Status berhasil diperbarui',
-        };
-      } else {
-        return {
-          'status': false,
-          'message': responseData['message'] ?? 'Gagal memperbarui status',
-        };
+      // Cek apakah response body kosong
+      if (response.body.isEmpty) {
+        print('Response body is empty');
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return {'success': true, 'message': 'Status berhasil diperbarui'};
+        } else {
+          return {
+            'success': false,
+            'message': 'Gagal memperbarui status (${response.statusCode})',
+          };
+        }
       }
+
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
+      print('Parsed Response Data: $responseData');
+      print('Response Data Type: ${responseData.runtimeType}');
+
+      // Cek setiap field yang ada di response
+      responseData.forEach((key, value) {
+        print('Field "$key": $value (type: ${value.runtimeType})');
+      });
+
+      // Tentukan success berdasarkan status code dan isi response
+      bool isSuccess = false;
+      String message = '';
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        // Cek berbagai kemungkinan field untuk menentukan success
+        if (responseData.containsKey('status')) {
+          isSuccess =
+              responseData['status'] == true ||
+              responseData['status'] == 'true' ||
+              responseData['status'] == 'success';
+        } else if (responseData.containsKey('success')) {
+          isSuccess =
+              responseData['success'] == true ||
+              responseData['success'] == 'true';
+        } else {
+          // Jika tidak ada field status/success, anggap berhasil jika status code OK
+          isSuccess = true;
+        }
+
+        message =
+            responseData['message']?.toString() ?? 'Status berhasil diperbarui';
+      } else {
+        isSuccess = false;
+        message =
+            responseData['message']?.toString() ?? 'Gagal memperbarui status';
+      }
+
+      print('Final isSuccess: $isSuccess');
+      print('Final message: $message');
+
+      return {
+        'success': isSuccess,
+        'message': message,
+        'data': responseData['data'],
+        'raw_response': responseData,
+      };
     } catch (e) {
-      return {'status': false, 'message': 'Terjadi kesalahan: $e'};
+      print('=== ERROR IN UPDATE STATUS ===');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
     }
   }
 

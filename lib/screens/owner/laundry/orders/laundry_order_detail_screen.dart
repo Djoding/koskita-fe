@@ -18,18 +18,6 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
   bool isLoading = true;
   String errorMessage = '';
 
-  double _parseDouble(dynamic value) {
-    if (value == null) return 0.0;
-
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) {
-      return double.tryParse(value) ?? 0.0;
-    }
-
-    return 0.0;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -46,6 +34,92 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
       });
     } else {
       _loadOrderDetail();
+    }
+  }
+
+  // lib/screens/owner/laundry/orders/laundry_order_detail_screen.dart
+
+  Future<void> _updateOrderStatus(String newStatus) async {
+    if (orderId == null) return;
+
+    // Show loading
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    try {
+      final response = await LaundryService.updateLaundryOrderStatus(orderId!, {
+        'status': newStatus,
+      });
+
+      // Close loading dialog
+      Get.back();
+
+      print('=== UPDATE STATUS RESPONSE ===');
+      print('Response: $response');
+
+      // Safe check untuk success
+      final success = response['success'];
+      print('Success value: $success (type: ${success.runtimeType})');
+
+      final bool isSuccess = success == true;
+      final String message =
+          response['message']?.toString() ??
+          (isSuccess
+              ? 'Status berhasil diperbarui'
+              : 'Gagal memperbarui status');
+
+      print('Final isSuccess: $isSuccess');
+      print('Final message: $message');
+
+      if (isSuccess) {
+        Get.snackbar(
+          'Berhasil',
+          message,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 3),
+        );
+
+        // Update local data
+        if (orderData != null) {
+          setState(() {
+            orderData!['status'] = newStatus;
+          });
+        }
+
+        // Return true to indicate changes
+        Get.back(result: true);
+      } else {
+        Get.snackbar(
+          'Error',
+          message,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      print('=== CATCH ERROR IN UPDATE STATUS ===');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+
+      // Close loading dialog if still open
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+
+      Get.snackbar(
+        'Error',
+        'Terjadi kesalahan: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
@@ -66,72 +140,34 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
     try {
       final response = await LaundryService.getLaundryOrderDetail(orderId!);
 
-      if (response['status']) {
+      print('=== LOAD ORDER DETAIL RESPONSE ===');
+      print('Response: $response');
+
+      // Safe check untuk success
+      final success = response['success'];
+      final bool isSuccess = success == true;
+
+      if (isSuccess && response['data'] != null) {
         setState(() {
           orderData = response['data'];
           isLoading = false;
-
-          // Debug: Print data structure
-          print('Order Data: ${orderData.toString()}');
-          if (orderData!['items'] != null) {
-            print('Items: ${orderData!['items']}');
-          }
         });
       } else {
+        final String message =
+            response['message']?.toString() ?? 'Gagal memuat detail pesanan';
         setState(() {
-          errorMessage = response['message'] ?? 'Gagal memuat detail pesanan';
+          errorMessage = message;
           isLoading = false;
         });
       }
     } catch (e) {
-      print('Error loading order detail: $e'); // Debug
+      print('=== CATCH ERROR IN LOAD ORDER DETAIL ===');
+      print('Error: $e');
+
       setState(() {
         errorMessage = 'Terjadi kesalahan: $e';
         isLoading = false;
       });
-    }
-  }
-
-  Future<void> _updateOrderStatus(String newStatus) async {
-    if (orderId == null) return;
-
-    try {
-      final response = await LaundryService.updateLaundryOrderStatus(orderId!, {
-        'status': newStatus,
-      });
-
-      if (response['status']) {
-        Get.snackbar(
-          'Berhasil',
-          'Status pesanan berhasil diperbarui',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-
-        // Update local data
-        if (orderData != null) {
-          setState(() {
-            orderData!['status'] = newStatus;
-          });
-        }
-
-        // Return true to indicate changes
-        Get.back(result: true);
-      } else {
-        Get.snackbar(
-          'Error',
-          response['message'] ?? 'Gagal memperbarui status',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Terjadi kesalahan: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
     }
   }
 
@@ -147,6 +183,7 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
         'Tidak ada status yang dapat diubah untuk pesanan ini',
         backgroundColor: Colors.orange,
         colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
@@ -195,14 +232,104 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
   List<String> _getAvailableStatuses(String currentStatus) {
     switch (currentStatus) {
       case 'PENDING':
-        return ['DIPROSES'];
-      case 'DIPROSES':
+        return ['PROSES'];
+      case 'PROSES':
         return ['DITERIMA'];
       case 'DITERIMA':
         return [];
       default:
-        return ['DIPROSES'];
+        return ['PROSES'];
     }
+  }
+
+  // Helper methods
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case 'PENDING':
+        return Colors.orange;
+      case 'PROSES':
+        return Colors.blue;
+      case 'DITERIMA':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getStatusIcon(String? status) {
+    switch (status) {
+      case 'PENDING':
+        return Icons.schedule;
+      case 'PROSES':
+        return Icons.autorenew;
+      case 'DITERIMA':
+        return Icons.check_circle;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  String _getStatusDisplayName(String? status) {
+    switch (status) {
+      case 'PENDING':
+        return 'Menunggu';
+      case 'PROSES':
+        return 'Diproses';
+      case 'DITERIMA':
+        return 'Selesai';
+      default:
+        return 'Tidak Diketahui';
+    }
+  }
+
+  String _getPaymentStatusDisplayName(String? status) {
+    switch (status) {
+      case 'PENDING':
+        return 'Menunggu Pembayaran';
+      case 'VERIFIED':
+        return 'Terverifikasi';
+      case 'REJECTED':
+        return 'Ditolak';
+      default:
+        return 'Tidak Diketahui';
+    }
+  }
+
+  bool _canUpdateStatus(String? status) {
+    return status == 'PENDING' || status == 'PROSES';
+  }
+
+  String _formatDateTime(dynamic dateTime) {
+    if (dateTime == null) return 'Tidak diketahui';
+    try {
+      final date = DateTime.parse(dateTime.toString());
+      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return 'Tidak diketahui';
+    }
+  }
+
+  String _formatCurrency(dynamic amount) {
+    if (amount == null) return '0';
+
+    double value = _parseDouble(amount);
+
+    return value
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        );
   }
 
   @override
@@ -327,8 +454,8 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
 
     final user = orderData!['user'] as Map<String, dynamic>? ?? {};
     final laundry = orderData!['laundry'] as Map<String, dynamic>? ?? {};
-    final items = orderData!['items'] as List? ?? [];
-    final payment = orderData!['payment'] as Map<String, dynamic>?;
+    final detailPesanan = orderData!['detail_pesanan_laundry'] as List? ?? [];
+    final pembayaran = orderData!['pembayaran'] as Map<String, dynamic>?;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -344,7 +471,7 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Order #${orderData!['order_id']}',
+                      'Order #${orderData!['pesanan_id']}',
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -430,16 +557,17 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
             Icons.shopping_cart,
             Colors.orange,
             [
-              if (items.isEmpty)
+              if (detailPesanan.isEmpty)
                 const Text('Tidak ada detail pesanan')
               else
-                ...items.map((item) => _buildOrderItemDetail(item)).toList(),
+                ...detailPesanan
+                    .map((item) => _buildOrderItemDetail(item))
+                    .toList(),
             ],
           ),
           const SizedBox(height: 20),
 
           // Payment Information
-          // Di bagian Payment Information, ubah menjadi:
           _buildSectionCard('Informasi Pembayaran', Icons.payment, Colors.purple, [
             _buildInfoRow(
               'Total Estimasi',
@@ -455,22 +583,23 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
                 'Berat Aktual',
                 '${_parseDouble(orderData!['berat_actual']).toStringAsFixed(1)} kg',
               ),
-            if (payment != null) ...[
+            if (pembayaran != null) ...[
               _buildInfoRow(
                 'Metode Pembayaran',
-                payment['metode'] ?? 'Tidak diketahui',
+                pembayaran['metode'] ?? 'Tidak diketahui',
               ),
               _buildInfoRow(
                 'Status Pembayaran',
-                _getPaymentStatusDisplayName(payment['status']),
+                _getPaymentStatusDisplayName(pembayaran['status']),
               ),
-              if (payment['bukti_bayar'] != null &&
-                  payment['bukti_bayar'].toString().isNotEmpty)
-                _buildInfoRow('Bukti Pembayaran', 'Tersedia'),
-              if (payment['verified_at'] != null)
+              if (pembayaran['bukti_bayar_url'] != null &&
+                  pembayaran['bukti_bayar_url'].toString().isNotEmpty)
+                _buildInfoRow('Bukti Pembayaran', 
+                  pembayaran['bukti_bayar_url']),
+              if (pembayaran['verified_at'] != null)
                 _buildInfoRow(
                   'Verifikasi',
-                  _formatDateTime(payment['verified_at']),
+                  _formatDateTime(pembayaran['verified_at']),
                 ),
             ],
           ]),
@@ -584,18 +713,12 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
   }
 
   Widget _buildOrderItemDetail(Map<String, dynamic> item) {
-    // Sesuaikan dengan struktur database: detail_pesanan_laundry
-    final layananId = item['layanan_id'];
-
-    // Konversi ke double untuk menghindari error tipe data
     final jumlahSatuan = _parseDouble(item['jumlah_satuan']);
     final hargaPerSatuan = _parseDouble(item['harga_per_satuan']);
     final subtotal = jumlahSatuan * hargaPerSatuan;
 
-    // Data layanan dari master_layanan_laundry
-    final layanan =
-        item['master_layanan_laundry'] as Map<String, dynamic>? ?? {};
-    final namaLayanan = layanan['nama_layanan'] ?? 'Cuci';
+    final layanan = item['layanan'] as Map<String, dynamic>? ?? {};
+    final namaLayanan = layanan['nama_layanan'] ?? 'Layanan';
     final satuan = layanan['satuan'] ?? 'unit';
 
     return Container(
@@ -648,108 +771,17 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
                 ),
               ),
               const Spacer(),
-              
-            ],
-          ),
-          Row(
-            children: [
-          Text(
-            'Harga: ',
-            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
-          ),
-          Text(
-            'Rp ${_formatCurrency(hargaPerSatuan)}/$satuan',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+              Text(
+                'Rp ${_formatCurrency(hargaPerSatuan)}/$satuan',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
             ],
           ),
         ],
       ),
     );
-  }
-
-  Color _getStatusColor(String? status) {
-    switch (status) {
-      case 'PENDING':
-        return Colors.orange;
-      case 'DIPROSES':
-        return Colors.blue;
-      case 'DITERIMA':
-        return Colors.green;
-
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getStatusIcon(String? status) {
-    switch (status) {
-      case 'PENDING':
-        return Icons.schedule;
-      case 'DIPROSES':
-        return Icons.autorenew;
-      case 'DITERIMA':
-        return Icons.check_circle;
-
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  String _getStatusDisplayName(String? status) {
-    switch (status) {
-      case 'PENDING':
-        return 'Menunggu';
-      case 'DIPROSES':
-        return 'Diproses';
-      case 'DITERIMA':
-        return 'Selesai';
-
-      default:
-        return 'Tidak Diketahui';
-    }
-  }
-
-  String _getPaymentStatusDisplayName(String? status) {
-    switch (status) {
-      case 'PENDING':
-        return 'Menunggu Pembayaran';
-      case 'VERIFIED':
-        return 'Terverifikasi';
-      case 'REJECT':
-        return 'Gagal';
-      default:
-        return 'Tidak Diketahui';
-    }
-  }
-
-  bool _canUpdateStatus(String? status) {
-    return status == 'PENDING' || status == 'DIPROSES';
-  }
-
-  String _formatDateTime(dynamic dateTime) {
-    if (dateTime == null) return 'Tidak diketahui';
-    try {
-      final date = DateTime.parse(dateTime.toString());
-      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return 'Tidak diketahui';
-    }
-  }
-
-  String _formatCurrency(dynamic amount) {
-    if (amount == null) return '0';
-
-    double value = _parseDouble(amount);
-
-    return value
-        .toStringAsFixed(0)
-        .replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        );
   }
 }
