@@ -1,4 +1,3 @@
-// lib/services/laundry_service.dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -10,7 +9,6 @@ class LaundryService {
   static const String _baseUrl = 'http://localhost:3000/api/v1';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
-  // Headers dengan token
   static Future<Map<String, String>> get _headers async {
     final token = await _storage.read(key: 'accessToken');
     return {
@@ -19,13 +17,11 @@ class LaundryService {
     };
   }
 
-  // Headers untuk multipart (tanpa Content-Type)
   static Future<Map<String, String>> get _multipartHeaders async {
     final token = await _storage.read(key: 'accessToken');
     return {if (token != null) 'Authorization': 'Bearer $token'};
   }
 
-  // Get laundries by kost ID
   static Future<Map<String, dynamic>> getLaundriesByKost(String kostId) async {
     try {
       final response = await http.get(
@@ -50,7 +46,6 @@ class LaundryService {
     }
   }
 
-  // Create laundry
   static Future<Map<String, dynamic>> createLaundry(
     Map<String, dynamic> laundryData,
     File? qrisImageFile,
@@ -65,7 +60,6 @@ class LaundryService {
       final headers = await _multipartHeaders;
       request.headers.addAll(headers);
 
-      // Add fields
       request.fields.addAll({
         'kost_id': laundryData['kost_id'],
         'nama_laundry': laundryData['nama_laundry'],
@@ -77,7 +71,6 @@ class LaundryService {
         'is_partner': laundryData['is_partner']?.toString() ?? 'false',
       });
 
-      // Add QRIS image if provided
       if (qrisImageFile != null) {
         request.files.add(
           await http.MultipartFile.fromPath(
@@ -108,7 +101,6 @@ class LaundryService {
     }
   }
 
-  // Get laundry services
   static Future<Map<String, dynamic>> getLaundryServices(
     String laundryId,
   ) async {
@@ -135,7 +127,6 @@ class LaundryService {
     }
   }
 
-  // Create laundry service
   static Future<Map<String, dynamic>> createLaundryService(
     String laundryId,
     Map<String, dynamic> serviceData,
@@ -163,8 +154,6 @@ class LaundryService {
       return {'status': false, 'message': 'Network error: $e'};
     }
   }
-
-  // Update laundry service
   static Future<Map<String, dynamic>> updateLaundryService(
     String laundryId,
     String layananId,
@@ -194,7 +183,6 @@ class LaundryService {
     }
   }
 
-  // Delete laundry service
   static Future<Map<String, dynamic>> deleteLaundryService(
     String laundryId,
     String layananId,
@@ -217,8 +205,6 @@ class LaundryService {
       return {'status': false, 'message': 'Network error: $e'};
     }
   }
-
-  // ENDPOINT OWNER: Get laundry orders untuk owner/pengelola dengan kostId sebagai parameter pertama
   static Future<Map<String, dynamic>> getLaundryOrders(
     String kostId, {
     String? status,
@@ -256,7 +242,6 @@ class LaundryService {
     }
   }
 
-  // ENDPOINT BARU: Get all laundry orders untuk penghuni (pesanan masuk)
   static Future<Map<String, dynamic>> getAllLaundryOrders({
     String? status,
     String? laundryId,
@@ -285,7 +270,7 @@ class LaundryService {
         return {
           'status': true,
           'data': data['data'],
-          'pagination': data['pagination'], // Jika ada pagination
+          'pagination': data['pagination'],
           'message': data['message'],
         };
       } else {
@@ -298,7 +283,6 @@ class LaundryService {
     }
   }
 
-  // ENDPOINT BARU: Get laundry order detail by ID
   static Future<Map<String, dynamic>> getLaundryOrderById(
     String orderId,
   ) async {
@@ -325,7 +309,6 @@ class LaundryService {
     }
   }
 
-  // ENDPOINT BARU: Update order status by ID
   static Future<Map<String, dynamic>> updateLaundryOrderStatus(
     String orderId,
     Map<String, dynamic> statusData,

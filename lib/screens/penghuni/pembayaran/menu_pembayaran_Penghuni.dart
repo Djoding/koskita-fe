@@ -232,7 +232,7 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
       debugPrint("Error submitting payment proof: $e");
       Get.snackbar(
         'Error',
-        'Terjadi kesalahan saat mengunggah bukti pembayaran: ${e.toString()}',
+        'Terjadi kesalahan saat mengunggah bukti pembayaran: $e',
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red,
         colorText: Colors.white,

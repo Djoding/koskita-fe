@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kosan_euy/services/history_order_service.dart';
+import 'package:intl/intl.dart';
 
 class LaundryOrderHistoryScreen extends StatefulWidget {
-  const LaundryOrderHistoryScreen({super.key});
+  final String reservasiId;
+
+  const LaundryOrderHistoryScreen({super.key, required this.reservasiId});
 
   @override
   State<LaundryOrderHistoryScreen> createState() =>
@@ -14,83 +18,65 @@ class _LaundryOrderHistoryScreenState extends State<LaundryOrderHistoryScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<Map<String, dynamic>> _laundryOrderHistory = const [
-    {
-      'orderId': 'LAUNDRY001',
-      'datePlaced': '08 Juni 2024',
-      'pickupDate': '09 Juni 2024',
-      'pickupTime': '10.00 WIB',
-      'deliveryDate': '11 Juni 2024',
-      'deliveryTime': '15.00 WIB',
-      'items': '3 Kg (Cuci & Gosok)',
-      'totalPrice': 18000,
-      'status': 'Selesai',
-    },
-    {
-      'orderId': 'LAUNDRY002',
-      'datePlaced': '05 Juni 2024',
-      'pickupDate': '06 Juni 2024',
-      'pickupTime': '09.00 WIB',
-      'deliveryDate': '08 Juni 2024',
-      'deliveryTime': '14.00 WIB',
-      'items': '5 Kg (Cuci & Gosok), 1 Sprei',
-      'totalPrice': 45000,
-      'status': 'Diproses',
-    },
-    {
-      'orderId': 'LAUNDRY003',
-      'datePlaced': '01 Juni 2024',
-      'pickupDate': '02 Juni 2024',
-      'pickupTime': '11.00 WIB',
-      'deliveryDate': '04 Juni 2024',
-      'deliveryTime': '17.00 WIB',
-      'items': '10 Kg (Cuci & Gosok)',
-      'totalPrice': 60000,
-      'status': 'Pending', // Changed status for 'Pending' tab example
-    },
-    {
-      'orderId': 'LAUNDRY004',
-      'datePlaced': '30 Mei 2024',
-      'pickupDate': '31 Mei 2024',
-      'pickupTime': '13.00 WIB',
-      'deliveryDate': '02 Juni 2024',
-      'deliveryTime': '16.00 WIB',
-      'items': '2 Kg (Cuci Kering)',
-      'totalPrice': 12000,
-      'status': 'Diproses',
-    },
-    {
-      'orderId': 'LAUNDRY005',
-      'datePlaced': '28 Mei 2024',
-      'pickupDate': '29 Mei 2024',
-      'pickupTime': '08.00 WIB',
-      'deliveryDate': '30 Mei 2024',
-      'deliveryTime': '10.00 WIB',
-      'items': '4 Kg (Setrika Saja)',
-      'totalPrice': 20000,
-      'status': 'Selesai',
-    },
-  ];
-
+  List<Map<String, dynamic>> _allLaundryOrders = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  final OrderHistoryService _orderHistoryService = OrderHistoryService();
   List<Map<String, dynamic>> get _pendingLaundryOrders =>
-      _laundryOrderHistory
-          .where((order) => order['status'] == 'Pending')
-          .toList();
+      _allLaundryOrders.where((order) => order['status'] == 'PENDING').toList();
 
   List<Map<String, dynamic>> get _processedLaundryOrders =>
-      _laundryOrderHistory
-          .where((order) => order['status'] == 'Diproses')
-          .toList();
+      _allLaundryOrders.where((order) => order['status'] == 'PROSES').toList();
 
-  List<Map<String, dynamic>> get _completedLaundryOrders =>
-      _laundryOrderHistory
-          .where((order) => order['status'] == 'Selesai')
+  List<Map<String, dynamic>> get _acceptedLaundryOrders =>
+      _allLaundryOrders
+          .where((order) => order['status'] == 'DITERIMA')
           .toList();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadOrderHistory();
+  }
+
+  Future<void> _loadOrderHistory() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final result = await _orderHistoryService.getReservationDetail(
+        widget.reservasiId,
+      );
+      if (result['status'] == true && result['data'] != null) {
+        final Map<String, dynamic> reservationData =
+            result['data'] as Map<String, dynamic>;
+        final List<dynamic>? laundryOrdersRaw =
+            reservationData['pesanan_laundry'];
+
+        setState(() {
+          if (laundryOrdersRaw != null) {
+            _allLaundryOrders = laundryOrdersRaw.cast<Map<String, dynamic>>();
+          } else {
+            _allLaundryOrders = [];
+          }
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage =
+              result['message'] ?? 'Gagal memuat riwayat pesanan laundry.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading laundry order history: $e");
+      setState(() {
+        _errorMessage = 'Terjadi kesalahan: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -118,14 +104,46 @@ class _LaundryOrderHistoryScreenState extends State<LaundryOrderHistoryScreen>
               _buildTitle(),
               _buildTabBar(),
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildOrderList(_pendingLaundryOrders, 'pending'),
-                    _buildOrderList(_processedLaundryOrders, 'diproses'),
-                    _buildOrderList(_completedLaundryOrders, 'selesai'),
-                  ],
-                ),
+                child:
+                    _isLoading
+                        ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                        : _errorMessage != null
+                        ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Error: $_errorMessage',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: _loadOrderHistory, // Coba lagi
+                                  child: const Text('Coba Lagi'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        : TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildOrderList(_pendingLaundryOrders, 'Pending'),
+                            _buildOrderList(
+                              _processedLaundryOrders,
+                              'Diproses',
+                            ),
+                            _buildOrderList(_acceptedLaundryOrders, 'Diterima'),
+                          ],
+                        ),
               ),
             ],
           ),
@@ -223,7 +241,7 @@ class _LaundryOrderHistoryScreenState extends State<LaundryOrderHistoryScreen>
         tabs: const [
           Tab(text: 'Pending'),
           Tab(text: 'Diproses'),
-          Tab(text: 'Selesai'),
+          Tab(text: 'Diterima'),
         ],
       ),
     );
@@ -250,7 +268,7 @@ class _LaundryOrderHistoryScreenState extends State<LaundryOrderHistoryScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.local_laundry_service,
+              Icons.history_toggle_off,
               size: 80,
               color: Colors.white.withOpacity(0.6),
             ),
@@ -283,33 +301,57 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
 
   const _LaundryOrderHistoryCard({required this.order});
 
+  String _formatPrice(dynamic price) {
+    if (price == null) return 'Rp 0';
+    double p;
+    if (price is String) {
+      p = double.tryParse(price) ?? 0.0;
+    } else if (price is num) {
+      p = price.toDouble();
+    } else {
+      p = 0.0;
+    }
+    return NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    ).format(p.round());
+  }
+
+  String _formatDateTime(String? dateString) {
+    if (dateString == null) return 'N/A';
+    try {
+      final DateTime date = DateTime.parse(dateString);
+      return '${DateFormat('dd MMMM y, HH:mm', 'id_ID').format(date)} WIB';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Color statusColor;
     Color statusBgColor;
     switch (order['status']) {
-      case 'Selesai':
+      case 'DITERIMA':
         statusColor = Colors.green[800]!;
         statusBgColor = Colors.green.withOpacity(0.2);
         break;
-      case 'Diproses':
-        statusColor = const Color(
-          0xFF4A99BD,
-        ); // Adjusted to blue for 'Diproses'
+      case 'PROSES':
+        statusColor = const Color(0xFF4A99BD);
         statusBgColor = const Color(0xFF4A99BD).withOpacity(0.2);
         break;
-      case 'Pending': // Assuming a 'Pending' status
+      case 'PENDING':
         statusColor = Colors.orange[800]!;
         statusBgColor = Colors.orange.withOpacity(0.2);
-        break;
-      case 'Dibatalkan': // Added 'Dibatalkan' status for completeness
-        statusColor = Colors.red[800]!;
-        statusBgColor = Colors.red.withOpacity(0.2);
         break;
       default:
         statusColor = Colors.grey[700]!;
         statusBgColor = Colors.grey.withOpacity(0.2);
     }
+
+    final List<dynamic> detailPesananLaundry =
+        order['detail_pesanan_laundry'] ?? [];
 
     return Card(
       elevation: 6,
@@ -326,7 +368,7 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Order ID: ${order['orderId']}',
+                  'Order ID: ${order['pesanan_id']?.substring(0, 8) ?? 'N/A'}...',
                   style: GoogleFonts.poppins(
                     color: Colors.black87,
                     fontWeight: FontWeight.bold,
@@ -334,7 +376,7 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  order['datePlaced'],
+                  _formatDateTime(order['created_at'] as String?),
                   style: GoogleFonts.poppins(
                     color: Colors.grey[600],
                     fontSize: 14,
@@ -345,27 +387,73 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
             const Divider(height: 16, thickness: 0.8, color: Colors.grey),
             _buildDetailRow(
               icon: Icons.calendar_today,
-              label: 'Penjemputan:',
-              value: '${order['pickupDate']} (${order['pickupTime']})',
+              label: 'Antar:',
+              value: _formatDateTime(order['tanggal_antar'] as String?),
             ),
             const SizedBox(height: 8),
             _buildDetailRow(
-              icon: Icons.delivery_dining,
-              label: 'Pengembalian:',
-              value: '${order['deliveryDate']} (${order['deliveryTime']})',
+              icon: Icons.check_circle_outline,
+              label: 'Estimasi Selesai:',
+              value: _formatDateTime(order['estimasi_selesai'] as String?),
             ),
             const SizedBox(height: 8),
             _buildDetailRow(
               icon: Icons.local_laundry_service,
               label: 'Layanan:',
-              value: order['items'],
+              value: detailPesananLaundry
+                  .map((detail) {
+                    final String namaLayanan =
+                        detail['layanan']?['nama_layanan'] ?? 'Layanan';
+                    final String satuan =
+                        detail['layanan']?['satuan'] ?? 'unit';
+                    final int jumlahSatuan =
+                        detail['jumlah_satuan'] as int? ?? 0;
+                    return '$jumlahSatuan $satuan $namaLayanan';
+                  })
+                  .join(', '),
             ),
+            const SizedBox(height: 8),
+            ...detailPesananLaundry.map((item) {
+              final String itemName =
+                  item['layanan']?['nama_layanan'] ?? 'Layanan';
+              final int itemQuantity = item['jumlah_satuan'] as int? ?? 0;
+              final dynamic itemPrice = item['harga_per_satuan'];
+              final double subtotal =
+                  itemQuantity *
+                  (double.tryParse(itemPrice?.toString() ?? '') ?? 0.0);
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4.0, left: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$itemQuantity x $itemName',
+                        style: GoogleFonts.poppins(
+                          color: Colors.grey[700],
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      _formatPrice(subtotal),
+                      style: GoogleFonts.poppins(
+                        color: Colors.grey[700],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
             const Divider(height: 16, thickness: 0.8, color: Colors.grey),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Total Pembayaran:',
+                  'Total Estimasi:',
                   style: GoogleFonts.poppins(
                     color: Colors.black87,
                     fontWeight: FontWeight.bold,
@@ -373,7 +461,7 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Rp ${order['totalPrice']}',
+                  _formatPrice(order['total_estimasi']),
                   style: GoogleFonts.poppins(
                     color: const Color(0xFF4D9DAB),
                     fontWeight: FontWeight.bold,
@@ -395,10 +483,10 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  order['status'],
+                  order['status'], // Status dari API
                   style: GoogleFonts.poppins(
                     color: statusColor,
-                    fontWeight: FontWeight.w700, // Make status text bolder
+                    fontWeight: FontWeight.w700,
                     fontSize: 13,
                   ),
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/settings/change_password_screen.dart';
+import 'package:kosan_euy/services/auth_service.dart';
 
 class SecurityScreen extends StatefulWidget {
   const SecurityScreen({super.key});
@@ -10,6 +11,79 @@ class SecurityScreen extends StatefulWidget {
 }
 
 class _SecurityScreenState extends State<SecurityScreen> {
+  final AuthService _authService = AuthService();
+  String _fullName = 'Memuat...';
+  String _userRole = 'Memuat...';
+  String? _avatarUrl;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final userData = await _authService.getStoredUserData();
+      if (userData != null) {
+        setState(() {
+          _fullName = userData['full_name'] ?? 'Nama Pengguna';
+          _userRole = userData['role'] ?? 'Peran Pengguna';
+          String? rawAvatarPath = userData['avatar_url'] ?? userData['avatar'];
+
+          if (rawAvatarPath != null && rawAvatarPath.isNotEmpty) {
+            if (rawAvatarPath.startsWith('http://') ||
+                rawAvatarPath.startsWith('https://')) {
+              _avatarUrl = rawAvatarPath;
+            } else if (rawAvatarPath.startsWith('/')) {
+              _avatarUrl = 'http://localhost:3000$rawAvatarPath';
+            } else {
+              _avatarUrl = 'http://localhost:3000/$rawAvatarPath';
+            }
+          } else {
+            _avatarUrl = null;
+          }
+
+          if (_userRole == 'ADMIN') {
+            _userRole = 'Admin';
+          } else if (_userRole == 'PENGELOLA') {
+            _userRole = 'Pengelola Kost';
+          } else if (_userRole == 'PENGHUNI') {
+            _userRole = 'Penghuni Kost';
+          }
+        });
+      } else {
+        _fullName = 'Tidak Login';
+        _userRole = 'Tamu';
+        _avatarUrl = null;
+      }
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
+      setState(() {
+        _fullName = 'Error';
+        _userRole = 'Error';
+        _avatarUrl = null;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat data pengguna: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,61 +91,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Header
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Back button
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-
-                    // Title
-                    Text(
-                      'Keamanan',
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-
-                    // Notification icon
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.notifications_none_outlined, color: Colors.white),
-                        onPressed: () {},
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content area with curved container
+            Positioned(top: 0, left: 0, right: 0, child: _buildHeader()),
             Positioned(
               top: 80,
               left: 0,
@@ -79,99 +99,212 @@ class _SecurityScreenState extends State<SecurityScreen> {
               bottom: 0,
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color.fromRGBO(241, 255, 243, 1.0),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(248, 248, 255, 1.0),
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 15,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 50.0),
-                  child: Column(
-                    children: [
-                      // Username and role
-                      Text(
-                        'Kapling40',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Pengelola Kost Kapling40',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-
-                      // Change Password Option
-                      Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ChangePasswordScreen()
-                              ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Ganti Password',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: Colors.grey,
-                                ),
-                              ],
+                child:
+                    _isLoading
+                        ? const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFF3C4D82),
                             ),
                           ),
+                        )
+                        : SingleChildScrollView(
+                          padding: const EdgeInsets.only(
+                            top: 90.0,
+                            left: 20,
+                            right: 20,
+                            bottom: 20,
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                _fullName,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF3C4D82),
+                                ),
+                              ),
+                              Text(
+                                _userRole,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              const SizedBox(height: 30),
+
+                              Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) =>
+                                                const ChangePasswordScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 5,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Ganti Password',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 16,
+                                          color: Colors.grey,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ),
 
-            // Profile picture that overlaps
             Positioned(
-              top: 50,
+              top: 60,
               left: 0,
               right: 0,
-              child: Center(
-                child: Container(
-                  width: 70,
-                  height: 70,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF3C4D82),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
+              child: Center(child: _buildAvatar()),
             ),
           ],
         ),
       ),
+    );
+  }
 
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.black,
+                size: 20,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          Text(
+            'Keamanan',
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 50, height: 50),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFF3C4D82),
+        border: Border.all(color: Colors.white, width: 4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child:
+            _avatarUrl != null && _avatarUrl!.isNotEmpty
+                ? Image.network(
+                  _avatarUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    debugPrint('Error loading avatar image: $error');
+                    return Icon(
+                      Icons.person,
+                      size: 60,
+                      color: Colors.white.withOpacity(0.8),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value:
+                            loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
+                )
+                : Icon(
+                  Icons.person,
+                  size: 60,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+      ),
     );
   }
 }

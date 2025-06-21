@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
 import 'package:kosan_euy/services/order_catering_service.dart';
+import 'package:kosan_euy/services/order_laundry_service.dart';
 
 class OrderPaymentScreen extends StatefulWidget {
   final String reservasiId;
@@ -40,7 +41,7 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
   bool _isUploading = false;
   final ImagePicker _picker = ImagePicker();
   final OrderCateringService _orderCateringService = OrderCateringService();
-  // final OrderLaundryService _orderLaundryService = OrderLaundryService(); // Inisialisasi nanti
+  final OrderLaundryService _orderLaundryService = OrderLaundryService();
 
   String? _selectedPaymentMethod;
   final List<String> _availablePaymentMethods = [];
@@ -165,6 +166,20 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
           }).toList();
 
       final String itemsJsonString = jsonEncode(rawItemsForService);
+
+      final List<Map<String, dynamic>> rawItemsForLaundry =
+          widget.orderItems.map((item) {
+            final int quantity =
+                (item['jumlah'] is int)
+                    ? item['jumlah'] as int
+                    : (item['jumlah'] as num).toInt();
+            return {
+              'layanan_id': item['layanan_id'],
+              'jumlah_satuan': quantity,
+            };
+          }).toList();
+
+      final String itemsJsonStringLaundry = jsonEncode(rawItemsForLaundry);
       debugPrint(
         'DEBUG OrderPaymentScreen: Final items JSON string to service: $itemsJsonString',
       );
@@ -206,34 +221,41 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
           );
         }
       } else if (widget.laundryId != null) {
-        // --- LOGIKA PEMBAYARAN LAUNDRY ---
-        // Anda perlu membuat OrderLaundryService dan API backend-nya
-        // Sesuaikan dengan nama field di backend Anda (misal: layanan_id, jumlah_satuan)
-        /*
-        final result = await _orderLaundryService.createLaundryOrderWithPayment(
-          userId: userId,
+        final result = await _orderLaundryService.createOrderLaundryWithPayment(
           reservasiId: widget.reservasiId,
           laundryId: widget.laundryId!,
           metodeBayar: _selectedPaymentMethod!,
-          catatan: _notesController.text.isEmpty ? 'Pesanan laundry' : _notesController.text,
-          items: widget.orderItems.map((item) => {
-            'layanan_id': item['layanan_id'],
-            'jumlah_satuan': item['jumlah'],
-          }).toList(),
+          catatan:
+              _notesController.text.isEmpty
+                  ? 'Pesanan laundry'
+                  : _notesController.text,
+          itemsJson: itemsJsonStringLaundry,
           buktiBayarFile: _pickedImageFile!,
         );
 
         if (result['status'] == true) {
-          Get.snackbar('Sukses!', result['message'] ?? 'Pesanan laundry berhasil dibuat.',
-              snackPosition: SnackPosition.TOP, backgroundColor: Colors.green, colorText: Colors.white);
+          Get.snackbar(
+            'Sukses!',
+            result['message'] ?? 'Pesanan laundry berhasil dibuat.',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
           _showSuccessDialogAndNavigate(
-            message: result['message'] ?? 'Pembayaran laundry berhasil diunggah. Mohon tunggu verifikasi.',
+            message:
+                result['message'] ??
+                'Pembayaran laundry berhasil diunggah. Mohon tunggu verifikasi.',
           );
         } else {
-          Get.snackbar('Gagal', result['message'] ?? 'Gagal membuat pesanan laundry. Mohon coba lagi.',
-              snackPosition: SnackPosition.TOP, backgroundColor: Colors.red, colorText: Colors.white);
+          Get.snackbar(
+            'Gagal',
+            result['message'] ??
+                'Gagal membuat pesanan laundry. Mohon coba lagi.',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
         }
-        */
         Get.snackbar(
           'Info',
           'Fungsi pembayaran laundry belum diimplementasikan sepenuhnya.',
@@ -479,7 +501,7 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
     } else if (widget.laundryId != null) {
       purposeDescription = 'Pembayaran Pesanan Laundry';
     } else {
-      purposeDescription = 'Pembayaran Order'; // Fallback
+      purposeDescription = 'Pembayaran Order';
     }
 
     return Card(
@@ -539,6 +561,7 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
                     final String itemName = item['nama'] ?? 'Item';
                     final int itemQuantity = item['jumlah'] ?? 0;
                     final double itemPrice = item['harga'] ?? 0.0;
+                    final double subtotal = itemQuantity * itemPrice;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 4.0, left: 8.0),
                       child: Row(
@@ -555,7 +578,7 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
                             ),
                           ),
                           Text(
-                            _formatPrice(itemPrice.round().toDouble()),
+                            _formatPrice(subtotal),
                             style: GoogleFonts.poppins(
                               fontSize: 15,
                               color: Colors.black87,

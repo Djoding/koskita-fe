@@ -13,6 +13,17 @@ class AuthService {
   static const String _refreshTokenKey = 'refreshToken';
   static const String _userDataKey = 'userData';
 
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await _getAccessToken();
+    if (token == null) {
+      throw Exception('Access token not found. Please log in.');
+    }
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
+
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId:
         '493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com',
@@ -315,6 +326,48 @@ class AuthService {
       }
     } catch (e) {
       throw Exception('Failed to connect to the server or update profile: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    final url = Uri.parse('$_baseUrl/change-password');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: await _getAuthHeaders(),
+        body: jsonEncode({
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        return {
+          'success': responseBody['success'] ?? true,
+          'message': responseBody['message'] ?? 'Password berhasil diubah.',
+        };
+      } else {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(
+          errorBody['message'] ??
+              'Gagal mengubah password: ${response.statusCode}',
+        );
+      }
+    } on SocketException {
+      throw Exception(
+        'Tidak ada koneksi internet. Mohon periksa jaringan Anda.',
+      );
+    } on http.ClientException catch (e) {
+      throw Exception('Kesalahan jaringan: ${e.message}');
+    } catch (e) {
+      throw Exception(
+        'Terjadi kesalahan tidak terduga saat mengubah password: $e',
+      );
     }
   }
 

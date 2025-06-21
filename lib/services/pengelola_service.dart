@@ -1,10 +1,7 @@
-// lib/services/pengelola_service.dart
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http_parser/http_parser.dart';
 
 class PengelolaService {
   static const String _baseUrl = 'http://localhost:3000/api/v1';
@@ -19,13 +16,6 @@ class PengelolaService {
     };
   }
 
-  // Headers untuk multipart (tanpa Content-Type)
-  static Future<Map<String, String>> get _multipartHeaders async {
-    final token = await _storage.read(key: 'accessToken');
-    return {if (token != null) 'Authorization': 'Bearer $token'};
-  }
-
-  // Get all kost by owner (pengelola)
   static Future<Map<String, dynamic>> getKostByOwner({String? namaKost}) async {
     try {
       final Map<String, String> queryParams = {};
@@ -56,7 +46,6 @@ class PengelolaService {
     }
   }
 
-  // Get kost detail by ID
   static Future<Map<String, dynamic>> getKostById(String kostId) async {
     try {
       final response = await http.get(
@@ -81,7 +70,6 @@ class PengelolaService {
     }
   }
 
-  // Get master data
   static Future<Map<String, dynamic>> getTipeKamar() async {
     try {
       final response = await http.get(
@@ -154,7 +142,6 @@ class PengelolaService {
     }
   }
 
-  // Create new kost
   static Future<Map<String, dynamic>> createKost(
     Map<String, dynamic> formData,
   ) async {
@@ -182,7 +169,6 @@ class PengelolaService {
     }
   }
 
-  // Update kost
   static Future<Map<String, dynamic>> updateKost(
     String kostId,
     Map<String, dynamic> kostData,
@@ -211,7 +197,6 @@ class PengelolaService {
     }
   }
 
-  // Delete kost (soft delete)
   static Future<Map<String, dynamic>> deleteKost(String kostId) async {
     try {
       final response = await http.delete(

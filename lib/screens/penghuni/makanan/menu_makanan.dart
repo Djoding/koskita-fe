@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/penghuni/makanan/keranjang.dart';
 import 'package:kosan_euy/screens/penghuni/makanan/order_food_history.dart';
 import 'package:kosan_euy/services/catering_menu_service.dart';
-import 'package:kosan_euy/models/catering_model.dart'; // Pastikan model Catering ada qrisImage dan rekeningInfo
+import 'package:kosan_euy/models/catering_model.dart';
 
 class MenuMakanan extends StatefulWidget {
   final String cateringId;
@@ -122,9 +122,7 @@ class _MenuMakananScreenState extends State<MenuMakanan>
                   setState(() {
                     if (_selectedItems.containsKey(menuId)) {
                       _selectedItems.update(menuId, (value) {
-                        value['jumlah'] =
-                            (value['jumlah'] as int) +
-                            quantity;
+                        value['jumlah'] = (value['jumlah'] as int) + quantity;
                         return value;
                       });
                     } else {
@@ -374,7 +372,9 @@ class _MenuMakananScreenState extends State<MenuMakanan>
                 child: IconButton(
                   icon: const Icon(Icons.history, color: Colors.white),
                   onPressed: () {
-                    Get.to(() => const OrderHistoryScreen());
+                    Get.to(
+                      () => OrderHistoryScreen(reservasiId: widget.reservasiId),
+                    );
                   },
                 ),
               ),
