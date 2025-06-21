@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:kosan_euy/services/api_service.dart';
 import 'package:kosan_euy/models/catering_model.dart';
 import 'package:uploadthing/uploadthing.dart';
+import 'package:kosan_euy/models/catering_order_model.dart';
 
 class CateringMenuService {
   static const String _baseUrl =
@@ -276,7 +277,6 @@ class CateringMenuService {
   }
 
   static Future<Map<String, dynamic>> getCateringOrders({
-    required String pengelolaId, 
     String? status,
     String? cateringId,
     String? startDate,
@@ -305,16 +305,22 @@ class CateringMenuService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'message': data['message'],
-        };
+        if (data['success'] == true) {
+          List<CateringOrder> orders =
+              (data['data'] as List)
+                  .map((json) => CateringOrder.fromJson(json))
+                  .toList();
+          return {'status': true, 'data': orders, 'message': data['message']};
+        } else {
+          return {'status': false, 'message': data['message'], 'data': []};
+        }
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(
-          errorData['message'] ?? 'Failed to fetch catering orders',
-        );
+        return {
+          'status': false,
+          'message': errorData['message'] ?? 'Failed to fetch orders',
+          'data': [],
+        };
       }
     } catch (e) {
       debugPrint('Error fetching catering orders: $e');
@@ -322,26 +328,31 @@ class CateringMenuService {
     }
   }
 
-  static Future<Map<String, dynamic>> getCateringOrderDetail({
-    required String orderId,
-    required String pengelolaId, 
-  }) async {
+   static Future<Map<String, dynamic>> getCateringOrderDetail(
+    String orderId,
+  ) async {
     try {
       final uri = Uri.parse('${_baseUrl}catering/orders/$orderId');
       final response = await http.get(uri, headers: await _headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'], 
-          'message': data['message'],
-        };
+        if (data['success'] == true) {
+          return {
+            'status': true,
+            'data': CateringOrder.fromJson(data['data']),
+            'message': data['message'],
+          };
+        } else {
+          return {'status': false, 'message': data['message'], 'data': null};
+        }
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(
-          errorData['message'] ?? 'Failed to fetch catering order detail',
-        );
+        return {
+          'status': false,
+          'message': errorData['message'] ?? 'Failed to fetch order detail',
+          'data': null,
+        };
       }
     } catch (e) {
       debugPrint('Error fetching catering order detail: $e');
@@ -349,11 +360,10 @@ class CateringMenuService {
     }
   }
 
-  static Future<Map<String, dynamic>> updateCateringOrderStatus({
-    required String orderId,
-    required String status, 
-    required String pengelolaId,
-  }) async {
+  static Future<Map<String, dynamic>> updateOrderStatus(
+    String orderId,
+    String status,
+  ) async {
     try {
       final response = await http.patch(
         Uri.parse('${_baseUrl}catering/orders/$orderId/status'),
@@ -370,12 +380,13 @@ class CateringMenuService {
         };
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(
-          errorData['message'] ?? 'Failed to update order status',
-        );
+        return {
+          'status': false,
+          'message': errorData['message'] ?? 'Failed to update order status',
+        };
       }
     } catch (e) {
-      debugPrint('Error updating catering order status: $e');
+      debugPrint('Error updating order status: $e');
       return {'status': false, 'message': 'Network error: $e'};
     }
   }
