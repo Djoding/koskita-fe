@@ -43,8 +43,10 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
         kostData!['kost_id'].toString(),
       );
 
-      // PERBAIKAN: Gunakan endpoint baru untuk mendapatkan semua pesanan
-      final allOrdersResponse = await LaundryService.getAllLaundryOrders();
+      // PERBAIKAN: Gunakan endpoint baru yang sudah filter berdasarkan kost
+      final ordersResponse = await LaundryService.getLaundryOrdersByKost(
+        kostId: kostData!['kost_id'].toString(),
+      );
 
       if (laundriesResponse['status']) {
         final laundries = laundriesResponse['data'] as List;
@@ -59,32 +61,20 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
         };
 
         // Jika berhasil mendapatkan data pesanan
-        if (allOrdersResponse['status']) {
-          final allOrders = allOrdersResponse['data'] as List;
+        if (ordersResponse['status']) {
+          final orders = ordersResponse['data'] as List;
 
-          // Filter orders berdasarkan kost_id (karena getAllLaundryOrders mengembalikan semua pesanan)
-          final kostOrders =
-              allOrders.where((order) {
-                final laundry = order['laundry'] as Map<String, dynamic>?;
-                return laundry?['kost_id']?.toString() ==
-                    kostData!['kost_id'].toString();
-              }).toList();
-
-          // Calculate stats berdasarkan orders yang sudah difilter
+          // Calculate stats
           final pendingOrders =
-              kostOrders.where((order) => order['status'] == 'PENDING').length;
+              orders.where((order) => order['status'] == 'PENDING').length;
           final processingOrders =
-              kostOrders
-                  .where((order) => order['status'] == 'PROCESSING')
-                  .length;
+              orders.where((order) => order['status'] == 'PROCESSING').length;
           final completedOrders =
-              kostOrders
-                  .where((order) => order['status'] == 'COMPLETED')
-                  .length;
+              orders.where((order) => order['status'] == 'COMPLETED').length;
 
           stats = {
             'total_laundries': laundries.length,
-            'total_orders': kostOrders.length,
+            'total_orders': orders.length,
             'pending_orders': pendingOrders,
             'processing_orders': processingOrders,
             'completed_orders': completedOrders,
@@ -198,7 +188,6 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
                 ),
               )
             else ...[
-              const SizedBox(height: 32),
               // Menu Grid
               Expanded(
                 child: Padding(
@@ -236,43 +225,6 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
             ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          Text(
-            title,
-            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 11),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ),
     );
   }
