@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
 import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
+import 'package:kosan_euy/screens/settings/create_password_screen.dart';
 import 'package:kosan_euy/screens/tamu/dashboard_tamu_screen.dart';
 import 'package:kosan_euy/services/auth_service.dart';
 
@@ -20,8 +21,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  final TextEditingController _fullNameController =
-      TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
   final AuthService _authService = AuthService();
 
   bool _obscurePassword = true;
@@ -31,7 +31,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
   int _currentStep = 0;
   String _username = "";
   String _email = "";
-  String? _selectedRole; 
+  String? _selectedRole;
 
   final Map<String, String> _roleMap = {
     'Pengelola Kos': 'PENGELOLA',
@@ -48,7 +48,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _fullNameController.dispose(); 
+    _fullNameController.dispose();
     super.dispose();
   }
 
@@ -122,7 +122,40 @@ class _LoginScreenState extends State<HomeScreenPage> {
         _isLoading = false;
       });
 
-      _handleLoginSuccess(userData);
+      final bool hasManualPassword = userData['has_manual_password'] ?? false;
+      final String? userId = userData['user_id'];
+      final String? userEmail = userData['email'];
+
+      if (userId == null || userEmail == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Data pengguna tidak lengkap dari Google login.',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
+      if (hasManualPassword == false) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CreatePasswordScreen(userEmail: userEmail),
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Anda perlu membuat password akun Anda.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        _handleLoginSuccess(userData);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -178,7 +211,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
       _emailController.clear();
       _passwordController.clear();
       _confirmPasswordController.clear();
-      _fullNameController.clear(); 
+      _fullNameController.clear();
       _selectedRole = null;
     });
   }
@@ -189,7 +222,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
       _passwordController.clear();
       _confirmPasswordController.clear();
       _emailController.clear();
-      _fullNameController.clear(); 
+      _fullNameController.clear();
       _selectedRole = null;
     });
   }
@@ -198,7 +231,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
-    final fullName = _fullNameController.text.trim(); 
+    final fullName = _fullNameController.text.trim();
 
     if (fullName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -257,7 +290,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
       }
 
       await _authService.register(
-        email.split('@')[0], 
+        email.split('@')[0],
         fullName,
         email,
         password,
@@ -703,10 +736,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
           width: double.infinity,
           height: 55,
           child: ElevatedButton(
-            onPressed:
-                _isLoading
-                    ? null
-                    : _submitRegistration,
+            onPressed: _isLoading ? null : _submitRegistration,
             style: ElevatedButton.styleFrom(
               foregroundColor: Colors.white,
               backgroundColor: const Color.fromRGBO(144, 122, 204, 1.0),

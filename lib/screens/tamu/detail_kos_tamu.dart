@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:get/get.dart';
 import 'dart:ui';
 import 'package:kosan_euy/screens/home_screen.dart';
@@ -20,12 +18,7 @@ class _DetailKosTamuState extends State<DetailKosTamu> {
   final CarouselSliderController _carouselController =
       CarouselSliderController();
 
-  LatLng _kostLocation = const LatLng(
-    -6.9731,
-    107.6291,
-  ); // Default atau placeholder lokasi map
-
-  final KostService _kostService = KostService(); // Hanya perlu KostService
+  final KostService _kostService = KostService();
 
   Map<String, dynamic>? _kostDetailData;
   String? _currentKostId;
@@ -515,51 +508,6 @@ class _DetailKosTamuState extends State<DetailKosTamu> {
                     ),
                   ),
                   const SizedBox(height: 15),
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: FlutterMap(
-                        options: MapOptions(
-                          initialCenter: _kostLocation,
-                          initialZoom: 15.0,
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                            subdomains: const ['a', 'b', 'c'],
-                          ),
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                width: 80.0,
-                                height: 80.0,
-                                point: _kostLocation,
-                                child: Icon(
-                                  Icons.location_pin,
-                                  color: Colors.red,
-                                  size: 40,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 25),
                   _buildSectionCard(
                     title: "Informasi Jarak:",
                     content: informasiJarakApi,

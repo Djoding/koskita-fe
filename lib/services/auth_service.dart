@@ -204,6 +204,50 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> setPassword(
+    String email,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    final url = Uri.parse('$_baseUrl/setup-password');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword,
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        return {
+          'success': responseBody['success'] ?? true,
+          'message': responseBody['message'] ?? 'Password berhasil diatur.',
+        };
+      } else {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(
+          errorBody['message'] ??
+              'Gagal mengatur password: ${response.statusCode}',
+        );
+      }
+    } on SocketException {
+      throw Exception(
+        'Tidak ada koneksi internet. Mohon periksa jaringan Anda.',
+      );
+    } on http.ClientException catch (e) {
+      throw Exception('Kesalahan jaringan: ${e.message}');
+    } catch (e) {
+      throw Exception(
+        'Terjadi kesalahan tidak terduga saat mengatur password: $e',
+      );
+    }
+  }
+
   Future<Map<String, dynamic>> getUserProfile() async {
     final token = await _getAccessToken();
 
