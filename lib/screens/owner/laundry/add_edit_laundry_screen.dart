@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kosan_euy/services/laundry_service.dart';
-import 'package:kosan_euy/widgets/success_screen.dart';
 
 class AddEditLaundryScreen extends StatefulWidget {
   const AddEditLaundryScreen({super.key});
@@ -115,14 +114,19 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
       if (_bankController.text.trim().isNotEmpty ||
           _rekeningController.text.trim().isNotEmpty ||
           _atasNamaController.text.trim().isNotEmpty) {
-        // Hapus jsonEncode di sini, kirim sebagai Map<String, dynamic>
-        // Backend akan mengonversinya.
         formData['rekening_info'] = {
           'bank': _bankController.text.trim(),
           'nomor': _rekeningController.text.trim(),
           'atas_nama': _atasNamaController.text.trim(),
         };
       }
+
+      // Debug print untuk melihat data yang akan dikirim
+      print('=== FORM DATA DEBUG ===');
+      print('FormData: $formData');
+      formData.forEach((key, value) {
+        print('$key: $value (${value.runtimeType})');
+      });
 
       final response = await LaundryService.createLaundry(
         formData,
@@ -131,17 +135,11 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
 
       if (response['status']) {
         Get.back(result: true);
-        Get.to(
-          () => SuccessScreen(
-            title:
-                isEdit
-                    ? 'Laundry Berhasil Diperbarui'
-                    : 'Laundry Berhasil Ditambahkan',
-            subtitle:
-                isEdit
-                    ? 'Data laundry telah diperbarui'
-                    : 'Laundry baru telah ditambahkan ke daftar',
-          ),
+        Get.snackbar(
+          'Success',
+          isEdit ? 'Laundry berhasil diperbarui' : 'Laundry berhasil ditambahkan',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
         );
       } else {
         Get.snackbar(

@@ -25,48 +25,6 @@ class LaundryService {
     return {if (token != null) 'Authorization': 'Bearer $token'};
   }
 
-  static Map<String, dynamic> _formatOrderData(Map<String, dynamic> rawData) {
-    return {
-      'order_id': rawData['pesanan_id'],
-      'user_id': rawData['user_id'],
-      'laundry_id': rawData['laundry_id'],
-      'reservasi_id': rawData['reservasi_id'],
-      'total_estimasi': rawData['total_estimasi'],
-      'total_final': rawData['total_final'],
-      'total_amount':
-          rawData['total_final'] ?? rawData['total_estimasi'], // fallback
-      'berat_actual': rawData['berat_actual'],
-      'tanggal_antar': rawData['tanggal_antar'],
-      'estimasi_selesai': rawData['estimasi_selesais'],
-      'pickup_datetime': rawData['tanggal_antar'],
-      'delivery_datetime': rawData['estimasi_selesai'],
-      'status': rawData['status'],
-      'catatan': rawData['catatan'],
-      'notes': rawData['catatan'],
-      'created_at': rawData['created_at'],
-      'updated_at': rawData['updated_at'],
-      // Data user
-      'user': rawData['user'] ?? {},
-      // Data laundry
-      'laundry': rawData['laundry'] ?? {},
-      // Detail pesanan
-      'items': rawData['detail_pesanan_laundry'] ?? [],
-      // Pembayaran
-      'payment':
-          rawData['pembayaran_laundry']?.isNotEmpty == true
-              ? rawData['pembayaran_laundry'][0]
-              : null,
-      'payment_method':
-          rawData['pembayaran_laundry']?.isNotEmpty == true
-              ? rawData['pembayaran_laundry'][0]['metode']
-              : null,
-      'payment_proof':
-          rawData['pembayaran_laundry']?.isNotEmpty == true
-              ? rawData['pembayaran_laundry'][0]['bukti_bayar']
-              : null,
-    };
-  }
-
   // Get laundries by kost ID
   static Future<Map<String, dynamic>> getLaundriesByKost(String kostId) async {
     try {
@@ -92,48 +50,34 @@ class LaundryService {
     }
   }
 
-  // Create laundry
+  // PERBAIKAN: Create laundry dengan dua langkah - JSON request dulu, lalu upload gambar
   static Future<Map<String, dynamic>> createLaundry(
     Map<String, dynamic> laundryData,
     File? qrisImageFile,
   ) async {
     try {
-      final request = http.MultipartRequest(
-        'POST',
+      // LANGKAH 1: Buat laundry tanpa gambar menggunakan JSON request
+      debugPrint('=== SENDING JSON DATA ===');
+      debugPrint('Data: $laundryData');
+
+      final response = await http.post(
         Uri.parse('$_baseUrl/laundry'),
+        headers: await _headers,
+        body: jsonEncode(laundryData),
       );
 
-      // Add headers
-      final headers = await _multipartHeaders;
-      request.headers.addAll(headers);
-
-      // Tambahkan semua field dari laundryData.
-      // Jika rekening_info ada, ia akan di-jsonEncode secara otomatis di baris ini.
-      laundryData.forEach((key, value) {
-        // Jika nilai adalah Map (seperti rekening_info), encode ke JSON string
-        if (value is Map<String, dynamic>) {
-          request.fields[key] = jsonEncode(value);
-        } else {
-          request.fields[key] = value.toString();
-        }
-      });
-
-      // Tambahkan gambar QRIS jika disediakan
-      if (qrisImageFile != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'qris_image',
-            qrisImageFile.path,
-            contentType: MediaType('image', 'jpeg'),
-          ),
-        );
-      }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
+        final laundryId = data['data']['laundry_id'];
+
+        // LANGKAH 2: Upload gambar QRIS jika ada
+        if (qrisImageFile != null && laundryId != null) {
+          await _uploadQrisImage(laundryId, qrisImageFile);
+        }
+
         return {
           'status': true,
           'data': data['data'],
@@ -149,11 +93,10 @@ class LaundryService {
     }
   }
 
-  // Update laundry (logika serupa untuk penanganan rekening_info)
-  static Future<Map<String, dynamic>> updateLaundry(
+  // Helper method untuk upload QRIS image
+  static Future<void> _uploadQrisImage(
     String laundryId,
-    Map<String, dynamic> laundryData,
-    File? qrisImageFile,
+    File qrisImageFile,
   ) async {
     try {
       final request = http.MultipartRequest(
@@ -165,63 +108,70 @@ class LaundryService {
       final headers = await _multipartHeaders;
       request.headers.addAll(headers);
 
-      // Tambahkan semua field dari laundryData.
-      laundryData.forEach((key, value) {
-        if (value is Map<String, dynamic>) {
-          request.fields[key] = jsonEncode(value);
-        } else {
-          request.fields[key] = value.toString();
-        }
-      });
-
-      // Tambahkan gambar QRIS jika disediakan
-      if (qrisImageFile != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'qris_image',
-            qrisImageFile.path,
-            contentType: MediaType('image', 'jpeg'),
-          ),
-        );
-      }
+      // Tambahkan gambar QRIS
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'qris_image',
+          qrisImageFile.path,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'message': data['message'],
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to update laundry');
+      if (response.statusCode != 200) {
+        debugPrint('Failed to upload QRIS image: ${response.body}');
       }
     } catch (e) {
-      debugPrint('Error updating laundry: $e');
-      return {'status': false, 'message': 'Network error: $e'};
+      debugPrint('Error uploading QRIS image: $e');
     }
   }
 
-  // Delete laundry
-  static Future<Map<String, dynamic>> deleteLaundry(String laundryId) async {
+  // Update laundry - Gunakan pendekatan yang sama
+  static Future<Map<String, dynamic>> updateLaundry(
+    String laundryId,
+    Map<String, dynamic> laundryData,
+    File? qrisImageFile,
+  ) async {
     try {
-      final response = await http.delete(
+      // LANGKAH 1: Update data laundry menggunakan JSON request
+      if (laundryData.isNotEmpty) {
+        final response = await http.put(
+          Uri.parse('$_baseUrl/laundry/$laundryId'),
+          headers: await _headers,
+          body: jsonEncode(laundryData),
+        );
+
+        if (response.statusCode != 200) {
+          final errorData = jsonDecode(response.body);
+          throw Exception(errorData['message'] ?? 'Failed to update laundry');
+        }
+      }
+
+      // LANGKAH 2: Upload gambar QRIS jika ada
+      if (qrisImageFile != null) {
+        await _uploadQrisImage(laundryId, qrisImageFile);
+      }
+
+      // Get updated data
+      final getResponse = await http.get(
         Uri.parse('$_baseUrl/laundry/$laundryId'),
         headers: await _headers,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {'status': true, 'message': data['message']};
+      if (getResponse.statusCode == 200) {
+        final data = jsonDecode(getResponse.body);
+        return {
+          'status': true,
+          'data': data['data'],
+          'message': 'Laundry updated successfully',
+        };
       } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to delete laundry');
+        return {'status': true, 'message': 'Laundry updated successfully'};
       }
     } catch (e) {
-      debugPrint('Error deleting laundry: $e');
+      debugPrint('Error updating laundry: $e');
       return {'status': false, 'message': 'Network error: $e'};
     }
   }
@@ -336,8 +286,9 @@ class LaundryService {
     }
   }
 
+  // Get laundry orders
   static Future<Map<String, dynamic>> getLaundryOrdersByKost({
-    required String kostId, // Pastikan parameter ini diterima
+    required String kostId,
     String? status,
     String? laundryId,
   }) async {
@@ -349,7 +300,6 @@ class LaundryService {
 
       final queryParams = <String, String>{};
 
-      // TAMBAHKAN BARIS INI: Sertakan kost_id dalam query parameters
       if (kostId.isNotEmpty) {
         queryParams['kost_id'] = kostId;
       }
@@ -393,6 +343,7 @@ class LaundryService {
     }
   }
 
+  // Get laundry order detail
   static Future<Map<String, dynamic>> getLaundryOrderDetail(
     String orderId,
   ) async {
@@ -403,9 +354,9 @@ class LaundryService {
         headers: headers,
       );
 
-      print('=== GET ORDER DETAIL DEBUG ===');
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      debugPrint('=== GET ORDER DETAIL DEBUG ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
 
       if (response.body.isEmpty) {
         return {'success': false, 'message': 'Response kosong dari server'};
@@ -440,13 +391,14 @@ class LaundryService {
 
       return {'success': isSuccess, 'message': message, 'data': data};
     } catch (e) {
-      print('=== ERROR IN GET ORDER DETAIL ===');
-      print('Error: $e');
+      debugPrint('=== ERROR IN GET ORDER DETAIL ===');
+      debugPrint('Error: $e');
 
       return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
     }
   }
 
+  // Update laundry order status
   static Future<Map<String, dynamic>> updateLaundryOrderStatus(
     String orderId,
     Map<String, dynamic> statusData,
@@ -459,14 +411,11 @@ class LaundryService {
         body: json.encode(statusData),
       );
 
-      print('=== UPDATE STATUS DEBUG ===');
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-      print('Headers: ${response.headers}');
+      debugPrint('=== UPDATE STATUS DEBUG ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
 
-      // Cek apakah response body kosong
       if (response.body.isEmpty) {
-        print('Response body is empty');
         if (response.statusCode >= 200 && response.statusCode < 300) {
           return {'success': true, 'message': 'Status berhasil diperbarui'};
         } else {
@@ -478,20 +427,11 @@ class LaundryService {
       }
 
       final responseData = json.decode(response.body) as Map<String, dynamic>;
-      print('Parsed Response Data: $responseData');
-      print('Response Data Type: ${responseData.runtimeType}');
 
-      // Cek setiap field yang ada di response
-      responseData.forEach((key, value) {
-        print('Field "$key": $value (type: ${value.runtimeType})');
-      });
-
-      // Tentukan success berdasarkan status code dan isi response
       bool isSuccess = false;
       String message = '';
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        // Cek berbagai kemungkinan field untuk menentukan success
         if (responseData.containsKey('status')) {
           isSuccess =
               responseData['status'] == true ||
@@ -502,7 +442,6 @@ class LaundryService {
               responseData['success'] == true ||
               responseData['success'] == 'true';
         } else {
-          // Jika tidak ada field status/success, anggap berhasil jika status code OK
           isSuccess = true;
         }
 
@@ -514,52 +453,20 @@ class LaundryService {
             responseData['message']?.toString() ?? 'Gagal memperbarui status';
       }
 
-      print('Final isSuccess: $isSuccess');
-      print('Final message: $message');
-
       return {
         'success': isSuccess,
         'message': message,
         'data': responseData['data'],
-        'raw_response': responseData,
       };
     } catch (e) {
-      print('=== ERROR IN UPDATE STATUS ===');
-      print('Error: $e');
-      print('Error Type: ${e.runtimeType}');
+      debugPrint('=== ERROR IN UPDATE STATUS ===');
+      debugPrint('Error: $e');
 
       return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
     }
   }
 
-  // Get master layanan laundry
-  static Future<Map<String, dynamic>> getMasterLayananLaundry() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/master/layanan-laundry'),
-        headers: await _headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'message': data['message'],
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(
-          errorData['message'] ?? 'Failed to fetch master layanan',
-        );
-      }
-    } catch (e) {
-      debugPrint('Error fetching master layanan: $e');
-      return {'status': false, 'message': 'Network error: $e', 'data': []};
-    }
-  }
-
-  // Get available layanan untuk owner
+  // Get available layanan
   static Future<Map<String, dynamic>> getAvailableLayanan() async {
     try {
       final response = await http.get(

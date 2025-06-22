@@ -368,60 +368,7 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                       ],
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'edit':
-                          Get.to(
-                            () => const AddEditLaundryScreen(),
-                            arguments: {
-                              'kost_data': kostData,
-                              'laundry_data': laundry,
-                              'is_edit': true,
-                            },
-                          )?.then((result) {
-                            if (result == true) {
-                              _loadLaundries();
-                            }
-                          });
-                          break;
-                        case 'delete':
-                          _showDeleteConfirmation(laundry);
-                          break;
-                      }
-                    },
-                    itemBuilder:
-                        (context) => [
-                          PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.edit,
-                                  size: 18,
-                                  color: Colors.blue,
-                                ),
-                                const SizedBox(width: 12),
-                                Text('Edit', style: GoogleFonts.poppins()),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.delete,
-                                  size: 18,
-                                  color: Colors.red,
-                                ),
-                                const SizedBox(width: 12),
-                                Text('Hapus', style: GoogleFonts.poppins()),
-                              ],
-                            ),
-                          ),
-                        ],
-                  ),
+                  
                 ],
               ),
               const SizedBox(height: 16),
