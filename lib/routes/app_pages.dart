@@ -5,7 +5,6 @@ import 'package:kosan_euy/screens/home_screen.dart';
 import 'package:kosan_euy/screens/owner/daftar_kos_screen.dart';
 import 'package:kosan_euy/screens/owner/reservasi/detail_validasi_reservasi_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
-import 'package:kosan_euy/screens/settings/notification_screen.dart';
 import 'package:kosan_euy/screens/settings/edit_profile_screen.dart';
 import 'package:kosan_euy/screens/settings/change_password_screen.dart';
 import 'package:kosan_euy/widgets/success_screen.dart';
@@ -47,7 +46,6 @@ class AppPages {
     GetPage(name: Routes.home, page: () => HomeScreenPage()),
     GetPage(name: Routes.daftarKos, page: () => DaftarKosScreen()),
     GetPage(name: Routes.setting, page: () => SettingScreen()),
-    GetPage(name: Routes.notification, page: () => NotificationScreen()),
     GetPage(name: Routes.editProfile, page: () => EditProfileScreen()),
     GetPage(name: Routes.changePassword, page: () => ChangePasswordScreen()),
     GetPage(
