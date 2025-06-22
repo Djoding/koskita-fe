@@ -7,7 +7,7 @@ class KostService {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static const String _accessTokenKey = 'accessToken';
 
-  static const String _baseUrl = 'http://localhost:3000/api/v1/kost';
+  static const String _baseUrl = 'https://kost-kita.my.id/api/v1/kost';
 
   static Map<String, dynamic> _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {

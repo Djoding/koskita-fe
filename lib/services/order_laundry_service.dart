@@ -6,7 +6,7 @@ import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 
 class OrderLaundryService {
-  static const String _baseUrl = 'http://localhost:3000/api/v1/order/laundry';
+  static const String _baseUrl = 'https://kost-kita.my.id/api/v1/order/laundry';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static const String _accessTokenKey = 'accessToken';
 

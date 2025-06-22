@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // Sesuaikan dengan IP backend Anda
-  static const String baseUrl = 'http://localhost:3000/api/v1/';
+  static const String baseUrl = 'https://kost-kita.my.id/api/v1/';
 
   static String? token;
 

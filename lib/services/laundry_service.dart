@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http_parser/http_parser.dart';
 
 class LaundryService {
-  static const String _baseUrl = 'http://localhost:3000/api/v1';
+  static const String _baseUrl = 'https://kost-kita.my.id/api/v1';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   // Headers dengan token

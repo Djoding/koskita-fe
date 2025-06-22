@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
 
 class ReservasiManagementService {
-  static const String _baseUrl = 'http://localhost:3000/api/v1/reservasi';
+  static const String _baseUrl = 'https://kost-kita.my.id/api/v1/reservasi';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   // Headers dengan token

@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class OrderHistoryService {
-  static const String _baseUrl = 'http://localhost:3000/api/v1/history';
+  static const String _baseUrl = 'https://kost-kita.my.id/api/v1/history';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static const String _accessTokenKey = 'accessToken';
 

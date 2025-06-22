@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AdminService {
-  static const String _baseUrl = 'http://localhost:3000/api/v1';
+  static const String _baseUrl = 'https://kost-kita.my.id/api/v1';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   // Headers dengan token
