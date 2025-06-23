@@ -5,6 +5,7 @@ import 'package:kosan_euy/screens/penghuni/makanan/keranjang.dart';
 import 'package:kosan_euy/screens/penghuni/makanan/order_food_history.dart';
 import 'package:kosan_euy/services/catering_menu_service.dart';
 import 'package:kosan_euy/models/catering_model.dart';
+import 'package:intl/intl.dart';
 
 class MenuMakanan extends StatefulWidget {
   final String cateringId;
@@ -310,7 +311,7 @@ class _MenuMakananScreenState extends State<MenuMakanan>
                             final menu = _getFilteredMenus(_showFoodTab)[index];
                             return FoodItemCard(
                               name: menu.namaMenu,
-                              price: menu.harga.toStringAsFixed(2),
+                              price: menu.harga,
                               imagePath:
                                   menu.fotoMenu ??
                                   'assets/placeholder_food.png',
@@ -600,7 +601,6 @@ class _MenuMakananScreenState extends State<MenuMakanan>
                 reservasiId: widget.reservasiId,
                 qrisImage: _cateringInfo?.qrisImage,
                 rekeningInfo: _cateringInfo?.rekeningInfo,
-                // ------------------------------------
               ),
             );
           },
@@ -651,7 +651,7 @@ class FoodGridView extends StatelessWidget {
         return FoodItemCard(
           menuId: menu.menuId,
           name: menu.namaMenu,
-          price: menu.harga.toStringAsFixed(2),
+          price: menu.harga, // Passing double price directly
           imagePath: menu.fotoMenu ?? 'assets/placeholder_food.png',
           kategori: menu.kategori,
           onAddToCart: onAddToCart,
@@ -694,7 +694,7 @@ class DrinkGridView extends StatelessWidget {
         return FoodItemCard(
           menuId: menu.menuId,
           name: menu.namaMenu,
-          price: menu.harga.toStringAsFixed(2),
+          price: menu.harga, // Passing double price directly
           imagePath: menu.fotoMenu ?? 'assets/placeholder_drink.png',
           kategori: menu.kategori,
           onAddToCart: onAddToCart,
@@ -706,7 +706,7 @@ class DrinkGridView extends StatelessWidget {
 
 class FoodItemCard extends StatelessWidget {
   final String name;
-  final String price;
+  final double price; // <--- UBAH TIPE DATA MENJADI double
   final String imagePath;
   final Function(
     String menuId,
@@ -722,12 +722,22 @@ class FoodItemCard extends StatelessWidget {
   const FoodItemCard({
     super.key,
     required this.name,
-    required this.price,
+    required this.price, // <--- UBAH TIPE DATA MENJADI double
     required this.imagePath,
     required this.onAddToCart,
     required this.menuId,
     required this.kategori,
   });
+
+  // === Pindahkan fungsi _formatPrice ke dalam FoodItemCard ===
+  String _formatPrice(double price) {
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID', // Lokalisasi Indonesia
+      symbol: 'Rp ', // Simbol mata uang
+      decimalDigits: 0, // Tidak ada digit desimal
+    );
+    return formatter.format(price);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -804,8 +814,9 @@ class FoodItemCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
+            // === GUNAKAN _formatPrice DI SINI ===
             Text(
-              'Rp ${price.replaceAll('RP ', '')}',
+              _formatPrice(price),
               style: GoogleFonts.poppins(
                 color: const Color(0xFF4D9DAB),
                 fontSize: 14,
@@ -831,9 +842,7 @@ class FoodItemCard extends StatelessWidget {
                   onAddToCart(
                     menuId,
                     name,
-                    double.parse(
-                      price.replaceAll('Rp ', '').replaceAll('.', ''),
-                    ),
+                    price, // <--- KIRIM DOUBLE ASLI KE onAddToCart
                     imagePath,
                     kategori,
                   );

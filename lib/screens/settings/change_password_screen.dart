@@ -18,6 +18,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
+  // === Tambahkan GlobalKey untuk Form di sini ===
+  final _formKey = GlobalKey<FormState>();
+
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
@@ -52,9 +55,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 rawAvatarPath.startsWith('https://')) {
               _avatarUrl = rawAvatarPath;
             } else if (rawAvatarPath.startsWith('/')) {
-              _avatarUrl = 'http://localhost:3000$rawAvatarPath';
+              _avatarUrl = 'https://kost-kita.my.id$rawAvatarPath';
             } else {
-              _avatarUrl = 'http://localhost:3000/$rawAvatarPath';
+              _avatarUrl = 'https://kost-kita.my.id/$rawAvatarPath';
             }
           } else {
             _avatarUrl = null;
@@ -97,42 +100,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Future<void> _changePassword() async {
-    final currentPassword = _currentPasswordController.text;
-    final newPassword = _newPasswordController.text;
-    final confirmPassword = _confirmPasswordController.text;
+    // === Panggil validasi FORM di sini ===
+    final isValidForm = _formKey.currentState?.validate() ?? false;
 
-    if (currentPassword.isEmpty ||
-        newPassword.isEmpty ||
-        confirmPassword.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Semua kolom password harus diisi.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+    // Jika form tidak valid, hentikan proses
+    if (!isValidForm) {
+      debugPrint('Validasi formulir gagal.');
+      // Pesan error akan ditampilkan langsung di bawah TextFormField
       return;
     }
-    if (newPassword != confirmPassword) {
-      Get.snackbar(
-        'Error',
-        'Password baru dan konfirmasi password tidak cocok.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-    if (newPassword.length < 8) {
-      Get.snackbar(
-        'Error',
-        'Password baru minimal 8 karakter.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
+
+    // Ambil nilai password setelah validasi FE berhasil
+    final currentPassword = _currentPasswordController.text.trim();
+    final newPassword = _newPasswordController.text.trim();
+    // final confirmPassword = _confirmPasswordController.text.trim(); // Tidak perlu diperiksa lagi di sini
 
     setState(() {
       _isSubmitting = true;
@@ -236,94 +217,140 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             right: 20,
                             bottom: 20,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                _fullName,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF3C4D82),
-                                ),
-                              ),
-                              Text(
-                                _userRole,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              const SizedBox(height: 30),
-
-                              _buildPasswordField(
-                                controller: _currentPasswordController,
-                                labelText: 'Password Saat Ini',
-                                obscureText: _obscureCurrentPassword,
-                                onToggleVisibility: () {
-                                  setState(() {
-                                    _obscureCurrentPassword =
-                                        !_obscureCurrentPassword;
-                                  });
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                              _buildPasswordField(
-                                controller: _newPasswordController,
-                                labelText: 'Password Baru',
-                                obscureText: _obscureNewPassword,
-                                onToggleVisibility: () {
-                                  setState(() {
-                                    _obscureNewPassword = !_obscureNewPassword;
-                                  });
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                              _buildPasswordField(
-                                controller: _confirmPasswordController,
-                                labelText: 'Konfirmasi Password',
-                                obscureText: _obscureConfirmPassword,
-                                onToggleVisibility: () {
-                                  setState(() {
-                                    _obscureConfirmPassword =
-                                        !_obscureConfirmPassword;
-                                  });
-                                },
-                              ),
-
-                              const SizedBox(height: 40),
-
-                              ElevatedButton(
-                                onPressed:
-                                    _isSubmitting ? null : _changePassword,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4D9DAB),
-                                  foregroundColor: Colors.white,
-                                  minimumSize: const Size(250, 55),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
+                          // === Bungkus Column dengan Form widget ===
+                          child: Form(
+                            key: _formKey, // Pasang GlobalKey di sini
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _fullName,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF3C4D82),
                                   ),
-                                  elevation: 8,
-                                  shadowColor: Colors.black.withOpacity(0.3),
                                 ),
-                                child:
-                                    _isSubmitting
-                                        ? const CircularProgressIndicator(
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        )
-                                        : Text(
-                                          'Ganti Password',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w700,
+                                Text(
+                                  _userRole,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                const SizedBox(height: 30),
+
+                                _buildPasswordField(
+                                  controller: _currentPasswordController,
+                                  labelText: 'Password Saat Ini',
+                                  obscureText: _obscureCurrentPassword,
+                                  onToggleVisibility: () {
+                                    setState(() {
+                                      _obscureCurrentPassword =
+                                          !_obscureCurrentPassword;
+                                    });
+                                  },
+                                  // === Tambahkan validator untuk Current Password ===
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Password saat ini tidak boleh kosong';
+                                    }
+                                    // Anda bisa menambahkan validasi lebih lanjut jika Anda ingin membandingkan dengan password pengguna yang tersimpan
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                _buildPasswordField(
+                                  controller: _newPasswordController,
+                                  labelText: 'Password Baru',
+                                  obscureText: _obscureNewPassword,
+                                  onToggleVisibility: () {
+                                    setState(() {
+                                      _obscureNewPassword =
+                                          !_obscureNewPassword;
+                                    });
+                                  },
+                                  // === Tambahkan validator untuk New Password ===
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Password baru tidak boleh kosong';
+                                    }
+                                    if (value.length < 8) {
+                                      return 'Password minimal 8 karakter';
+                                    }
+                                    if (!value.contains(RegExp(r'[a-z]'))) {
+                                      return 'Harus mengandung setidaknya satu huruf kecil';
+                                    }
+                                    if (!value.contains(RegExp(r'[A-Z]'))) {
+                                      return 'Harus mengandung setidaknya satu huruf besar';
+                                    }
+                                    if (!value.contains(RegExp(r'\d'))) {
+                                      return 'Harus mengandung setidaknya satu angka';
+                                    }
+                                    // Optional: New password should not be the same as current password
+                                    // if (value == _currentPasswordController.text) {
+                                    //   return 'Password baru tidak boleh sama dengan password saat ini';
+                                    // }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                _buildPasswordField(
+                                  controller: _confirmPasswordController,
+                                  labelText: 'Konfirmasi Password',
+                                  obscureText: _obscureConfirmPassword,
+                                  onToggleVisibility: () {
+                                    setState(() {
+                                      _obscureConfirmPassword =
+                                          !_obscureConfirmPassword;
+                                    });
+                                  },
+                                  // === Tambahkan validator untuk Confirm Password ===
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Konfirmasi password tidak boleh kosong';
+                                    }
+                                    if (value != _newPasswordController.text) {
+                                      return 'Password tidak cocok';
+                                    }
+                                    return null;
+                                  },
+                                ),
+
+                                const SizedBox(height: 40),
+
+                                ElevatedButton(
+                                  onPressed:
+                                      _isSubmitting ? null : _changePassword,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF4D9DAB),
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(250, 55),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    elevation: 8,
+                                    shadowColor: Colors.black.withOpacity(0.3),
+                                  ),
+                                  child:
+                                      _isSubmitting
+                                          ? const CircularProgressIndicator(
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
+                                          )
+                                          : Text(
+                                            'Ganti Password',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                           ),
-                                        ),
-                              ),
-                            ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
               ),
@@ -441,11 +468,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 
+  // === Modifikasi _buildPasswordField untuk menjadi TextFormField dan menambahkan validator ===
   Widget _buildPasswordField({
     required TextEditingController controller,
     required String labelText,
     required bool obscureText,
     required VoidCallback onToggleVisibility,
+    String? Function(String?)? validator, // Tambahkan parameter validator
   }) {
     return Card(
       margin: EdgeInsets.zero,
@@ -454,10 +483,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: TextField(
+        child: TextFormField(
+          // <--- UBAH DARI TextField KE TextFormField
           controller: controller,
           obscureText: obscureText,
           style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+          onChanged:
+              (_) =>
+                  setState(() {}), // Panggil setState agar UI bisa di-rebuild
           decoration: InputDecoration(
             labelText: labelText,
             labelStyle: GoogleFonts.poppins(color: Colors.grey[600]),
@@ -471,7 +504,27 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
               onPressed: onToggleVisibility,
             ),
+            // === Tambahkan properti styling error ===
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 2.0),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2.5),
+            ),
+            errorStyle: GoogleFonts.poppins(
+              color: Colors.redAccent,
+              fontSize: 12,
+              height: 1.2,
+            ),
+            errorMaxLines: 2,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
+          validator: validator, // <--- Pasangkan parameter validator
         ),
       ),
     );

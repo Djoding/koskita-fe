@@ -42,9 +42,9 @@ class _SettingScreenState extends State<SettingScreen> {
                 rawAvatarPath.startsWith('https://')) {
               _avatarUrl = rawAvatarPath;
             } else if (rawAvatarPath.startsWith('/')) {
-              _avatarUrl = 'http://localhost:3000$rawAvatarPath';
+              _avatarUrl = 'https://kost-kita.my.id$rawAvatarPath';
             } else {
-              _avatarUrl = 'http://localhost:3000/$rawAvatarPath';
+              _avatarUrl = 'https://kost-kita.my.id/$rawAvatarPath';
             }
           } else {
             _avatarUrl = null;

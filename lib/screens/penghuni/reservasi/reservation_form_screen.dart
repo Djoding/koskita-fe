@@ -38,8 +38,8 @@ class _InitialReservationFormScreenState
   }
 
   String _cleanImageUrl(String rawUrl) {
-    if (rawUrl.startsWith('http://localhost:3000http')) {
-      return rawUrl.substring('http://localhost:3000'.length);
+    if (rawUrl.startsWith('https://kost-kita.my.idhttp')) {
+      return rawUrl.substring('https://kost-kita.my.id'.length);
     }
     return rawUrl;
   }

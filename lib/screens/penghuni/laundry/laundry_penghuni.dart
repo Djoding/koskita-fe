@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/penghuni/laundry/order_laundry_history.dart';
 import 'package:kosan_euy/screens/penghuni/laundry/pemesanan_laundry.dart';
 import 'package:kosan_euy/services/laundry_service.dart';
+import 'package:intl/intl.dart';
 
 class LaundryPenghuni extends StatefulWidget {
   final String laundryId;
@@ -326,7 +327,8 @@ class _LaundryPenghuniState extends State<LaundryPenghuni>
                               layananId: serviceItem['layanan_id'] as String,
                               name: namaLayanan,
                               service: 'Harga per $satuan',
-                              price: hargaPerSatuan.toStringAsFixed(0),
+                              price:
+                                  hargaPerSatuan, // Passing double price directly
                               satuan: satuan,
                               onAddToCart:
                                   (
@@ -574,7 +576,7 @@ class _LaundryItemCard extends StatelessWidget {
   final String layananId;
   final String name;
   final String service;
-  final String price;
+  final double price; // <--- UBAH TIPE DATA MENJADI double
   final String satuan;
   // imagePath dihilangkan dari konstruktor
 
@@ -592,10 +594,20 @@ class _LaundryItemCard extends StatelessWidget {
     required this.layananId,
     required this.name,
     required this.service,
-    required this.price,
+    required this.price, // <--- UBAH TIPE DATA MENJADI double
     required this.satuan,
     required this.onAddToCart,
   });
+
+  // === Tambahkan fungsi _formatPrice ke dalam _LaundryItemCard ===
+  String _formatPrice(double price) {
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID', // Lokalisasi Indonesia
+      symbol: 'Rp ', // Simbol mata uang
+      decimalDigits: 0, // Tidak ada digit desimal
+    );
+    return formatter.format(price);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -646,7 +658,9 @@ class _LaundryItemCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Rp ${price.replaceAll('RP ', '')}', // Format price
+                    _formatPrice(
+                      price,
+                    ), // <--- GUNAKAN FUNGSI FORMATTER DI SINI
                     style: GoogleFonts.poppins(
                       color: const Color(0xFF4D9DAB),
                       fontWeight: FontWeight.bold,
@@ -669,9 +683,7 @@ class _LaundryItemCard extends StatelessWidget {
                     hargaId,
                     layananId,
                     name,
-                    double.parse(
-                      price.replaceAll('Rp ', '').replaceAll('.', ''),
-                    ),
+                    price, // <--- KIRIM DOUBLE ASLI KE onAddToCart
                     satuan,
                   );
                 },
