@@ -128,8 +128,8 @@ class _KosScreenState extends State<KosScreen>
       String imageUrl = 'assets/placeholder_image.png';
       if (typedItem['foto_kost'] != null && typedItem['foto_kost'].isNotEmpty) {
         String rawUrl = typedItem['foto_kost'][0];
-        if (rawUrl.startsWith('http://localhost:3000http')) {
-          imageUrl = rawUrl.substring('http://localhost:3000'.length);
+        if (rawUrl.startsWith('https://kost-kita.my.idhttp')) {
+          imageUrl = rawUrl.substring('https://kost-kita.my.id'.length);
         } else {
           imageUrl = rawUrl;
         }

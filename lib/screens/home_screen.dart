@@ -23,6 +23,7 @@ class _LoginScreenState extends State<HomeScreenPage> {
       TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
   final AuthService _authService = AuthService();
+  final _formKey = GlobalKey<FormState>();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -228,47 +229,8 @@ class _LoginScreenState extends State<HomeScreenPage> {
   }
 
   Future<void> _submitRegistration() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
-    final fullName = _fullNameController.text.trim();
+    final isValidForm = _formKey.currentState?.validate() ?? false;
 
-    if (fullName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Nama lengkap tidak boleh kosong.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-    if (email.isEmpty || !email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Masukkan email yang valid.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-    if (password.isEmpty || password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Password minimal 6 karakter.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Password dan konfirmasi password tidak cocok.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
     if (_selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -278,6 +240,13 @@ class _LoginScreenState extends State<HomeScreenPage> {
       );
       return;
     }
+    if (!isValidForm) {
+      return;
+    }
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final fullName = _fullNameController.text.trim();
 
     setState(() {
       _isLoading = true;
@@ -605,185 +574,238 @@ class _LoginScreenState extends State<HomeScreenPage> {
   }
 
   Widget _buildRegistrationScreen() {
-    return Column(
-      children: [
-        Text(
-          'Daftar Akun Baru',
-          style: GoogleFonts.poppins(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'Buat akun Anda untuk mulai mencari kosan impian!',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 15, color: Colors.white70),
-        ),
-
-        const SizedBox(height: 30),
-
-        _buildInputField(
-          controller: _fullNameController,
-          hintText: 'Nama Lengkap',
-          keyboardType: TextInputType.text,
-          prefixIcon: Icons.person_outline,
-          suffixIcon:
-              _fullNameController.text.isNotEmpty
-                  ? IconButton(
-                    icon: const Icon(Icons.clear, color: Colors.grey),
-                    onPressed:
-                        () => setState(() => _fullNameController.clear()),
-                  )
-                  : null,
-        ),
-        const SizedBox(height: 16),
-
-        _buildInputField(
-          controller: _emailController,
-          hintText: 'Email',
-          keyboardType: TextInputType.emailAddress,
-          prefixIcon: Icons.email_outlined,
-          suffixIcon:
-              _emailController.text.isNotEmpty
-                  ? IconButton(
-                    icon: const Icon(Icons.clear, color: Colors.grey),
-                    onPressed: () => setState(() => _emailController.clear()),
-                  )
-                  : null,
-        ),
-        const SizedBox(height: 16),
-
-        _buildInputField(
-          controller: _passwordController,
-          hintText: 'Password',
-          obscureText: _obscurePassword,
-          prefixIcon: Icons.lock_outline,
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscurePassword ? Icons.visibility_off : Icons.visibility,
-              color: Colors.grey,
-            ),
-            onPressed:
-                () => setState(() => _obscurePassword = !_obscurePassword),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        _buildInputField(
-          controller: _confirmPasswordController,
-          hintText: 'Konfirmasi Password',
-          obscureText: _obscureConfirmPassword,
-          prefixIcon: Icons.lock_outline,
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-              color: Colors.grey,
-            ),
-            onPressed:
-                () => setState(
-                  () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color:
-                  _selectedRole == null && _currentStep == 2
-                      ? Colors.redAccent
-                      : Colors.transparent,
-              width: 1.5,
-            ),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedRole,
-              hint: Text(
-                'Pilih Peran Anda',
-                style: GoogleFonts.poppins(color: Colors.grey[600]),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            Text(
+              'Daftar Akun Baru',
+              style: GoogleFonts.poppins(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
-              isExpanded: true,
-              style: GoogleFonts.poppins(color: Colors.black87),
-              items:
-                  <String>[
-                    'Pengelola Kos',
-                    'Penghuni Kos',
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedRole = newValue;
-                });
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Buat akun Anda untuk mulai mencari kosan impian!',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 15, color: Colors.white70),
+            ),
+
+            const SizedBox(height: 30),
+
+            _buildInputField(
+              controller: _fullNameController,
+              hintText: 'Nama Lengkap',
+              keyboardType: TextInputType.text,
+              prefixIcon: Icons.person_outline,
+              suffixIcon:
+                  _fullNameController.text.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey),
+                        onPressed:
+                            () => setState(() => _fullNameController.clear()),
+                      )
+                      : null,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Nama lengkap tidak boleh kosong';
+                }
+                return null;
               },
             ),
-          ),
-        ),
+            const SizedBox(height: 16),
 
-        const SizedBox(height: 30),
-        SizedBox(
-          width: double.infinity,
-          height: 55,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _submitRegistration,
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: const Color.fromRGBO(144, 122, 204, 1.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              elevation: 5,
+            _buildInputField(
+              controller: _emailController,
+              hintText: 'Email',
+              keyboardType: TextInputType.emailAddress,
+              prefixIcon: Icons.email_outlined,
+              suffixIcon:
+                  _emailController.text.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey),
+                        onPressed:
+                            () => setState(() => _emailController.clear()),
+                      )
+                      : null,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Email tidak boleh kosong';
+                }
+                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                  return 'Format email tidak valid';
+                }
+                return null;
+              },
             ),
-            child:
-                _isLoading
-                    ? const CircularProgressIndicator(
-                      color: Colors.white,
-                    ) // Show loading indicator
-                    : Text(
-                      'Daftar',
+            const SizedBox(height: 16),
+
+            _buildInputField(
+              controller: _passwordController,
+              hintText: 'Password',
+              obscureText: _obscurePassword,
+              prefixIcon: Icons.lock_outline,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey,
+                ),
+                onPressed:
+                    () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Password tidak boleh kosong';
+                }
+                if (value.length < 8) {
+                  return 'Password minimal 8 karakter';
+                }
+                if (!value.contains(RegExp(r'[a-z]'))) {
+                  return 'Harus mengandung setidaknya satu huruf kecil';
+                }
+                if (!value.contains(RegExp(r'[A-Z]'))) {
+                  return 'Harus mengandung setidaknya satu huruf besar';
+                }
+                if (!value.contains(RegExp(r'\d'))) {
+                  return 'Harus mengandung setidaknya satu angka';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            _buildInputField(
+              controller: _confirmPasswordController,
+              hintText: 'Konfirmasi Password',
+              obscureText: _obscureConfirmPassword,
+              prefixIcon: Icons.lock_outline,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscureConfirmPassword
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                  color: Colors.grey,
+                ),
+                onPressed:
+                    () => setState(
+                      () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                    ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Konfirmasi password tidak boleh kosong';
+                }
+                if (value != _passwordController.text) {
+                  return 'Password tidak cocok';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color:
+                      _selectedRole == null
+                          ? Colors.redAccent
+                          : Colors.transparent,
+                  width: 1.5,
+                ),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedRole,
+                  hint: Text(
+                    'Pilih Peran Anda',
+                    style: GoogleFonts.poppins(color: Colors.grey[600]),
+                  ),
+                  icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
+                  isExpanded: true,
+                  style: GoogleFonts.poppins(color: Colors.black87),
+                  items:
+                      <String>[
+                        'Pengelola Kos',
+                        'Penghuni Kos',
+                      ].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedRole = newValue;
+                    });
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _submitRegistration,
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: const Color.fromRGBO(144, 122, 204, 1.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 5,
+                ),
+                child:
+                    _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                          'Daftar',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _backToLogin,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.arrow_back,
+                      size: 18,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Kembali ke Login',
                       style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: _backToLogin,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.arrow_back, size: 18, color: Colors.white70),
-                const SizedBox(width: 8),
-                Text(
-                  'Kembali ke Login',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -794,8 +816,9 @@ class _LoginScreenState extends State<HomeScreenPage> {
     bool obscureText = false,
     IconData? prefixIcon,
     Widget? suffixIcon,
+    String? Function(String?)? validator,
   }) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
@@ -830,7 +853,31 @@ class _LoginScreenState extends State<HomeScreenPage> {
             width: 2.5,
           ),
         ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: const BorderSide(
+            color: Colors.redAccent, 
+            width: 2.5,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: const BorderSide(
+            color:
+                Colors.red,
+            width: 2.5,
+          ),
+        ),
+        errorStyle: GoogleFonts.poppins(
+          color: Colors.redAccent,
+          fontSize:
+              12, 
+          height:
+              1.2,
+        ),
+        errorMaxLines: 2,
       ),
+      validator: validator,
     );
   }
 }

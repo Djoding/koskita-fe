@@ -87,11 +87,11 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
   String _cleanImageUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.isEmpty) return 'assets/placeholder_image.png';
     String cleaned = rawUrl;
-    if (cleaned.startsWith('http://localhost:3000http')) {
-      cleaned = cleaned.substring('http://localhost:3000'.length);
+    if (cleaned.startsWith('https://kost-kita.my.idhttp')) {
+      cleaned = cleaned.substring('https://kost-kita.my.id'.length);
     }
     if (cleaned.startsWith('/uploads/')) {
-      cleaned = 'http://localhost:3000$cleaned';
+      cleaned = 'https://kost-kita.my.id$cleaned';
     }
     return cleaned;
   }

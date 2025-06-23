@@ -256,11 +256,6 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
             colorText: Colors.white,
           );
         }
-        Get.snackbar(
-          'Info',
-          'Fungsi pembayaran laundry belum diimplementasikan sepenuhnya.',
-          snackPosition: SnackPosition.TOP,
-        );
       } else {
         Get.snackbar(
           'Error',

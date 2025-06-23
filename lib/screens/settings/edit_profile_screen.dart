@@ -17,6 +17,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   String _fullName = 'Memuat...';
   String _userRole = 'Memuat...';
@@ -47,14 +48,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 rawAvatarPath.startsWith('http://') ||
                         rawAvatarPath.startsWith('https://')
                     ? rawAvatarPath
-                    : 'http://localhost:3000$rawAvatarPath';
+                    : 'https://kost-kita.my.id$rawAvatarPath';
           } else {
             _avatarUrl = null;
           }
 
           _selectedAvatarFile = null;
 
-          if (_userRole == 'ADMIN' || _userRole == 'PENGELOLA') {
+          if (_userRole == 'ADMIN') {
+            _userRole = 'Admin';
+          } else if (_userRole == 'PENGELOLA') {
             _userRole = 'Pengelola Kost';
           } else if (_userRole == 'PENGHUNI') {
             _userRole = 'Penghuni Kost';
@@ -103,16 +106,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _handleUpdateProfile() async {
+    final isValidForm = _formKey.currentState?.validate() ?? false;
+    if (!isValidForm) {
+      debugPrint('Validasi formulir gagal.');
+      return;
+    }
     setState(() {
       _isLoading = true;
     });
 
     try {
       await _authService.updateProfile(
-        fullName: _nameController.text.isNotEmpty ? _nameController.text : null,
-        phone: _phoneController.text.isNotEmpty ? _phoneController.text : null,
+        fullName:
+            _nameController.text.isNotEmpty
+                ? _nameController.text.trim()
+                : null,
+        phone:
+            _phoneController.text.isNotEmpty
+                ? _phoneController.text.trim()
+                : null,
         whatsappNumber:
-            _phoneController.text.isNotEmpty ? _phoneController.text : null,
+            _phoneController.text.isNotEmpty
+                ? _phoneController.text.trim()
+                : null,
         avatarFile: _selectedAvatarFile,
         clearAvatar: _selectedAvatarFile == null && _avatarUrl != null,
       );
@@ -153,9 +169,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       body:
           _isLoading
-              ? const Center(
-                child: CircularProgressIndicator(),
-              ) // Show loading indicator
+              ? const Center(child: CircularProgressIndicator())
               : Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -236,68 +250,101 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               horizontal: 20.0,
                               vertical: 30.0,
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildProfileInfo(),
-                                const SizedBox(height: 30),
-                                _buildInputField(
-                                  controller: _nameController,
-                                  label: 'Nama Lengkap',
-                                  keyboardType: TextInputType.text,
-                                ),
-                                const SizedBox(height: 20),
-                                _buildInputField(
-                                  controller: _phoneController,
-                                  label: 'Nomor Telepon (WhatsApp)',
-                                  keyboardType: TextInputType.phone,
-                                ),
-                                const SizedBox(height: 20),
-                                _buildInputField(
-                                  controller: _emailController,
-                                  label: 'Email',
-                                  keyboardType: TextInputType.emailAddress,
-                                  readOnly: true,
-                                ),
-                                const SizedBox(height: 30),
-                                Center(
-                                  child: ElevatedButton(
-                                    onPressed:
-                                        _handleUpdateProfile, // Call the update function
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF4A99BD),
-                                      minimumSize: const Size(200, 50),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(25),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Perbarui Profil',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildProfileInfo(),
+                                  const SizedBox(height: 30),
+                                  _buildInputField(
+                                    controller: _nameController,
+                                    label: 'Nama Lengkap',
+                                    keyboardType: TextInputType.text,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Nama lengkap tidak boleh kosong';
+                                      }
+                                      return null;
+                                    },
                                   ),
-                                ),
-                                if (_avatarUrl != null ||
-                                    _selectedAvatarFile !=
-                                        null) // Show clear button only if avatar exists
+                                  const SizedBox(height: 20),
+                                  _buildInputField(
+                                    controller: _phoneController,
+                                    label: 'Nomor Telepon (WhatsApp)',
+                                    keyboardType: TextInputType.phone,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Nomor telepon tidak boleh kosong';
+                                      }
+                                      if (!RegExp(
+                                        r'^(\+62|0)[0-9]{8,13}$',
+                                      ).hasMatch(value)) {
+                                        return 'Mohon berikan nomor telepon Indonesia yang valid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _buildInputField(
+                                    controller: _emailController,
+                                    label: 'Email',
+                                    keyboardType: TextInputType.emailAddress,
+                                    readOnly: true,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Email tidak boleh kosong';
+                                      }
+                                      if (!RegExp(
+                                        r'^[^@]+@[^@]+\.[^@]+',
+                                      ).hasMatch(value)) {
+                                        return 'Format email tidak valid';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 30),
                                   Center(
-                                    child: TextButton(
-                                      onPressed: _clearAvatar,
+                                    child: ElevatedButton(
+                                      onPressed: _handleUpdateProfile,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFF4A99BD,
+                                        ),
+                                        minimumSize: const Size(200, 50),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            25,
+                                          ),
+                                        ),
+                                      ),
                                       child: Text(
-                                        'Hapus Avatar',
+                                        'Perbarui Profil',
                                         style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          color: Colors.red,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ),
                                   ),
-                                const SizedBox(height: 30),
-                              ],
+                                  if (_avatarUrl != null ||
+                                      _selectedAvatarFile != null)
+                                    Center(
+                                      child: TextButton(
+                                        onPressed: _clearAvatar,
+                                        child: Text(
+                                          'Hapus Avatar',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  const SizedBox(height: 30),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -420,6 +467,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required String label,
     TextInputType keyboardType = TextInputType.text,
     bool readOnly = false,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -433,13 +481,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: controller,
           keyboardType: keyboardType,
           readOnly: readOnly,
           style: GoogleFonts.poppins(
             color: readOnly ? Colors.grey[700] : Colors.black87,
           ),
+          onChanged: (_) {
+            setState(() {});
+          },
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
@@ -458,11 +509,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 width: 2.0,
               ),
             ),
+            // === Tambahkan properti styling error ===
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 2.0),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.red, width: 2.5),
+            ),
+            errorStyle: GoogleFonts.poppins(
+              color: Colors.redAccent,
+              fontSize: 12,
+              height: 1.2,
+            ),
+            errorMaxLines: 2,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
             ),
           ),
+          validator: validator,
         ),
       ],
     );

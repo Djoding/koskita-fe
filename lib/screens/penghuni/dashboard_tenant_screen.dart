@@ -114,8 +114,8 @@ class _DashboardTenantScreenState extends State<DashboardTenantScreen> {
           if (kostInfo['foto_kost'] != null &&
               kostInfo['foto_kost'].isNotEmpty) {
             String rawUrl = kostInfo['foto_kost'][0].toString();
-            if (rawUrl.startsWith('http://localhost:3000http')) {
-              imageUrl = rawUrl.substring('http://localhost:3000'.length);
+            if (rawUrl.startsWith('https://kost-kita.my.idhttp')) {
+              imageUrl = rawUrl.substring('https://kost-kita.my.id'.length);
             } else {
               imageUrl = rawUrl;
             }
