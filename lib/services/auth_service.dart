@@ -9,6 +9,11 @@ class AuthService {
   static const String _baseUrl = 'https://kost-kita.my.id/api/v1/auth';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
+  static const _iosClientId =
+      '493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com';
+  static const _androidClientId =
+      '493320600420-5psr77jln3rfcb6o9u77l7umdhv2ejrd.apps.googleusercontent.com';
+
   static const String _accessTokenKey = 'accessToken';
   static const String _refreshTokenKey = 'refreshToken';
   static const String _userDataKey = 'userData';
@@ -25,10 +30,10 @@ class AuthService {
   }
 
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId:
-        '493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com',
+    clientId: Platform.isAndroid ? _androidClientId : _iosClientId,
     scopes: ['email', 'profile'],
   );
+
   Future<Map<String, dynamic>> register(
     String username,
     String fullName,
@@ -147,16 +152,13 @@ class AuthService {
   Future<Map<String, dynamic>> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
       if (googleUser == null) {
         throw Exception('Google Sign-In dibatalkan oleh pengguna.');
       }
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-
       final String? idToken = googleAuth.idToken;
-
       if (idToken == null) {
         throw Exception('Gagal mendapatkan ID Token dari Google.');
       }
@@ -165,18 +167,19 @@ class AuthService {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'idToken': idToken}),
+        body: jsonEncode({
+          'idToken': idToken,
+          'platform': Platform.operatingSystem,
+        }),
       );
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
         if (responseBody['success'] == true && responseBody['data'] != null) {
           final data = responseBody['data'] as Map<String, dynamic>;
-
-          final String? accessToken = data['accessToken'];
-          final String? refreshToken = data['refreshToken'];
-          final Map<String, dynamic>? user =
-              data['user'] as Map<String, dynamic>?;
+          final accessToken = data['accessToken'];
+          final refreshToken = data['refreshToken'];
+          final user = data['user'] as Map<String, dynamic>?;
 
           if (accessToken != null && refreshToken != null) {
             await _saveTokens(accessToken, refreshToken);
