@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/catering_menu_service.dart';
 import 'package:kosan_euy/models/catering_order_model.dart';
 
@@ -105,8 +106,7 @@ class _EditStatusPesananMakananScreenState
       );
 
       if (response['status']) {
-        Get.back(); // Pop this screen
-        Get.back(); // Pop detail screen
+        Get.back(result: true); // Pop this screen and return true
         Get.snackbar(
           'Sukses',
           response['message'] ?? 'Status pesanan berhasil diperbarui!',
@@ -145,6 +145,7 @@ class _EditStatusPesananMakananScreenState
                 const SizedBox(height: 16),
                 // Header
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       width: 44,
@@ -171,7 +172,23 @@ class _EditStatusPesananMakananScreenState
                       ),
                     ),
                     const Spacer(),
-                    const SizedBox(width: 44),
+                    
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.settings,
+                          color: Colors.black,
+                          size: 20, // Ubah dari 28 ke 20 untuk konsistensi
+                        ),
+                        onPressed: () => Get.to(() => SettingScreen()),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 32),

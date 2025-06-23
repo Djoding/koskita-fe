@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/models/catering_order_model.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/catering_menu_service.dart';
 import 'package:kosan_euy/models/catering_model.dart';
 import 'package:kosan_euy/routes/app_pages.dart';
@@ -143,17 +144,38 @@ class _OwnerCekPesananState extends State<OwnerCekPesanan>
                     ),
                   ),
                   const Spacer(),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.refresh, color: Colors.black),
-                      onPressed: _fetchOrders,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.refresh, color: Colors.black),
+                          onPressed: _fetchOrders,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.settings,
+                            color: Colors.black,
+                            size: 20, // Ubah dari 28 ke 20 untuk konsistensi
+                          ),
+                          onPressed: () => Get.to(() => SettingScreen()),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -346,11 +368,17 @@ class _OwnerCekPesananState extends State<OwnerCekPesanan>
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            Get.toNamed(
+          onTap: () async {
+            // Added async keyword
+            final result = await Get.toNamed(
+              // Await the result from detail screen
               Routes.cateringOrderDetail,
               arguments: {'orderId': order.pesananId, 'order': order},
             );
+            if (result == true) {
+              // If result is true, refresh orders
+              _fetchOrders();
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(16),

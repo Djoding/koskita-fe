@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/add_screen.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/edit_screen.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/catering_menu_service.dart';
 import 'package:kosan_euy/models/catering_model.dart';
 import 'package:kosan_euy/routes/app_pages.dart';
@@ -222,27 +223,68 @@ class _FoodListScreenState extends State<FoodListScreen>
                       },
                     ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.black),
-                      onPressed: () {
-                        if (_cateringId != null) {
-                          Get.toNamed(
-                            Routes.addCateringMenu,
-                            arguments: {'cateringId': _cateringId},
-                          );
-                        } else {
-                          Get.snackbar(
-                            'Error',
-                            'Catering service not found for this kost. Cannot add menu.',
-                          );
-                        }
-                      },
-                    ),
+                  Row(
+                    // Group refresh and add buttons
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.refresh, color: Colors.black),
+                          onPressed: _fetchCateringMenus, // Call refresh logic
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 8,
+                      ), // Spacer between refresh and add
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.settings,
+                            color: Colors.black,
+                            size: 20, // Ubah dari 28 ke 20 untuk konsistensi
+                          ),
+                          onPressed: () => Get.to(() => SettingScreen()),
+                        ),
+                      ),
+                      const SizedBox(width: 8), // Spacer between settings and add
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.add, color: Colors.black),
+                          onPressed: () async {
+                            // Added async
+                            if (_cateringId != null) {
+                              final result = await Get.toNamed(
+                                // Await result
+                                Routes.addCateringMenu,
+                                arguments: {'cateringId': _cateringId},
+                              );
+                              if (result == true) {
+                                // Check if result is true for refresh
+                                _fetchCateringMenus();
+                              }
+                            } else {
+                              Get.snackbar(
+                                'Error',
+                                'Catering service not found for this kost. Cannot add menu.',
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -436,23 +478,29 @@ class MenuGridView extends StatelessWidget {
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.75,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
-      itemCount: menuItems.length,
-      itemBuilder: (context, index) {
-        final item = menuItems[index];
-        return FoodItemCard(
-          menuItem: item,
-          cateringId: cateringId,
-          onRefresh: onRefresh,
-        );
+    return RefreshIndicator(
+      // Added RefreshIndicator
+      onRefresh: () async {
+        onRefresh(); // Trigger refresh from parent
       },
+      child: GridView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemCount: menuItems.length,
+        itemBuilder: (context, index) {
+          final item = menuItems[index];
+          return FoodItemCard(
+            menuItem: item,
+            cateringId: cateringId,
+            onRefresh: onRefresh,
+          );
+        },
+      ),
     );
   }
 }
@@ -660,14 +708,17 @@ class FoodItemCard extends StatelessWidget {
                     ),
                   ),
                   child: InkWell(
-                    onTap: () {
-                      Get.toNamed(
+                    onTap: () async {
+                      final result = await Get.toNamed(
                         Routes.editCateringMenu,
                         arguments: {
                           'cateringId': cateringId,
                           'menuItem': menuItem,
                         },
                       );
+                      if (result == true) {
+                        onRefresh();
+                      }
                     },
                     child: const Icon(
                       Icons.edit,

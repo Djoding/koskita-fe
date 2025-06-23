@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/laundry_service.dart';
 
 class AddEditLaundryScreen extends StatefulWidget {
@@ -201,7 +202,22 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                     ),
                   ),
                   const Spacer(),
-                  const SizedBox(width: 44),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.settings,
+                        color: Colors.black,
+                        size: 20, // Ubah dari 28 ke 20 untuk konsistensi
+                      ),
+                      onPressed: () => Get.to(() => SettingScreen()),
+                    ),
+                  ),
                 ],
               ),
             ),

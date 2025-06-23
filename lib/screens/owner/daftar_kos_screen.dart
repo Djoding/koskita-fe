@@ -4,6 +4,7 @@ import 'package:kosan_euy/services/pengelola_service.dart';
 import 'dart:io';
 import 'package:kosan_euy/widgets/success_screen.dart';
 import 'package:uploadthing/uploadthing.dart';
+import 'package:get/get.dart'; // Import GetX
 
 class DaftarKosScreen extends StatefulWidget {
   const DaftarKosScreen({super.key});
@@ -25,7 +26,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
   final TextEditingController _namaKostController = TextEditingController();
   final TextEditingController _alamatController = TextEditingController();
   final TextEditingController _totalKamarController = TextEditingController();
-  final TextEditingController _gmapsLinkController = TextEditingController();
+  // Removed _gmapsLinkController as per request
   final TextEditingController _deskripsiController = TextEditingController();
   final TextEditingController _kapasitasParkirMotorController =
       TextEditingController(text: '0');
@@ -126,7 +127,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
     _namaKostController.dispose();
     _alamatController.dispose();
     _totalKamarController.dispose();
-    _gmapsLinkController.dispose();
+    // _gmapsLinkController.dispose(); // Removed as per request
     _deskripsiController.dispose();
     _kapasitasParkirMotorController.dispose();
     _kapasitasParkirMobilController.dispose();
@@ -187,7 +188,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  Center(
+                  const Center(
                     child: Text(
                       'Silahkan Isi Data Kost Anda',
                       style: TextStyle(
@@ -202,20 +203,20 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
                   // Informasi Dasar
                   _buildSectionTitle('Informasi Dasar'),
                   _buildTextField(
-                    'Nama Kost*',
+                    'Nama Kost',
                     _namaKostController,
                     isRequired: true,
                   ),
                   const SizedBox(height: 12),
                   _buildTextField(
-                    'Alamat Lengkap*',
+                    'Alamat Lengkap',
                     _alamatController,
                     isRequired: true,
                     maxLines: 3,
                   ),
                   const SizedBox(height: 12),
                   _buildTextField(
-                    'Total Kamar*',
+                    'Total Kamar',
                     _totalKamarController,
                     isRequired: true,
                     keyboardType: TextInputType.number,
@@ -223,8 +224,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
                   const SizedBox(height: 12),
                   _buildTipeKamarDropdown(),
                   const SizedBox(height: 12),
-                  _buildTextField('Link Google Maps', _gmapsLinkController),
-                  const SizedBox(height: 12),
+                  // Removed Google Maps link input as per request
                   _buildTextField(
                     'Deskripsi Kost',
                     _deskripsiController,
@@ -276,7 +276,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
                   // Informasi Harga
                   _buildSectionTitle('Informasi Harga'),
                   _buildTextField(
-                    'Harga Bulanan*',
+                    'Harga Bulanan',
                     _hargaBulananController,
                     isRequired: true,
                     keyboardType: TextInputType.number,
@@ -357,7 +357,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 18,
           fontWeight: FontWeight.bold,
@@ -397,15 +397,41 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
             }
           : null,
       decoration: InputDecoration(
-        labelText: label,
+        // Use label for RichText to color the asterisk red
+        label: isRequired
+            ? RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: label,
+                      style: const TextStyle(color: Colors.black54, fontSize: 14),
+                    ),
+                    const TextSpan(
+                      text: ' *', // Add asterisk with space
+                      style: TextStyle(color: Colors.red, fontSize: 14), // Red asterisk
+                    ),
+                  ],
+                ),
+              )
+            : Text(label, style: const TextStyle(color: Colors.black54, fontSize: 14)),
         hintText: hintText,
-        labelStyle: const TextStyle(color: Colors.black54, fontSize: 14),
         hintStyle: const TextStyle(color: Colors.black38, fontSize: 12),
         filled: true,
         fillColor: readOnly ? Colors.grey[200] : Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide.none, // Default no border
+        ),
+        enabledBorder: OutlineInputBorder( // Explicitly define enabled border
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none, // No border when enabled
+        ),
+        focusedBorder: OutlineInputBorder( // Explicitly define focused border
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: Color(0xFF4A99BD), // A shade of blue
+            width: 2.0,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -427,13 +453,42 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
     return DropdownButtonFormField<String>(
       value: _selectedTipeId,
       decoration: InputDecoration(
-        labelText: 'Tipe Kamar*',
-        labelStyle: const TextStyle(color: Colors.black54, fontSize: 14),
+        label: RichText( // Use RichText for label to color the asterisk red
+          text: const TextSpan(
+            children: [
+              TextSpan(
+                text: 'Tipe Kamar',
+                style: TextStyle(color: Colors.black54, fontSize: 14),
+              ),
+              TextSpan(
+                text: ' *', // Add asterisk with space
+                style: TextStyle(color: Colors.red, fontSize: 14), // Red asterisk
+              ),
+            ],
+          ),
+        ),
+        labelStyle: const TextStyle(color: Colors.black54, fontSize: 14), // Fallback if 'label' not supported
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF4A99BD), width: 2.0),
+        ),
+        errorBorder: OutlineInputBorder( // Add error border for dropdown
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder( // Add focused error border for dropdown
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -451,7 +506,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
           value: tipe['tipe_id'],
           child: Text(
             '${tipe['nama_tipe']} - ${tipe['ukuran'] ?? ''} (${tipe['kapasitas']} orang)',
-            style: TextStyle(fontSize: 14),
+            style: const TextStyle(fontSize: 14),
           ),
         );
       }).toList(),
@@ -463,8 +518,8 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
               });
             },
       hint: _loadingTipeKamar
-          ? Text('Memuat tipe kamar...')
-          : Text('Pilih tipe kamar'),
+          ? const Text('Memuat tipe kamar...')
+          : const Text('Pilih tipe kamar'),
     );
   }
 
@@ -478,7 +533,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Fasilitas',
             style: TextStyle(
               color: Colors.black87,
@@ -526,7 +581,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Peraturan',
             style: TextStyle(
               color: Colors.black87,
@@ -618,24 +673,24 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
               color: _isSubmitting ? Colors.grey[300] : Colors.white,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
+            child: const Row( // Changed to const as no dynamic children
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: 16.0),
+                  padding: EdgeInsets.only(left: 16.0),
                   child: Text(
                     'Upload Foto Kost',
                     style: TextStyle(
-                      color: _isSubmitting ? Colors.grey[600] : Colors.black54,
+                      color: Colors.black54, // Fixed color
                       fontSize: 14,
                     ),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
+                  padding: EdgeInsets.only(right: 16.0),
                   child: Icon(
                     Icons.upload,
-                    color: _isSubmitting ? Colors.grey[600] : Colors.blue[700],
+                    color: Colors.blue, // Fixed color
                   ),
                 ),
               ],
@@ -716,24 +771,24 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
               color: _isSubmitting ? Colors.grey[300] : Colors.white,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
+            child: const Row( // Changed to const as no dynamic children
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: 16.0),
+                  padding: EdgeInsets.only(left: 16.0),
                   child: Text(
                     'Upload QRIS (Opsional)',
                     style: TextStyle(
-                      color: _isSubmitting ? Colors.grey[600] : Colors.black54,
+                      color: Colors.black54, // Fixed color
                       fontSize: 14,
                     ),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
+                  padding: EdgeInsets.only(right: 16.0),
                   child: Icon(
                     Icons.qr_code,
-                    color: _isSubmitting ? Colors.grey[600] : Colors.blue[700],
+                    color: Colors.blue, // Fixed color
                   ),
                 ),
               ],
@@ -771,6 +826,14 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
             : () {
                 if (_formKey.currentState!.validate()) {
                   _submitForm();
+                } else {
+                  Get.snackbar(
+                    'Peringatan',
+                    'Harap lengkapi semua field wajib yang bertanda (*).',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.orangeAccent,
+                    colorText: Colors.white,
+                  );
                 }
               },
         style: ElevatedButton.styleFrom(
@@ -782,7 +845,7 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
           ),
         ),
         child: _isSubmitting
-            ? Row(
+            ? const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
@@ -793,8 +856,8 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Text('Menyimpan...'),
+                  SizedBox(width: 8),
+                  Text('Menyimpan...'),
                 ],
               )
             : const Text(
@@ -891,10 +954,6 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
         'nama_kost': _namaKostController.text.trim(),
         'alamat': _alamatController.text.trim(),
         'total_kamar': int.tryParse(_totalKamarController.text.trim()) ?? 1,
-        'gmaps_link':
-            _gmapsLinkController.text.trim().isEmpty
-                ? null
-                : _gmapsLinkController.text.trim(),
         'deskripsi':
             _deskripsiController.text.trim().isEmpty
                 ? null
@@ -953,15 +1012,14 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       });
 
       if (response['status']) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => const SuccessScreen(
-                  title: 'Kost Berhasil Didaftarkan',
-                ),
+        // Navigate to SuccessScreen, and pass a result back to previous screen
+        Get.to(
+          () => const SuccessScreen(
+            title: 'Kost Berhasil Didaftarkan',
+            subtitle: 'Data kost Anda berhasil ditambahkan dan menunggu validasi.',
           ),
         );
+        Get.back(result: true); // Signal successful creation to DashboardOwnerScreen
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

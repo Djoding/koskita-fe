@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/makanan_screen.dart';
 import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/owner_cek_pesanan.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 
 class LayananMakananScreen extends StatelessWidget {
   const LayananMakananScreen({super.key});
@@ -65,30 +66,52 @@ class LayananMakananScreen extends StatelessWidget {
                     ],
                   ),
                   const Spacer(),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.refresh,
-                        color: Colors.black,
-                        size: 20,
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.refresh,
+                            color: Colors.black,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            // Refresh functionality jika diperlukan
+                            Get.snackbar(
+                              'Info',
+                              'Data dimuat ulang',
+                              backgroundColor: Colors.green,
+                              colorText: Colors.white,
+                            );
+                          },
+                        ),
                       ),
-                      onPressed: () {
-                        // Refresh functionality jika diperlukan
-                        Get.snackbar(
-                          'Info',
-                          'Data dimuat ulang',
-                          backgroundColor: Colors.green,
-                          colorText: Colors.white,
-                        );
-                      },
-                    ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.settings,
+                            color: Colors.black,
+                            size: 20, // Ubah dari 28 ke 20 untuk konsistensi
+                          ),
+                          onPressed: () => Get.to(() => SettingScreen()),
+                        ),
+                      ),
+                    ],
                   ),
+                  
                 ],
               ),
             ),
