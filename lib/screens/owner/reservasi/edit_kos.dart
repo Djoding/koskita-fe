@@ -35,7 +35,6 @@ class _EditKosScreenState extends State<EditKosScreen> {
   final _jamSurveyController = TextEditingController();
   final _kapasitasParkirMotorController = TextEditingController();
   final _kapasitasParkirMobilController = TextEditingController();
-  final _gmapsLinkController = TextEditingController();
 
   // Rekening controllers
   final _bankController = TextEditingController();
@@ -70,7 +69,6 @@ class _EditKosScreenState extends State<EditKosScreen> {
     _namaKostController.text = data['nama_kost'] ?? '';
     _alamatController.text = data['alamat'] ?? '';
     _deskripsiController.text = data['deskripsi'] ?? '';
-    _gmapsLinkController.text = data['gmaps_link'] ?? '';
 
     // Parse numbers safely
     _hargaBulananController.text = _formatNumberForDisplay(data['harga_bulanan']);
@@ -262,9 +260,6 @@ class _EditKosScreenState extends State<EditKosScreen> {
         'deskripsi': _deskripsiController.text.trim().isEmpty 
             ? null 
             : _deskripsiController.text.trim(),
-        'gmaps_link': _gmapsLinkController.text.trim().isEmpty 
-            ? null 
-            : _gmapsLinkController.text.trim(),
         'tipe_id': selectedTipeKamar!,
         'harga_bulanan': double.parse(_hargaBulananController.text),
         'deposit': _depositController.text.isNotEmpty 
@@ -408,10 +403,6 @@ class _EditKosScreenState extends State<EditKosScreen> {
                         controller: _deskripsiController,
                         label: 'Deskripsi',
                         maxLines: 3,
-                      ),
-                      _buildTextField(
-                        controller: _gmapsLinkController,
-                        label: 'Link Google Maps',
                       ),
                     ]),
 
@@ -1101,7 +1092,6 @@ class _EditKosScreenState extends State<EditKosScreen> {
     _jamSurveyController.dispose();
     _kapasitasParkirMotorController.dispose();
     _kapasitasParkirMobilController.dispose();
-    _gmapsLinkController.dispose();
     _bankController.dispose();
     _nomorRekeningController.dispose();
     _namaPemilikController.dispose();

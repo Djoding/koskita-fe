@@ -349,7 +349,8 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
             ),
           ),
           const Spacer(),
-          const SizedBox(width: 44), // Placeholder for symmetry
+          // Placeholder for symmetry (removed old refresh button)
+          const SizedBox(width: 44),
         ],
       ),
     );
@@ -358,7 +359,8 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
   Widget _buildImageCarousel() {
     return Stack(
       children: [
-        Container(
+        SizedBox(
+          // Changed Container to SizedBox for explicit sizing
           height: 300,
           width: double.infinity,
           child:
@@ -378,7 +380,8 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                     ),
                     items:
                         _fullImageUrls.map((imageUrl) {
-                          return Container(
+                          return SizedBox(
+                            // Changed Container to SizedBox
                             width: double.infinity,
                             child: Image.network(
                               imageUrl,
@@ -386,11 +389,11 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
                                   color: Colors.grey[300],
-                                  child: Center(
+                                  child: const Center(
                                     child: Icon(
                                       Icons.image_not_supported,
                                       size: 50,
-                                      color: Colors.grey[600],
+                                      color: Colors.grey,
                                     ),
                                   ),
                                 );
@@ -401,15 +404,15 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                   )
                   : Container(
                     color: Colors.grey[300],
-                    child: Center(
+                    child: const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.home, size: 80, color: Colors.grey[600]),
-                          const SizedBox(height: 8),
+                          Icon(Icons.home, size: 80, color: Colors.grey),
+                          SizedBox(height: 8),
                           Text(
                             'Tidak ada foto',
-                            style: TextStyle(color: Colors.grey[600]),
+                            style: TextStyle(color: Colors.grey),
                           ),
                         ],
                       ),
@@ -443,7 +446,25 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
               ),
               Row(
                 children: [
-                  // Edit button dengan background
+                  // Refresh button added here
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.refresh, // Refresh icon
+                        color: Colors.black,
+                        size: 20,
+                      ),
+                      onPressed: _fetchKostDetail, // Call refresh logic
+                    ),
+                  ),
+                  const SizedBox(width: 8), // Spacer between buttons
+                  // Edit button with background
                   Container(
                     width: 44,
                     height: 44,
@@ -457,10 +478,15 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                         color: Colors.black,
                         size: 20,
                       ),
-                      onSelected: (value) {
+                      onSelected: (value) async {
                         switch (value) {
                           case 'edit':
-                            Get.to(() => EditKosScreen(kostData: kostData!));
+                            final result = await Get.to(
+                              () => EditKosScreen(kostData: kostData!),
+                            );
+                            if (result == true) {
+                              _fetchKostDetail();
+                            }
                             break;
                           case 'delete':
                             _showDeleteConfirmation();
@@ -507,7 +533,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8), // Spasi antara kedua button
-                  // Settings button dengan background
+                  // Settings button with background
                   Container(
                     width: 44,
                     height: 44,
@@ -952,9 +978,9 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 10,
-                    color: Colors.grey[600],
+                    color: Colors.grey,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1183,7 +1209,8 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                 () {
                   // Pastikan kostData dikirim dengan benar
                   Get.to(
-                    () => const LayananMakananScreen(),
+                    () =>
+                        const LayananMakananScreen(), // Dashboard Layanan Makanan
                     arguments: kostData, // kostData dari response API
                   );
                 },
@@ -1233,7 +1260,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Ubah bagian ini untuk menyamakan dengan _LayananCard
+            // Ubah bagian icon untuk menyamakan dengan _LayananCard
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child:
@@ -1257,10 +1284,10 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                               width: 50,
                               height: 50,
                               color: Colors.grey[300],
-                              child: Icon(
+                              child: const Icon(
                                 Icons.broken_image,
                                 size: 25,
-                                color: Colors.grey[500],
+                                color: Colors.grey,
                               ),
                             ),
                       ),

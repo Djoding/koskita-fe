@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/owner/laundry/add_edit_laundry_screen.dart';
 import 'package:kosan_euy/screens/owner/laundry/laundry_detail_screen.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/laundry_service.dart';
 
 class LaundryListScreen extends StatefulWidget {
@@ -151,6 +152,34 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                     ),
                   ),
                   const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.refresh, color: Colors.black),
+                      onPressed: _loadLaundries, // Call refresh logic
+                    ),
+                  ),
+                  const SizedBox(width: 8), // Spacer between refresh and add
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.settings,
+                        color: Colors.black,
+                        size: 20, // Ubah dari 28 ke 20 untuk konsistensi
+                      ),
+                      onPressed: () => Get.to(() => SettingScreen()),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Container(
                     width: 44,
                     height: 44,

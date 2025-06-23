@@ -245,26 +245,17 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
         children: [
           Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Colors.black,
-                  ),
-                  onPressed: () => Get.back(),
-                ),
-              ),
+              // Removed back button
               const Spacer(),
-
-              const Spacer(),
+              // Added Refresh button
               IconButton(
-                icon: const Icon(Icons.settings, color: Colors.black, size: 28),
+                icon: const Icon(Icons.refresh, color: Colors.white, size: 28),
+                onPressed: () async {
+                  await _loadInitialData();
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white, size: 28),
                 onPressed: () => Get.to(() => SettingScreen()),
               ),
             ],
@@ -569,17 +560,10 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
                       true,
                     );
 
+                    if (!mounted) return;
                     DialogUtils.hideLoadingDialog(context);
 
                     if (result['status']) {
-                      // Remove from pending list and add to verified list
-                      setState(() {
-                        _pendingPengelola.removeWhere(
-                          (p) => p['user_id'] == pengelola['user_id'],
-                        );
-                        _verifiedPengelola.insert(0, result['data']);
-                      });
-
                       Get.to(
                         () => SuccessScreen(
                           title: 'Pengelola berhasil diverifikasi',
@@ -587,8 +571,10 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
                               '${pengelola['full_name']} telah diverifikasi.',
                         ),
                       );
+                      _loadInitialData(); // Auto-refresh after successful operation
                     }
                   } catch (e) {
+                    if (!mounted) return;
                     DialogUtils.hideLoadingDialog(context);
                     ScaffoldMessenger.of(
                       context,
@@ -634,26 +620,19 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen>
                       pengelola['user_id'],
                     );
 
+                    if (!mounted) return;
                     DialogUtils.hideLoadingDialog(context);
 
                     if (result['status']) {
-                      // Remove from both lists
-                      setState(() {
-                        _pendingPengelola.removeWhere(
-                          (p) => p['user_id'] == pengelola['user_id'],
-                        );
-                        _verifiedPengelola.removeWhere(
-                          (p) => p['user_id'] == pengelola['user_id'],
-                        );
-                      });
-
                       Get.to(
                         () => SuccessDeleteScreen(
                           title: '${pengelola['full_name']} berhasil dihapus',
                         ),
                       );
+                      _loadInitialData(); // Auto-refresh after successful operation
                     }
                   } catch (e) {
+                    if (!mounted) return;
                     DialogUtils.hideLoadingDialog(context);
                     ScaffoldMessenger.of(
                       context,

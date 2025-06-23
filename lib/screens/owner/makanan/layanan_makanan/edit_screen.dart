@@ -5,6 +5,7 @@ import 'package:kosan_euy/services/catering_menu_service.dart'; // Import servic
 import 'package:kosan_euy/models/catering_model.dart'; // Import models
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_fonts/google_fonts.dart'; // Import GoogleFonts
 
 class EditFoodScreen extends StatefulWidget {
   const EditFoodScreen({super.key});
@@ -90,7 +91,16 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
   }
 
   Future<void> _updateMenuItem() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      Get.snackbar(
+        'Peringatan',
+        'Harap perbaiki kesalahan input pada field yang ditandai.', // Changed message
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orangeAccent,
+        colorText: Colors.white,
+      );
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -110,7 +120,9 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
       );
 
       if (response['status']) {
-        Get.back(); // Go back to previous screen (menu list)
+        Get.back(
+          result: true,
+        ); // Pass true to signal refresh on previous screen
         Get.snackbar(
           'Sukses',
           response['message'] ?? 'Menu berhasil diperbarui!',
@@ -176,10 +188,11 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  const Center(
+                  Center(
                     child: Text(
                       'Edit Makanan/Minuman',
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
+                        // Use GoogleFonts
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -191,9 +204,11 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                   TextFormField(
                     controller: _namaMenuController,
                     decoration: InputDecoration(
+                      // Removed RichText for asterisk, as fields are not strictly required in edit
                       labelText: 'Nama Makanan/Minuman',
-                      labelStyle: const TextStyle(
-                        color: Colors.grey,
+                      labelStyle: GoogleFonts.poppins(
+                        // Use GoogleFonts
+                        color: Colors.black54,
                         fontSize: 14,
                       ),
                       filled: true,
@@ -202,17 +217,32 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                         vertical: 18,
                         horizontal: 16,
                       ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(
-                          color: Colors.blue,
-                          width: 1.5,
-                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(
-                          color: Colors.blue,
+                          color: Color(0xFF4A99BD),
+                          width: 2.0,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
                           width: 2,
                         ),
                       ),
@@ -229,28 +259,45 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                   DropdownButtonFormField<String>(
                     value: _selectedKategori,
                     decoration: InputDecoration(
+                      // Removed RichText for asterisk
                       labelText: 'Kategori',
-                      labelStyle: const TextStyle(
-                        color: Colors.grey,
+                      labelStyle: GoogleFonts.poppins(
+                        // Use GoogleFonts
+                        color: Colors.black54,
                         fontSize: 14,
                       ),
                       filled: true,
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 15,
                         vertical: 18,
-                        horizontal: 16,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(
-                          color: Colors.blue,
-                          width: 1.5,
-                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(
-                          color: Colors.blue,
+                          color: Color(0xFF4A99BD),
+                          width: 2.0,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
                           width: 2,
                         ),
                       ),
@@ -284,9 +331,11 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                     controller: _hargaController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
+                      // Removed RichText for asterisk
                       labelText: 'Harga',
-                      labelStyle: const TextStyle(
-                        color: Colors.grey,
+                      labelStyle: GoogleFonts.poppins(
+                        // Use GoogleFonts
+                        color: Colors.black54,
                         fontSize: 14,
                       ),
                       filled: true,
@@ -295,17 +344,32 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                         vertical: 18,
                         horizontal: 16,
                       ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(
-                          color: Colors.blue,
-                          width: 1.5,
-                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(
-                          color: Colors.blue,
+                          color: Color(0xFF4A99BD),
+                          width: 2.0,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
                           width: 2,
                         ),
                       ),
@@ -314,8 +378,30 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Harga tidak boleh kosong';
                       }
-                      if (double.tryParse(value.replaceAll('.', '')) == null) {
-                        return 'Harga harus berupa angka';
+                      final cleanedValue = value.replaceAll(
+                        '.',
+                        '',
+                      ); // Remove dots for parsing
+                      final price = double.tryParse(cleanedValue);
+
+                      if (price == null) {
+                        return 'Harga harus berupa angka yang valid';
+                      }
+                      if (price <= 0) {
+                        return 'Harga harus lebih dari 0';
+                      }
+                      const double maxAllowedPrice =
+                          999999.99; // Adjust based on your DB precision, e.g., DECIMAL(8,2)
+                      if (price > maxAllowedPrice) {
+                        // Format the max allowed price for the message
+                        final formattedMaxPrice = maxAllowedPrice
+                            .toInt()
+                            .toString()
+                            .replaceAllMapped(
+                              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                              (Match m) => '${m[1]}.',
+                            );
+                        return 'Harga terlalu besar. Maksimum Rp $formattedMaxPrice.';
                       }
                       return null;
                     },
@@ -326,7 +412,10 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                     children: [
                       Text(
                         'Tersedia:',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ), // Use GoogleFonts
                       ),
                       Switch(
                         value: _isAvailable,
@@ -362,7 +451,9 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                               _imageFile == null
                                   ? 'Upload Foto Makanan/Minuman Baru'
                                   : 'Foto Baru Terpilih: ${_imageFile!.path.split('/').last}',
-                              style: TextStyle(color: Colors.grey[400]),
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[400],
+                              ), // Use GoogleFonts
                             ),
                             const Icon(
                               Icons.file_download_outlined,
@@ -399,7 +490,12 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                           fit: BoxFit.cover,
                         ),
                       ),
-                      child: Center(child: Text('Foto Existing')),
+                      child: Center(
+                        child: Text(
+                          'Foto Existing',
+                          style: GoogleFonts.poppins(color: Colors.grey[600]),
+                        ),
+                      ), // Use GoogleFonts
                     ),
                   const SizedBox(height: 30),
                   SizedBox(
@@ -421,9 +517,10 @@ class _EditFoodScreenState extends State<EditFoodScreen> {
                               ? const CircularProgressIndicator(
                                 color: Colors.white,
                               )
-                              : const Text(
+                              : Text(
                                 'Perbarui',
-                                style: TextStyle(
+                                style: GoogleFonts.poppins(
+                                  // Use GoogleFonts
                                   fontSize: 18,
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,

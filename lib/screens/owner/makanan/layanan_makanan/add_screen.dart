@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:get/get.dart';
 import 'package:kosan_euy/services/catering_menu_service.dart'; // Import service
+import 'package:google_fonts/google_fonts.dart'; // Import GoogleFonts
 
 class AddFoodScreen extends StatefulWidget {
   const AddFoodScreen({super.key});
@@ -85,7 +86,16 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   }
 
   Future<void> _addMenuItem() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      Get.snackbar(
+        'Peringatan',
+        'Harap lengkapi semua field wajib yang bertanda (*).',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orangeAccent,
+        colorText: Colors.white,
+      );
+      return;
+    }
     if (_cateringId == null) {
       Get.snackbar('Error', 'Catering ID tidak ditemukan.');
       return;
@@ -108,7 +118,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       );
 
       if (response['status']) {
-        Get.back(); // Go back to previous screen (menu list)
+        Get.back(
+          result: true,
+        ); // Pass true to signal refresh on previous screen
         Get.snackbar(
           'Sukses',
           response['message'] ?? 'Menu berhasil ditambahkan!',
@@ -183,8 +195,27 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                     // Changed to TextFormField
                     controller: _namaMenuController,
                     decoration: InputDecoration(
-                      hintText: 'Nama Makanan/Minuman',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      label: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Nama Makanan/Minuman',
+                              style: GoogleFonts.poppins(
+                                color: Colors.black54,
+                                fontSize: 14,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' *',
+                              style: GoogleFonts.poppins(
+                                color: Colors.red,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 15,
                         vertical: 18, // Adjusted vertical padding
@@ -192,7 +223,36 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       border: OutlineInputBorder(
                         // Added border
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Colors.blue),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        // Explicitly define enabled border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        // Explicitly define focused border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF4A99BD),
+                          width: 2.0,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        // Add error border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        // Add focused error border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
                       fillColor: Colors.white,
@@ -209,8 +269,27 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                   DropdownButtonFormField<String>(
                     value: _selectedKategori,
                     decoration: InputDecoration(
-                      hintText: 'Pilih Kategori',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      label: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Kategori',
+                              style: GoogleFonts.poppins(
+                                color: Colors.black54,
+                                fontSize: 14,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' *',
+                              style: GoogleFonts.poppins(
+                                color: Colors.red,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
                       filled: true,
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(
@@ -219,7 +298,36 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Colors.blue),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        // Explicitly define enabled border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        // Explicitly define focused border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF4A99BD),
+                          width: 2.0,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        // Add error border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        // Add focused error border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
                       ),
                     ),
                     items: const [
@@ -252,8 +360,27 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                     controller: _hargaController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      hintText: 'Harga',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      label: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Harga',
+                              style: GoogleFonts.poppins(
+                                color: Colors.black54,
+                                fontSize: 14,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' *',
+                              style: GoogleFonts.poppins(
+                                color: Colors.red,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 15,
                         vertical: 18, // Adjusted vertical padding
@@ -261,7 +388,36 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       border: OutlineInputBorder(
                         // Added border
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Colors.blue),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        // Explicitly define enabled border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        // Explicitly define focused border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF4A99BD),
+                          width: 2.0,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        // Add error border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        // Add focused error border
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
                       fillColor: Colors.white,
@@ -270,8 +426,22 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Harga tidak boleh kosong';
                       }
-                      if (double.tryParse(value.replaceAll('.', '')) == null) {
-                        return 'Harga harus berupa angka';
+                      // Remove dots before parsing to allow input like "10.000"
+                      final cleanedValue = value.replaceAll('.', '');
+                      final price = double.tryParse(cleanedValue);
+
+                      if (price == null) {
+                        return 'Harga harus berupa angka yang valid';
+                      }
+                      if (price <= 0) {
+                        return 'Harga harus lebih dari 0';
+                      }
+                      // Max value check based on typical database DECIMAL(8,2) which supports up to 999,999.99
+                      // If your database precision is different, adjust this max value.
+                      const double maxAllowedPrice =
+                          999999.99; // Max value before 10^6
+                      if (price > maxAllowedPrice) {
+                        return 'Harga terlalu besar. Maksimum Rp ${maxAllowedPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}.';
                       }
                       return null;
                     },
@@ -298,7 +468,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                               _imageFile == null
                                   ? 'Upload Foto Makanan/Minuman'
                                   : 'Foto Terpilih: ${_imageFile!.path.split('/').last}',
-                              style: TextStyle(color: Colors.grey[400]),
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[400],
+                              ), // Use GoogleFonts
                             ),
                             const Icon(
                               Icons.file_download_outlined,
@@ -343,9 +515,10 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                               ? const CircularProgressIndicator(
                                 color: Colors.white,
                               )
-                              : const Text(
+                              : Text(
                                 'Daftar',
-                                style: TextStyle(
+                                style: GoogleFonts.poppins(
+                                  // Use GoogleFonts
                                   color: Colors.white,
                                   fontSize: 16,
                                 ),

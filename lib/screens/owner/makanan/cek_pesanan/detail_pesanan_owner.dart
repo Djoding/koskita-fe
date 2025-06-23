@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/models/catering_order_model.dart';
+import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/catering_menu_service.dart';
 import 'package:kosan_euy/routes/app_pages.dart';
 
@@ -42,7 +43,9 @@ class _DetailPesananOwnerState extends State<DetailPesananOwner> {
     });
 
     try {
-      final response = await CateringMenuService.getCateringOrderDetail(orderId);
+      final response = await CateringMenuService.getCateringOrderDetail(
+        orderId,
+      );
       if (response['status']) {
         setState(() {
           _order = response['data'];
@@ -140,6 +143,7 @@ class _DetailPesananOwnerState extends State<DetailPesananOwner> {
     return Padding(
       padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
             width: 44,
@@ -150,7 +154,10 @@ class _DetailPesananOwnerState extends State<DetailPesananOwner> {
             ),
             child: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-              onPressed: () => Get.back(),
+              onPressed:
+                  () => Get.back(
+                    result: true,
+                  ), // Return true on back to signal refresh
             ),
           ),
           const Spacer(),
@@ -163,7 +170,22 @@ class _DetailPesananOwnerState extends State<DetailPesananOwner> {
             ),
           ),
           const Spacer(),
-          const SizedBox(width: 44),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.settings,
+                color: Colors.black,
+                size: 20, // Ubah dari 28 ke 20 untuk konsistensi
+              ),
+              onPressed: () => Get.to(() => SettingScreen()),
+            ),
+          ),
         ],
       ),
     );
@@ -504,8 +526,10 @@ class _DetailPesananOwnerState extends State<DetailPesananOwner> {
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () {
-            Get.toNamed(
+          onPressed: () async {
+            // Added async
+            final result = await Get.toNamed(
+              // Await result from edit screen
               Routes.editCateringOrderStatus,
               arguments: {
                 'orderId': _order!.pesananId,
@@ -513,6 +537,10 @@ class _DetailPesananOwnerState extends State<DetailPesananOwner> {
                 'order': _order,
               },
             );
+            if (result == true) {
+              // If result is true, refresh this detail screen
+              _fetchOrderDetail(_order!.pesananId);
+            }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF119DB0),
