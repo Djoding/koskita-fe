@@ -9,11 +9,6 @@ class AuthService {
   static const String _baseUrl = 'https://kost-kita.my.id/api/v1/auth';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
-  static const _iosClientId =
-      '493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com';
-  static const _androidClientId =
-      '493320600420-5psr77jln3rfcb6o9u77l7umdhv2ejrd.apps.googleusercontent.com';
-
   static const String _accessTokenKey = 'accessToken';
   static const String _refreshTokenKey = 'refreshToken';
   static const String _userDataKey = 'userData';
@@ -30,8 +25,11 @@ class AuthService {
   }
 
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: Platform.isAndroid ? _androidClientId : _iosClientId,
     scopes: ['email', 'profile'],
+    clientId:
+        Platform.isIOS
+            ? '493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com'
+            : null,
   );
 
   Future<Map<String, dynamic>> register(
@@ -151,55 +149,26 @@ class AuthService {
 
   Future<Map<String, dynamic>> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        throw Exception('Google Sign-In dibatalkan oleh pengguna.');
-      }
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) throw Exception('Sign-in cancelled by user');
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final String? idToken = googleAuth.idToken;
-      if (idToken == null) {
-        throw Exception('Gagal mendapatkan ID Token dari Google.');
-      }
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
 
-      final url = Uri.parse('$_baseUrl/google/mobile');
+      if (idToken == null) throw Exception('Failed to get ID token');
+
+      final url = Uri.parse('https://kost-kita.my.id/api/v1/google/mobile');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'idToken': idToken,
-          'platform': Platform.operatingSystem,
-        }),
+        body: jsonEncode({'idToken': idToken}),
       );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        if (responseBody['success'] == true && responseBody['data'] != null) {
-          final data = responseBody['data'] as Map<String, dynamic>;
-          final accessToken = data['accessToken'];
-          final refreshToken = data['refreshToken'];
-          final user = data['user'] as Map<String, dynamic>?;
-
-          if (accessToken != null && refreshToken != null) {
-            await _saveTokens(accessToken, refreshToken);
-            if (user != null) {
-              await _storage.write(key: _userDataKey, value: jsonEncode(user));
-            }
-            return user ?? {};
-          } else {
-            throw Exception('Gagal mendapatkan token dari respons backend.');
-          }
-        } else {
-          throw Exception(
-            responseBody['message'] ?? 'Otentikasi Google gagal di backend.',
-          );
-        }
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        return body['data']['user'];
       } else {
-        final errorBody = jsonDecode(response.body);
-        throw Exception(
-          errorBody['message'] ?? 'Kesalahan backend: ${response.statusCode}',
-        );
+        throw Exception(body['message'] ?? 'Login backend gagal');
       }
     } catch (e) {
       await _googleSignIn.signOut();
