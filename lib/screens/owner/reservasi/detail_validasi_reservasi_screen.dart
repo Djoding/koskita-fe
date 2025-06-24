@@ -438,6 +438,9 @@ class _DetailValidasiReservasiScreenState
   }
 
   Widget _buildPaymentInfo(Map<String, dynamic> reservationData) {
+    // Get the image URL from 'bukti_bayar_url'
+    final String? buktiBayarUrl = reservationData['bukti_bayar_url'];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -447,8 +450,8 @@ class _DetailValidasiReservasiScreenState
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
@@ -461,27 +464,29 @@ class _DetailValidasiReservasiScreenState
               Text(
                 'Informasi Pembayaran',
                 style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _InfoRow(
-                'Metode Pembayaran',
-                reservationData['metode_bayar'] ?? '',
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Bukti Pembayaran',
-                style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: 16,
                   color: Colors.black87,
                 ),
               ),
-              const SizedBox(height: 8),
-              if (reservationData['bukti_bayar'] != null)
+              const SizedBox(height: 12),
+              _InfoRow('Metode Bayar', reservationData['metode_bayar'] ?? ''),
+              _InfoRow(
+                'Jumlah',
+                _formatCurrency(reservationData['total_harga']),
+              ), // Use total_harga as amount
+              // Check if buktiBayarUrl exists and is not empty before displaying
+              if (buktiBayarUrl != null && buktiBayarUrl.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Bukti Pembayaran:',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
                   height: 200,
@@ -492,7 +497,7 @@ class _DetailValidasiReservasiScreenState
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
-                      reservationData['bukti_bayar'],
+                      buktiBayarUrl, // Use the fetched URL
                       fit: BoxFit.contain,
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
@@ -524,8 +529,8 @@ class _DetailValidasiReservasiScreenState
                       },
                     ),
                   ),
-                )
-              else
+                ),
+              ] else
                 Container(
                   width: double.infinity,
                   height: 100,
