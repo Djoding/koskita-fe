@@ -61,7 +61,7 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
       print('Response: $response');
 
       // Safe check untuk success
-      final success = response['success'];
+      final success = response['status']; // Changed from 'success' to 'status'
       print('Success value: $success (type: ${success.runtimeType})');
 
       final bool isSuccess = success == true;
@@ -145,7 +145,7 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
       print('Response: $response');
 
       // Safe check untuk success
-      final success = response['success'];
+      final success = response['status']; // Changed from 'success' to 'status'
       final bool isSuccess = success == true;
 
       if (isSuccess && response['data'] != null) {
@@ -489,7 +489,7 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Order #${orderData!['pesanan_id']}',
+                      'Order #${orderData!['pesanan_id']?.substring(0, 8) ?? 'N/A'}', // Shorten ID for display
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -610,10 +610,12 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
                 'Status Pembayaran',
                 _getPaymentStatusDisplayName(pembayaran['status']),
               ),
-              if (pembayaran['bukti_bayar_url'] != null &&
-                  pembayaran['bukti_bayar_url'].toString().isNotEmpty)
-                _buildInfoRow('Bukti Pembayaran', 
-                  pembayaran['bukti_bayar_url']),
+              if (pembayaran['bukti_bayar'] !=
+                      null && // Changed from bukti_bayar_url to bukti_bayar
+                  pembayaran['bukti_bayar'].toString().isNotEmpty)
+                _buildPaymentProofImage(
+                  pembayaran['bukti_bayar'],
+                ), // Pass the image URL
               if (pembayaran['verified_at'] != null)
                 _buildInfoRow(
                   'Verifikasi',
@@ -800,6 +802,56 @@ class _LaundryOrderDetailScreenState extends State<LaundryOrderDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPaymentProofImage(String imageUrl) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Text(
+          'Bukti Pembayaran:',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              imageUrl,
+              height: 200,
+              width: double.infinity,
+              fit:
+                  BoxFit
+                      .contain, // Changed to contain for full image visibility
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.image_not_supported,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
+                        Text('Gagal memuat bukti pembayaran'),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

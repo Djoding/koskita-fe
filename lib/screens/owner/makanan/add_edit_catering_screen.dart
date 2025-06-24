@@ -1,22 +1,23 @@
-// lib/screens/owner/laundry/add_edit_laundry_screen.dart
+// lib/screens/owner/makanan/add_edit_catering_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
-import 'package:kosan_euy/services/laundry_service.dart';
+import 'package:kosan_euy/services/catering_menu_service.dart';
+import 'package:kosan_euy/models/catering_model.dart'; // Import Catering model
 
-class AddEditLaundryScreen extends StatefulWidget {
-  const AddEditLaundryScreen({super.key});
+class AddEditCateringScreen extends StatefulWidget {
+  const AddEditCateringScreen({super.key});
 
   @override
-  State<AddEditLaundryScreen> createState() => _AddEditLaundryScreenState();
+  State<AddEditCateringScreen> createState() => _AddEditCateringScreenState();
 }
 
-class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
+class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _namaLaundryController = TextEditingController();
+  final _namaCateringController = TextEditingController();
   final _alamatController = TextEditingController();
   final _whatsappController = TextEditingController();
   final _bankController = TextEditingController();
@@ -30,35 +31,44 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
   String? existingQrisImageUrl;
 
   Map<String, dynamic>? kostData;
-  Map<String, dynamic>? laundryData;
+  Catering? cateringData; // Use Catering model for data
 
   @override
   void initState() {
     super.initState();
-    final arguments = Get.arguments as Map<String, dynamic>;
-    kostData = arguments['kost_data'];
-    isEdit = arguments['is_edit'] ?? false;
+    final arguments = Get.arguments as Map<String, dynamic>?;
+    if (arguments != null) {
+      kostData = arguments['kost_data'];
+      isEdit = arguments['is_edit'] ?? false;
 
-    if (isEdit) {
-      laundryData = arguments['laundry_data'];
-      _loadLaundryData();
+      if (isEdit) {
+        cateringData = arguments['catering_data'] as Catering?;
+        _loadCateringData();
+      }
+    } else {
+      // Handle missing arguments if necessary, though it should be passed
+      Get.snackbar('Error', 'Missing arguments for AddEditCateringScreen');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.back();
+      });
     }
   }
 
-  void _loadLaundryData() {
-    if (laundryData != null) {
-      _namaLaundryController.text = laundryData!['nama_laundry'] ?? '';
-      _alamatController.text = laundryData!['alamat'] ?? '';
-      _whatsappController.text = laundryData!['whatsapp_number'] ?? '';
-      isPartner = laundryData!['is_partner'] ?? false;
-      existingQrisImageUrl = laundryData!['qris_image_url'];
+  void _loadCateringData() {
+    if (cateringData != null) {
+      _namaCateringController.text = cateringData!.namaCatering;
+      _alamatController.text = cateringData!.alamat;
+      _whatsappController.text = cateringData!.whatsappNumber ?? '';
+      isPartner = cateringData!.isPartner;
+      existingQrisImageUrl =
+          cateringData!.qrisImageUrl; // Use qrisImageUrl from model
 
-      if (laundryData!['rekening_info'] != null) {
-        final rekeningInfo =
-            laundryData!['rekening_info'] as Map<String, dynamic>;
+      if (cateringData!.rekeningInfo != null) {
+        final rekeningInfo = cateringData!.rekeningInfo!;
         _bankController.text = rekeningInfo['bank'] ?? '';
         _rekeningController.text = rekeningInfo['nomor'] ?? '';
-        _atasNamaController.text = rekeningInfo['atas_nama'] ?? '';
+        _atasNamaController.text =
+            rekeningInfo['nama'] ?? ''; // 'nama' for catering, not 'atas_nama'
       }
     }
   }
@@ -75,7 +85,8 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
     if (image != null) {
       setState(() {
         qrisImageFile = File(image.path);
-        existingQrisImageUrl = null; // Clear existing if new picked
+        existingQrisImageUrl =
+            null; // Clear existing image if new one is picked
       });
     }
   }
@@ -85,7 +96,7 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
       return;
     }
 
-    if (kostData == null) {
+    if (kostData == null || kostData!['kost_id'] == null) {
       Get.snackbar(
         'Error',
         'Data kost tidak ditemukan',
@@ -100,63 +111,77 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
     });
 
     try {
-      // Prepare form data
-      final Map<String, dynamic> formData = {
-        'kost_id': kostData!['kost_id'],
-        'nama_laundry': _namaLaundryController.text.trim(),
-        'alamat': _alamatController.text.trim(),
-        'is_partner': isPartner,
-      };
-
-      if (_whatsappController.text.trim().isNotEmpty) {
-        formData['whatsapp_number'] = _whatsappController.text.trim();
+      final Map<String, dynamic> rekeningInfo = {};
+      if (_bankController.text.trim().isNotEmpty) {
+        rekeningInfo['bank'] = _bankController.text.trim();
+      }
+      if (_rekeningController.text.trim().isNotEmpty) {
+        rekeningInfo['nomor'] = _rekeningController.text.trim();
+      }
+      if (_atasNamaController.text.trim().isNotEmpty) {
+        rekeningInfo['nama'] =
+            _atasNamaController.text.trim(); // 'nama' for catering
       }
 
-      // Add rekening info if provided
-      if (_bankController.text.trim().isNotEmpty ||
-          _rekeningController.text.trim().isNotEmpty ||
-          _atasNamaController.text.trim().isNotEmpty) {
-        formData['rekening_info'] = {
-          'bank': _bankController.text.trim(),
-          'nomor': _rekeningController.text.trim(),
-          'atas_nama': _atasNamaController.text.trim(),
-        };
-      }
+      // Check if rekeningInfo is empty, set to null if so
+      final Map<String, dynamic>? finalRekeningInfo =
+          rekeningInfo.isNotEmpty ? rekeningInfo : null;
 
-      // Debug print untuk melihat data yang akan dikirim
-      print('=== FORM DATA DEBUG ===');
-      print('FormData: $formData');
-      formData.forEach((key, value) {
-        print('$key: $value (${value.runtimeType})');
-      });
-
-      // Call create or update based on isEdit flag
-      final response =
-          isEdit && laundryData != null
-              ? await LaundryService.updateLaundry(
-                laundryData!['laundry_id'],
-                formData,
-                qrisImageFile,
-              )
-              : await LaundryService.createLaundry(formData, qrisImageFile);
-
-      if (response['status']) {
-        Get.back(result: true);
-        Get.snackbar(
-          'Success',
-          isEdit
-              ? 'Laundry berhasil diperbarui'
-              : 'Laundry berhasil ditambahkan',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
+      if (isEdit && cateringData != null) {
+        // Update existing catering
+        final response = await CateringMenuService.updateCatering(
+          cateringId: cateringData!.cateringId,
+          kostId: kostData!['kost_id'],
+          namaCatering: _namaCateringController.text.trim(),
+          alamat: _alamatController.text.trim(),
+          whatsappNumber:
+              _whatsappController.text.trim().isEmpty
+                  ? null
+                  : _whatsappController.text.trim(),
+          qrisImage: qrisImageFile,
+          rekeningInfo: finalRekeningInfo,
+          isPartner: isPartner,
+          existingQrisImageUrl:
+              existingQrisImageUrl, // Pass existing URL for comparison
         );
+
+        if (response['status']) {
+          Get.back(result: true);
+          Get.snackbar(
+            'Success',
+            response['message'] ?? 'Katering berhasil diperbarui',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+        } else {
+          throw Exception(response['message'] ?? 'Gagal memperbarui katering');
+        }
       } else {
-        Get.snackbar(
-          'Error',
-          response['message'] ?? 'Gagal menyimpan data laundry',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+        // Create new catering
+        final response = await CateringMenuService.createCatering(
+          kostId: kostData!['kost_id'],
+          namaCatering: _namaCateringController.text.trim(),
+          alamat: _alamatController.text.trim(),
+          whatsappNumber:
+              _whatsappController.text.trim().isEmpty
+                  ? null
+                  : _whatsappController.text.trim(),
+          qrisImage: qrisImageFile,
+          rekeningInfo: finalRekeningInfo,
+          isPartner: isPartner,
         );
+
+        if (response['status']) {
+          Get.back(result: true);
+          Get.snackbar(
+            'Success',
+            response['message'] ?? 'Katering berhasil ditambahkan',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+        } else {
+          throw Exception(response['message'] ?? 'Gagal menambahkan katering');
+        }
       }
     } catch (e) {
       Get.snackbar(
@@ -202,7 +227,7 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    isEdit ? 'Edit Laundry' : 'Tambah Laundry',
+                    isEdit ? 'Edit Katering' : 'Tambah Katering',
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -245,7 +270,7 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                     padding: const EdgeInsets.all(24),
                     children: [
                       Text(
-                        'Informasi Laundry',
+                        'Informasi Katering',
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -254,18 +279,23 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Nama Laundry
-                      _buildTextField(
-                        controller: _namaLaundryController,
-                        label: 'Nama Laundry *',
-                        hint: 'Masukkan nama laundry',
-                        icon: Icons.local_laundry_service,
+                      // Nama Katering
+                      TextFormField(
+                        controller: _namaCateringController,
+                        decoration: InputDecoration(
+                          labelText: 'Nama Katering *',
+                          hintText: 'Masukkan nama katering',
+                          prefixIcon: const Icon(Icons.restaurant),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Nama laundry tidak boleh kosong';
+                            return 'Nama katering tidak boleh kosong';
                           }
                           if (value.trim().length < 3) {
-                            return 'Nama laundry minimal 3 karakter';
+                            return 'Nama katering minimal 3 karakter';
                           }
                           return null;
                         },
@@ -273,11 +303,16 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                       const SizedBox(height: 16),
 
                       // Alamat
-                      _buildTextField(
+                      TextFormField(
                         controller: _alamatController,
-                        label: 'Alamat *',
-                        hint: 'Masukkan alamat laundry',
-                        icon: Icons.location_on,
+                        decoration: InputDecoration(
+                          labelText: 'Alamat *',
+                          hintText: 'Masukkan alamat katering',
+                          prefixIcon: const Icon(Icons.location_on),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                         maxLines: 3,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -292,11 +327,16 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                       const SizedBox(height: 16),
 
                       // WhatsApp
-                      _buildTextField(
+                      TextFormField(
                         controller: _whatsappController,
-                        label: 'WhatsApp (Opsional)',
-                        hint: 'Contoh: 081234567890',
-                        icon: Icons.phone,
+                        decoration: InputDecoration(
+                          labelText: 'WhatsApp (Opsional)',
+                          hintText: 'Contoh: 081234567890',
+                          prefixIcon: const Icon(Icons.phone),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                         keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (value != null && value.trim().isNotEmpty) {
@@ -335,7 +375,7 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                                     ),
                                   ),
                                   Text(
-                                    'Laundry partner mendapat prioritas',
+                                    'Katering partner mendapat prioritas',
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
                                       color: Colors.grey[600],
@@ -404,39 +444,35 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                             ),
                             if (qrisImageFile != null) ...[
                               const SizedBox(height: 12),
-                              Center(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(
-                                    qrisImageFile!,
-                                    height: 150,
-                                    width: 150,
-                                    fit: BoxFit.cover,
-                                  ),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  qrisImageFile!,
+                                  height: 150,
+                                  width: 150,
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                            ] else if (existingQrisImageUrl != null) ...[
+                            ] else if (existingQrisImageUrl != null &&
+                                existingQrisImageUrl!.isNotEmpty) ...[
                               const SizedBox(height: 12),
-                              Center(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    existingQrisImageUrl!,
-                                    height: 150,
-                                    width: 150,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            Container(
-                                              height: 150,
-                                              width: 150,
-                                              color: Colors.grey[300],
-                                              child: const Icon(
-                                                Icons.qr_code,
-                                                size: 50,
-                                              ),
-                                            ),
-                                  ),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  existingQrisImageUrl!,
+                                  height: 150,
+                                  width: 150,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) => Container(
+                                        height: 150,
+                                        width: 150,
+                                        color: Colors.grey[300],
+                                        child: const Icon(
+                                          Icons.broken_image,
+                                          size: 50,
+                                        ),
+                                      ),
                                 ),
                               ),
                             ],
@@ -446,30 +482,45 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                       const SizedBox(height: 16),
 
                       // Bank Info
-                      _buildTextField(
+                      TextFormField(
                         controller: _bankController,
-                        label: 'Nama Bank (Opsional)',
-                        hint: 'Contoh: BCA, Mandiri, BRI',
-                        icon: Icons.account_balance,
+                        decoration: InputDecoration(
+                          labelText: 'Nama Bank (Opsional)',
+                          hintText: 'Contoh: BCA, Mandiri, BRI',
+                          prefixIcon: const Icon(Icons.account_balance),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
 
                       // Nomor Rekening
-                      _buildTextField(
+                      TextFormField(
                         controller: _rekeningController,
-                        label: 'Nomor Rekening (Opsional)',
-                        hint: 'Masukkan nomor rekening',
-                        icon: Icons.credit_card,
+                        decoration: InputDecoration(
+                          labelText: 'Nomor Rekening (Opsional)',
+                          hintText: 'Masukkan nomor rekening',
+                          prefixIcon: const Icon(Icons.credit_card),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 16),
 
                       // Atas Nama
-                      _buildTextField(
+                      TextFormField(
                         controller: _atasNamaController,
-                        label: 'Nama Pemilik Rekening (Opsional)',
-                        hint: 'Nama pemilik rekening',
-                        icon: Icons.person,
+                        decoration: InputDecoration(
+                          labelText: 'Nama Pemilik Rekening (Opsional)',
+                          hintText: 'Nama pemilik rekening',
+                          prefixIcon: const Icon(Icons.person),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 32),
 
@@ -492,8 +543,8 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                                   )
                                   : Text(
                                     isEdit
-                                        ? 'Perbarui Laundry'
-                                        : 'Tambah Laundry',
+                                        ? 'Perbarui Katering'
+                                        : 'Tambah Katering',
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -513,60 +564,9 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    String? hint,
-    IconData? icon,
-    TextInputType? keyboardType,
-    int maxLines = 1,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      validator: validator,
-      style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        labelStyle: GoogleFonts.poppins(color: Colors.black54, fontSize: 14),
-        hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
-        prefixIcon: icon != null ? Icon(icon, color: Colors.grey[600]) : null,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4A99BD), width: 2.0),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-      ),
-    );
-  }
-
   @override
   void dispose() {
-    _namaLaundryController.dispose();
+    _namaCateringController.dispose();
     _alamatController.dispose();
     _whatsappController.dispose();
     _bankController.dispose();

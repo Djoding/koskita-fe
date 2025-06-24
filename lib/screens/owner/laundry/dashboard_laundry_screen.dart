@@ -248,6 +248,41 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
     );
   }
 
+  // NEW: _buildSummaryCard Widget for dashboard stats
+  Widget _buildSummaryCard(
+    String title,
+    int count,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            count.toString(),
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMenuCard(
     String title,
     String subtitle,
@@ -295,7 +330,7 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
                     ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               title,
               style: GoogleFonts.poppins(

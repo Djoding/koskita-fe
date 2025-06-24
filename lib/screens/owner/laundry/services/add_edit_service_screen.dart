@@ -265,15 +265,10 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
 
                       // Jenis Layanan (Dropdown for new, readonly for edit)
                       if (isEdit) ...[
-                        TextFormField(
+                        _buildTextField(
                           controller: _namaLayananController,
-                          decoration: InputDecoration(
-                            labelText: 'Jenis Layanan',
-                            prefixIcon: const Icon(Icons.cleaning_services),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                          label: 'Jenis Layanan',
+                          icon: Icons.cleaning_services,
                           readOnly: true,
                         ),
                       ] else ...[
@@ -282,9 +277,48 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                           value: selectedLayananId,
                           decoration: InputDecoration(
                             labelText: 'Jenis Layanan *',
-                            prefixIcon: const Icon(Icons.cleaning_services),
+                            labelStyle: GoogleFonts.poppins(
+                              color: Colors.black54,
+                              fontSize: 14,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.cleaning_services,
+                              color: Colors.grey,
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF4A99BD),
+                                width: 2.0,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.red,
+                                width: 1,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.red,
+                                width: 2,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
                             ),
                           ),
                           items:
@@ -328,30 +362,20 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                       const SizedBox(height: 16),
 
                       // Satuan (readonly)
-                      TextFormField(
+                      _buildTextField(
                         controller: _satuanController,
-                        decoration: InputDecoration(
-                          labelText: 'Satuan',
-                          prefixIcon: const Icon(Icons.straighten),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                        label: 'Satuan',
+                        icon: Icons.straighten,
                         readOnly: true,
                       ),
                       const SizedBox(height: 16),
 
                       // Harga per Satuan
-                      TextFormField(
+                      _buildTextField(
                         controller: _hargaController,
-                        decoration: InputDecoration(
-                          labelText: 'Harga per Satuan *',
-                          hintText: 'Masukkan harga dalam rupiah',
-                          prefixIcon: const Icon(Icons.attach_money),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                        label: 'Harga per Satuan *',
+                        hint: 'Masukkan harga dalam rupiah',
+                        icon: Icons.attach_money,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
@@ -475,6 +499,62 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // NEW: Helper _buildTextField to reuse styling
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    IconData? icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    bool readOnly = false,
+    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      readOnly: readOnly,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      inputFormatters: inputFormatters,
+      validator: validator,
+      style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: GoogleFonts.poppins(color: Colors.black54, fontSize: 14),
+        hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
+        prefixIcon: icon != null ? Icon(icon, color: Colors.grey[600]) : null,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF4A99BD), width: 2.0),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
         ),
       ),
     );

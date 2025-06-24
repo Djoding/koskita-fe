@@ -181,41 +181,7 @@ class _OwnerCekPesananState extends State<OwnerCekPesanan>
               ),
             ),
 
-            // Summary Cards
-            if (!_isLoading && _errorMessage.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildSummaryCard(
-                        'Pending',
-                        _getOrdersByStatus('PENDING').length,
-                        Colors.orange,
-                        Icons.pending,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildSummaryCard(
-                        'Proses',
-                        _getOrdersByStatus('PROSES').length,
-                        Colors.blue,
-                        Icons.hourglass_empty,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildSummaryCard(
-                        'Diterima',
-                        _getOrdersByStatus('DITERIMA').length,
-                        Colors.green,
-                        Icons.check_circle,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            
 
             const SizedBox(height: 24),
 

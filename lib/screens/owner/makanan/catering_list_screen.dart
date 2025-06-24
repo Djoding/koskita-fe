@@ -1,36 +1,37 @@
-// lib/screens/owner/laundry/laundry_list_screen.dart
+// lib/screens/owner/makanan/catering_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:kosan_euy/screens/owner/laundry/add_edit_laundry_screen.dart';
-import 'package:kosan_euy/screens/owner/laundry/laundry_detail_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
-import 'package:kosan_euy/services/laundry_service.dart';
+import 'package:kosan_euy/services/catering_menu_service.dart';
+import 'package:kosan_euy/models/catering_model.dart'; // Import Catering model
+import 'package:kosan_euy/routes/app_pages.dart'; // Import Routes
+import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/makanan_screen.dart'; // Import FoodListScreen
 
-class LaundryListScreen extends StatefulWidget {
-  const LaundryListScreen({super.key});
+class CateringListScreen extends StatefulWidget {
+  const CateringListScreen({super.key});
 
   @override
-  State<LaundryListScreen> createState() => _LaundryListScreenState();
+  State<CateringListScreen> createState() => _CateringListScreenState();
 }
 
-class _LaundryListScreenState extends State<LaundryListScreen> {
+class _CateringListScreenState extends State<CateringListScreen> {
   Map<String, dynamic>? kostData;
-  List<dynamic> laundries = [];
+  List<Catering> caterings = [];
   bool isLoading = true;
   String errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    kostData = Get.arguments;
-    _loadLaundries();
+    kostData = Get.arguments; // Get kostData from arguments
+    _loadCaterings();
   }
 
-  Future<void> _loadLaundries() async {
-    if (kostData == null) {
+  Future<void> _loadCaterings() async {
+    if (kostData == null || kostData!['kost_id'] == null) {
       setState(() {
-        errorMessage = 'Data kost tidak ditemukan';
+        errorMessage = 'Data kost tidak ditemukan atau tidak lengkap.';
         isLoading = false;
       });
       return;
@@ -42,18 +43,18 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
     });
 
     try {
-      final response = await LaundryService.getLaundriesByKost(
+      final response = await CateringMenuService.getCateringsByKost(
         kostData!['kost_id'],
       );
 
-      if (response['status']) {
+      if (response['status'] == true) {
         setState(() {
-          laundries = response['data'] ?? [];
+          caterings = response['data'] as List<Catering>;
           isLoading = false;
         });
       } else {
         setState(() {
-          errorMessage = response['message'] ?? 'Gagal memuat data laundry';
+          errorMessage = response['message'] ?? 'Gagal memuat data katering.';
           isLoading = false;
         });
       }
@@ -65,16 +66,16 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
     }
   }
 
-  void _showDeleteConfirmation(dynamic laundry) {
+  void _showDeleteConfirmation(Catering catering) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Hapus Laundry',
+          'Hapus Katering',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         content: Text(
-          'Apakah Anda yakin ingin menghapus ${laundry['nama_laundry']}?',
+          'Apakah Anda yakin ingin menghapus ${catering.namaCatering}?',
           style: GoogleFonts.poppins(),
         ),
         actions: [
@@ -88,14 +89,14 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
           TextButton(
             onPressed: () {
               Get.back();
-              // Since there's no delete endpoint in the backend for laundry,
-              // we'll show a message that it's not supported yet
+              // No delete API for catering, just show info
               Get.snackbar(
                 'Info',
-                'Fitur hapus laundry belum tersedia di backend.',
+                'Fitur hapus katering belum tersedia',
                 backgroundColor: Colors.orange,
                 colorText: Colors.white,
               );
+              // _deleteCatering(catering); // Uncomment if delete API exists
             },
             child: Text(
               'Hapus',
@@ -140,7 +141,7 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    'Daftar Laundry',
+                    'Daftar Catering',
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -155,10 +156,10 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.refresh, color: Colors.black),
-                      onPressed: _loadLaundries, // Call refresh logic
+                      onPressed: _loadCaterings, // Call refresh logic
                     ),
                   ),
-                  const SizedBox(width: 8), // Spacer between refresh and add
+                  const SizedBox(width: 8),
                   Container(
                     width: 44,
                     height: 44,
@@ -190,12 +191,13 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                         size: 20,
                       ),
                       onPressed: () async {
-                        final result = await Get.to(
-                          () => const AddEditLaundryScreen(),
+                        // Navigate to AddEditCateringScreen
+                        final result = await Get.toNamed(
+                          Routes.addEditCatering,
                           arguments: {'kost_data': kostData, 'is_edit': false},
                         );
                         if (result == true) {
-                          _loadLaundries();
+                          _loadCaterings(); // Refresh list after add
                         }
                       },
                     ),
@@ -203,11 +205,12 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
 
             // Content
             Expanded(
               child: RefreshIndicator(
-                onRefresh: _loadLaundries,
+                onRefresh: _loadCaterings,
                 child: _buildContent(),
               ),
             ),
@@ -238,7 +241,7 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _loadLaundries,
+              onPressed: _loadCaterings,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF9EBFED),
@@ -250,19 +253,19 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
       );
     }
 
-    if (laundries.isEmpty) {
+    if (caterings.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(
-              Icons.local_laundry_service_outlined,
+              Icons.restaurant_menu_outlined,
               size: 80,
               color: Colors.white60,
             ),
             const SizedBox(height: 16),
             Text(
-              'Belum ada laundry yang terdaftar',
+              'Belum ada katering yang terdaftar',
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 color: Colors.white,
@@ -271,19 +274,19 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tambahkan laundry pertama untuk mulai menerima pesanan',
+              'Tambahkan katering pertama untuk mulai menerima pesanan makanan',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () async {
-                final result = await Get.to(
-                  () => const AddEditLaundryScreen(),
+                final result = await Get.toNamed(
+                  Routes.addEditCatering,
                   arguments: {'kost_data': kostData, 'is_edit': false},
                 );
                 if (result == true) {
-                  _loadLaundries();
+                  _loadCaterings();
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -295,7 +298,7 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                 ),
               ),
               icon: const Icon(Icons.add),
-              label: const Text('Tambah Laundry'),
+              label: const Text('Tambah Katering'),
             ),
           ],
         ),
@@ -304,15 +307,15 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: laundries.length,
+      itemCount: caterings.length,
       itemBuilder: (context, index) {
-        final laundry = laundries[index];
-        return _buildLaundryCard(laundry);
+        final catering = caterings[index];
+        return _buildCateringCard(catering);
       },
     );
   }
 
-  Widget _buildLaundryCard(dynamic laundry) {
+  Widget _buildCateringCard(Catering catering) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -327,11 +330,13 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
         ],
       ),
       child: InkWell(
-        onTap:
-            () => Get.to(
-              () => const LaundryDetailScreen(),
-              arguments: {'laundry_data': laundry, 'kost_data': kostData},
-            ),
+        onTap: () {
+          // Navigate to CateringDetailScreen
+          Get.toNamed(
+            Routes.cateringDetail,
+            arguments: {'catering_data': catering, 'kost_data': kostData},
+          );
+        },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -344,12 +349,12 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.orange.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(25),
                     ),
                     child: const Icon(
-                      Icons.local_laundry_service,
-                      color: Colors.blue,
+                      Icons.restaurant,
+                      color: Colors.orange,
                       size: 28,
                     ),
                   ),
@@ -359,7 +364,7 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          laundry['nama_laundry'] ?? '',
+                          catering.namaCatering,
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -379,7 +384,7 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                laundry['alamat'] ?? '',
+                                catering.alamat,
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
                                   color: Colors.grey[600],
@@ -393,87 +398,29 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                       ],
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) async {
-                      if (value == 'edit') {
-                        final result = await Get.to(
-                          () => const AddEditLaundryScreen(),
-                          arguments: {
-                            'kost_data': kostData,
-                            'laundry_data': laundry,
-                            'is_edit': true,
-                          },
-                        );
-                        if (result == true) {
-                          _loadLaundries(); // Refresh after edit
-                        }
-                      } else if (value == 'delete') {
-                        _showDeleteConfirmation(laundry);
-                      }
-                    },
-                    itemBuilder:
-                        (BuildContext context) => <PopupMenuEntry<String>>[
-                          PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.edit,
-                                  size: 18,
-                                  color: Colors.blue,
-                                ),
-                                const SizedBox(width: 12),
-                                Text('Edit', style: GoogleFonts.poppins()),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.delete,
-                                  size: 18,
-                                  color: Colors.red,
-                                ),
-                                const SizedBox(width: 12),
-                                Text('Hapus', style: GoogleFonts.poppins()),
-                              ],
-                            ),
-                          ),
-                        ],
-                  ),
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Info cards
               Row(
                 children: [
                   Expanded(
                     child: _buildInfoChip(
                       Icons.phone,
-                      laundry['whatsapp_number'] ?? 'Tidak ada',
+                      catering.whatsappNumber ?? 'Tidak ada',
                       Colors.green,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildInfoChip(
-                      laundry['is_partner'] == true
-                          ? Icons.verified
-                          : Icons.store,
-                      laundry['is_partner'] == true ? 'Partner' : 'Non-Partner',
-                      laundry['is_partner'] == true
-                          ? Colors.blue
-                          : Colors.orange,
+                      catering.isPartner ? Icons.verified : Icons.store,
+                      catering.isPartner ? 'Partner' : 'Non-Partner',
+                      catering.isPartner ? Colors.blue : Colors.orange,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-
-              // Services count
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -485,14 +432,10 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.cleaning_services,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
+                    Icon(Icons.menu_book, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 8),
                     Text(
-                      '${laundry['services_count'] ?? 0} layanan tersedia',
+                      '${catering.menuCount} menu tersedia',
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: Colors.grey[700],

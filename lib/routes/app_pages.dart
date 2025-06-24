@@ -24,6 +24,10 @@ import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/edit_screen.dart
 import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/owner_cek_pesanan.dart'; // Daftar Pesanan Catering
 import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/detail_pesanan_owner.dart'; // Detail Pesanan Catering
 import 'package:kosan_euy/screens/owner/makanan/edit_pesanan/edit_status_pesanan_makanan.dart';
+import 'package:kosan_euy/screens/owner/makanan/catering_list_screen.dart'; // NEW
+import 'package:kosan_euy/screens/owner/makanan/add_edit_catering_screen.dart'; // NEW
+import 'package:kosan_euy/screens/owner/makanan/catering_detail_screen.dart'; // NEW
+
 
 // Laundry Specific Screens
 import 'package:kosan_euy/screens/owner/laundry/dashboard_laundry_screen.dart';
@@ -115,6 +119,18 @@ class AppPages {
     GetPage(
       name: Routes.editCateringOrderStatus,
       page: () => EditStatusPesananMakananScreen(),
+    ),
+     GetPage(
+      name: Routes.cateringList, // Rute baru untuk daftar katering
+      page: () => CateringListScreen(),
+    ),
+    GetPage(
+      name: Routes.addEditCatering, // Rute baru untuk tambah/edit katering
+      page: () => AddEditCateringScreen(),
+    ),
+    GetPage(
+      name: Routes.cateringDetail, // Rute baru untuk detail katering
+      page: () => CateringDetailScreen(),
     ),
 
     // Laundry Routes

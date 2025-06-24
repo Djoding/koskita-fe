@@ -27,7 +27,7 @@ class _FoodListScreenState extends State<FoodListScreen>
 
   String? _cateringId;
   String? _pengelolaId;
-  Map<String, dynamic>? _kostData;
+  // Removed _kostData from here as it's now used to get cateringId in CateringListScreen
 
   @override
   void initState() {
@@ -38,107 +38,21 @@ class _FoodListScreenState extends State<FoodListScreen>
         _currentTabIndex = _tabController.index;
       });
     });
-    _initializeCateringData();
+
+    // Get cateringId directly from arguments
+    _cateringId = Get.arguments['cateringId'] as String?;
+    if (_cateringId == null) {
+      _errorMessage = 'Catering ID tidak ditemukan. Tidak dapat memuat menu.';
+      _isLoadingMenus = false;
+    } else {
+      _fetchCateringMenus();
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  Future<void> _getPengelolaId() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('accessToken');
-      if (token != null) {
-        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-        _pengelolaId = decodedToken["userId"];
-        print('Pengelola ID: $_pengelolaId');
-      } else {
-        print('No access token found');
-      }
-    } catch (e) {
-      print('Error getting pengelola ID: $e');
-    }
-  }
-
-  Future<void> _initializeCateringData() async {
-    await _getPengelolaId();
-
-    _kostData = Get.arguments as Map<String, dynamic>?;
-
-    print('FoodListScreen kostData: $_kostData');
-
-    if (_kostData == null) {
-      setState(() {
-        _errorMessage = 'Kost data is missing. Cannot fetch catering menus.';
-        _isLoadingMenus = false;
-      });
-      return;
-    }
-
-    try {
-      print('Fetching caterings for kost: ${_kostData!['kost_id']}');
-
-      final response = await CateringMenuService.getCateringsByKost(
-        _kostData!['kost_id'],
-      );
-
-      print('Catering response: $response');
-
-      if (response['status'] && (response['data'] as List).isNotEmpty) {
-        final List<Catering> caterings = response['data'];
-        _cateringId = caterings.first.cateringId;
-        print('Found catering ID: $_cateringId');
-        await _fetchCateringMenus();
-      } else {
-        print('No catering found, creating new catering...');
-        await _createDefaultCatering();
-      }
-    } catch (e) {
-      print('Error in _initializeCateringData: $e');
-      setState(() {
-        _errorMessage = 'Error fetching catering service: $e';
-        _isLoadingMenus = false;
-      });
-    }
-  }
-
-  Future<void> _createDefaultCatering() async {
-    try {
-      print('Creating default catering for kost: ${_kostData!['kost_id']}');
-
-      final response = await CateringMenuService.createCatering(
-        kostId: _kostData!['kost_id'],
-        namaCatering: 'Layanan Catering ${_kostData!['nama_kost']}',
-        alamat: _kostData!['alamat'] ?? 'Alamat tidak tersedia',
-        whatsappNumber: null,
-        qrisImage: null,
-        rekeningInfo: null,
-        isPartner: false,
-      );
-
-      print('Create catering response: $response');
-
-      if (response['status']) {
-        final Catering newCatering = response['data'];
-        _cateringId = newCatering.cateringId;
-        await _fetchCateringMenus();
-      } else {
-        setState(() {
-          _errorMessage =
-              response['message'] ?? 'Failed to create catering service.';
-          _isLoadingMenus = false;
-        });
-      }
-    } catch (e) {
-      print('Error creating default catering: $e');
-      setState(() {
-        _errorMessage = 'Error creating catering service: $e';
-        _isLoadingMenus = false;
-      });
-    }
   }
 
   Future<void> _fetchCateringMenus() async {
@@ -255,7 +169,9 @@ class _FoodListScreenState extends State<FoodListScreen>
                           onPressed: () => Get.to(() => SettingScreen()),
                         ),
                       ),
-                      const SizedBox(width: 8), // Spacer between settings and add
+                      const SizedBox(
+                        width: 8,
+                      ), // Spacer between settings and add
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -655,7 +571,8 @@ class FoodItemCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   image: DecorationImage(
                     image:
-                        menuItem.fotoMenuUrl != null
+                        menuItem.fotoMenuUrl != null &&
+                                menuItem.fotoMenuUrl!.isNotEmpty
                             ? NetworkImage(menuItem.fotoMenuUrl!)
                             : const AssetImage('assets/icon_makanan.png')
                                 as ImageProvider,

@@ -27,17 +27,13 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
   String errorMessage = '';
 
   // Status filters berdasarkan backend schema
-  final List<String> statusTabs = [
-    'Semua',
-    'Menunggu',
-    'Diproses', 
-    'Selesai',
-  ];
+  // MODIFIED: Filter status hanya PENDING, PROSES, DITERIMA
+  final List<String> statusTabs = ['Pending', 'Proses', 'Diterima'];
+  // MODIFIED: Sesuaikan mapping dengan statusTabs
   final Map<String, String> statusMapping = {
-    'Semua': '',
-    'Menunggu': 'PENDING',
-    'Diproses': 'PROSES',
-    'Selesai': 'DITERIMA',
+    'Pending': 'PENDING',
+    'Proses': 'PROSES',
+    'Diterima': 'DITERIMA',
   };
 
   @override
@@ -87,7 +83,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
 
       if (response['status']) {
         setState(() {
-          orders = response['data'] as List? ?? [];
+          orders = response['data'] ?? [];
           isLoading = false;
         });
       } else {
@@ -140,13 +136,26 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
         // Refresh data
         await _loadOrders();
       } else {
-        
+        Get.snackbar(
+          'Error',
+          message,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 3),
+        );
       }
     } catch (e) {
-     
+      Get.snackbar(
+        'Error',
+        'Terjadi kesalahan: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+      );
     }
   }
-
 
   void _showStatusUpdateDialog(Map<String, dynamic> order) {
     final currentStatus = order['status'] ?? '';
@@ -171,23 +180,24 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: availableStatuses.map((status) {
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                _getStatusDisplayName(status),
-                style: GoogleFonts.poppins(),
-              ),
-              trailing: Icon(
-                _getStatusIcon(status),
-                color: _getStatusColor(status),
-              ),
-              onTap: () {
-                Get.back();
-                _updateOrderStatus(order['pesanan_id'].toString(), status);
-              },
-            );
-          }).toList(),
+          children:
+              availableStatuses.map((status) {
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    _getStatusDisplayName(status),
+                    style: GoogleFonts.poppins(),
+                  ),
+                  trailing: Icon(
+                    _getStatusIcon(status),
+                    color: _getStatusColor(status),
+                  ),
+                  onTap: () {
+                    Get.back();
+                    _updateOrderStatus(order['pesanan_id'].toString(), status);
+                  },
+                );
+              }).toList(),
         ),
         actions: [
           TextButton(
@@ -317,33 +327,31 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
               ),
             ),
 
-            // Tabs
+            const SizedBox(height: 24), // Spacer after summary cards
+            // Tab Bar
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: TabBar(
                 controller: _tabController,
-                isScrollable: true,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                labelColor: const Color(0xFF9EBFED),
+                unselectedLabelColor: Colors.white,
                 labelStyle: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
-                unselectedLabelStyle: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.grey[600],
-                indicator: BoxDecoration(
-                  color: const Color(0xFF9EBFED),
-                  borderRadius: BorderRadius.circular(12),
-                ),
                 tabs: statusTabs.map((status) => Tab(text: status)).toList(),
               ),
             ),
+
+            const SizedBox(height: 16),
 
             // Content
             Expanded(
@@ -358,6 +366,40 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(
+    String title,
+    int count,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            count.toString(),
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -389,7 +431,15 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
       );
     }
 
-    if (orders.isEmpty) {
+    List<dynamic> currentOrders;
+    final selectedTabName = statusTabs[_tabController.index];
+    // MODIFIED: Filter langsung berdasarkan statusMapping
+    currentOrders =
+        orders
+            .where((order) => order['status'] == statusMapping[selectedTabName])
+            .toList();
+
+    if (currentOrders.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -419,9 +469,9 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
       onRefresh: _loadOrders,
       child: ListView.builder(
         padding: const EdgeInsets.all(24),
-        itemCount: orders.length,
+        itemCount: currentOrders.length,
         itemBuilder: (context, index) {
-          final order = orders[index];
+          final order = currentOrders[index];
           return _buildOrderCard(order);
         },
       ),
@@ -463,7 +513,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Order #${order['pesanan_id']}',
+                          'Order #${order['pesanan_id']?.substring(0, 8) ?? 'N/A'}', // Shorten ID for display
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -551,7 +601,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
                         ),
                       ],
                     ),
-                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
