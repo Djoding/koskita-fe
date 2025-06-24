@@ -48,7 +48,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         setState(() {
           _fullName = userData['full_name'] ?? 'Nama Pengguna';
           _userRole = userData['role'] ?? 'Peran Pengguna';
-          String? rawAvatarPath = userData['avatar_url'] ?? userData['avatar'];
+          String? rawAvatarPath = userData['avatar'];
 
           if (rawAvatarPath != null && rawAvatarPath.isNotEmpty) {
             if (rawAvatarPath.startsWith('http://') ||

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
 import 'package:kosan_euy/services/reservation_service.dart';
+import 'package:uploadthing/uploadthing.dart'; // Import UploadThing
 
 class MenuPembayaranPenghuni extends StatefulWidget {
   final int amount;
@@ -43,6 +44,10 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
 
   String? _selectedPaymentMethod;
   final List<String> _availablePaymentMethods = [];
+
+  final UploadThing _uploadThing = UploadThing(
+    "sk_live_08e0250b1aab76a8067be159691359dfb45a15f5fb0906fbacf6859866f1e199",
+  );
 
   @override
   void initState() {
@@ -143,7 +148,28 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
       _isUploading = true;
     });
 
+    String? buktiBayarUrl; 
+
     try {
+      List<File> filesToUpload = [_pickedImageFile!];
+      var uploadSuccess = await _uploadThing.uploadFiles(filesToUpload);
+
+      if (uploadSuccess) {
+        var uploadedFilesData = _uploadThing.uploadedFilesData;
+        if (uploadedFilesData.isNotEmpty &&
+            uploadedFilesData.first["url"] != null) {
+          buktiBayarUrl = uploadedFilesData.first["url"];
+          debugPrint('Bukti bayar berhasil diunggah ke: $buktiBayarUrl');
+        } else {
+          throw Exception(
+            'Gagal mendapatkan URL bukti pembayaran dari UploadThing.',
+          );
+        }
+      } else {
+        throw Exception('Gagal mengunggah bukti pembayaran ke UploadThing.');
+      }
+      // --- Akhir Langkah Baru ---
+
       if (widget.paymentPurpose == 'create_reservation') {
         if (widget.kostId == null || widget.durasiBulan == null) {
           throw Exception(
@@ -151,12 +177,17 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
           );
         }
 
+        // Siapkan formData untuk createReservation
+        final Map<String, dynamic> reservationFormData = {
+          'kost_id': widget.kostId!,
+          'tanggal_check_in': widget.tanggalCheckIn!,
+          'durasi_bulan': widget.durasiBulan!,
+          'metode_bayar': _selectedPaymentMethod!,
+          'bukti_bayar': buktiBayarUrl, // Mengirim URL dari UploadThing
+        };
+
         final result = await _reservationService.createReservation(
-          kostId: widget.kostId!,
-          tanggalCheckIn: widget.tanggalCheckIn!,
-          durasiBulan: widget.durasiBulan!,
-          metodeBayar: _selectedPaymentMethod!,
-          buktiBayarFile: _pickedImageFile!,
+          reservationFormData, // Kirim seluruh Map sebagai formData
         );
 
         if (result['status'] == true) {
@@ -189,11 +220,15 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
           );
         }
 
+        final Map<String, dynamic> extensionFormData = {
+          'durasi_perpanjangan_bulan': widget.durasiBulan!,
+          'metode_bayar': _selectedPaymentMethod!,
+          'bukti_bayar_perpanjangan': buktiBayarUrl,
+        };
+
         final result = await _reservationService.extendReservation(
           reservasiId: widget.reservasiId!,
-          durasiPerpanjanganBulan: widget.durasiBulan!,
-          metodeBayar: _selectedPaymentMethod!,
-          buktiBayarFile: _pickedImageFile!,
+          formData: extensionFormData,
         );
 
         if (result['status'] == true) {
@@ -232,7 +267,7 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
       debugPrint("Error submitting payment proof: $e");
       Get.snackbar(
         'Error',
-        'Terjadi kesalahan saat mengunggah bukti pembayaran: $e',
+        'Terjadi kesalahan saat mengunggah bukti pembayaran: ${e.toString()}', 
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -240,7 +275,8 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
     } finally {
       setState(() {
         _isUploading = false;
-        _pickedImageFile = null;
+        _pickedImageFile =
+            null; 
       });
     }
   }

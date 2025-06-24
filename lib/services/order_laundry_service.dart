@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io';
-import 'package:http_parser/http_parser.dart';
 
 class OrderLaundryService {
   static const String _baseUrl = 'https://kost-kita.my.id/api/v1/order/laundry';
@@ -12,21 +11,6 @@ class OrderLaundryService {
 
   Future<String?> _getAccessToken() async {
     return await _storage.read(key: _accessTokenKey);
-  }
-
-  MediaType _getMediaTypeForFile(File file) {
-    final String extension = file.path.split('.').last.toLowerCase();
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        return MediaType('image', 'jpeg');
-      case 'png':
-        return MediaType('image', 'png');
-      case 'gif':
-        return MediaType('image', 'gif');
-      default:
-        return MediaType('application', 'octet-stream');
-    }
   }
 
   static Map<String, dynamic> _handleResponse(http.Response response) {
@@ -55,13 +39,8 @@ class OrderLaundryService {
     }
   }
 
-  Future<Map<String, dynamic>> createOrderLaundryWithPayment({
-    required String reservasiId,
-    required String laundryId,
-    required String metodeBayar,
-    required String catatan,
-    required String itemsJson,
-    required File buktiBayarFile,
+  Future<Map<String, dynamic>> createLaundryOrderWithPayment({
+    required Map<String, dynamic> laundryData,
   }) async {
     try {
       final uri = Uri.parse(_baseUrl);
@@ -71,29 +50,21 @@ class OrderLaundryService {
         throw Exception('Access token not found. Please log in.');
       }
 
-      var request = http.MultipartRequest('POST', uri);
-      request.headers['Authorization'] = 'Bearer $accessToken';
-
-      request.fields['reservasi_id'] = reservasiId;
-      request.fields['laundry_id'] = laundryId;
-      request.fields['metode_bayar'] = metodeBayar;
-      request.fields['catatan'] = catatan;
-
       debugPrint(
-        'DEBUG Flutter Service: Raw Items JSON string received: $itemsJson',
+        'DEBUG Flutter Service: Calling POST Catering Order: ${uri.toString()}',
       );
-      request.fields['items'] = itemsJson;
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'bukti_bayar',
-          buktiBayarFile.path,
-          contentType: _getMediaTypeForFile(buktiBayarFile),
-          filename: buktiBayarFile.path.split('/').last,
-        ),
+      debugPrint(
+        'DEBUG Flutter Service: Request Body (JSON): ${jsonEncode(laundryData)}',
       );
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await http.post(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(laundryData),
+      );
 
       return _handleResponse(response);
     } catch (e) {

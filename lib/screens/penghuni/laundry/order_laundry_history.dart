@@ -322,7 +322,7 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
     if (dateString == null) return 'N/A';
     try {
       final DateTime date = DateTime.parse(dateString);
-      return '${DateFormat('dd MMMM y, HH:mm', 'id_ID').format(date)} WIB';
+      return '${DateFormat('dd MMMM y', 'id_ID').format(date)} WIB';
     } catch (e) {
       return dateString;
     }
@@ -373,13 +373,6 @@ class _LaundryOrderHistoryCard extends StatelessWidget {
                     color: Colors.black87,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                  ),
-                ),
-                Text(
-                  _formatDateTime(order['created_at'] as String?),
-                  style: GoogleFonts.poppins(
-                    color: Colors.grey[600],
-                    fontSize: 14,
                   ),
                 ),
               ],

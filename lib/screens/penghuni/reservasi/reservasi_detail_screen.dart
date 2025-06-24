@@ -316,7 +316,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
     final String metodeBayar = reservationData['metode_bayar'] ?? 'N/A';
     final String? catatan = reservationData['catatan'];
     final String? rejectionReason = reservationData['rejection_reason'];
-    final String buktiBayarUrl = _cleanImageUrl(reservationData['bukti_bayar']);
+    final String buktiBayarUrl = _cleanImageUrl(reservationData['bukti_bayar_url']);
     final String validatedAt = _formatDate(reservationData['validated_at']);
     final String createdAt = _formatDate(reservationData['created_at']);
 
