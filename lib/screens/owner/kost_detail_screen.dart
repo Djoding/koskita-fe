@@ -69,17 +69,19 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
 
                 // Bersihkan URL dari duplikasi localhost
                 while (cleanUrl.contains(
-                  'http://localhost:3000http://localhost:3000',
+                  'http://kost-kita.my.idhttp://kost-kita.my.id',
                 )) {
                   cleanUrl = cleanUrl.replaceFirst(
-                    'http://localhost:3000http://localhost:3000',
-                    'http://localhost:3000',
+                    'http://kost-kita.my.idhttp://kost-kita.my.id',
+                    'http://kost-kita.my.id',
                   );
                 }
 
-                // Jika dimulai dengan http://localhost:3000http, hilangkan yang pertama
-                if (cleanUrl.startsWith('http://localhost:3000http')) {
-                  cleanUrl = cleanUrl.substring('http://localhost:3000'.length);
+                // Jika dimulai dengan http://kost-kita.my.idhttp, hilangkan yang pertama
+                if (cleanUrl.startsWith('http://kost-kita.my.idhttp')) {
+                  cleanUrl = cleanUrl.substring(
+                    'http://kost-kita.my.id'.length,
+                  );
                 }
 
                 // Jika sudah berupa URL lengkap (https:// atau http://), gunakan langsung
@@ -94,7 +96,7 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
                   cleanUrl = cleanUrl.substring(1);
                 }
 
-                final fullUrl = 'http://localhost:3000/$cleanUrl';
+                final fullUrl = 'http://kost-kita.my.id/$cleanUrl';
                 print('Generated URL: $fullUrl');
                 return fullUrl;
               }).toList();
@@ -108,16 +110,16 @@ class _KostDetailScreenState extends State<KostDetailScreen> {
 
             // Bersihkan duplikasi
             while (qrisUrl.contains(
-              'http://localhost:3000http://localhost:3000',
+              'http://kost-kita.my.idhttp://kost-kita.my.id',
             )) {
               qrisUrl = qrisUrl.replaceFirst(
-                'http://localhost:3000http://localhost:3000',
-                'http://localhost:3000',
+                'http://kost-kita.my.idhttp://kost-kita.my.id',
+                'http://kost-kita.my.id',
               );
             }
 
-            if (qrisUrl.startsWith('http://localhost:3000http')) {
-              qrisUrl = qrisUrl.substring('http://localhost:3000'.length);
+            if (qrisUrl.startsWith('http://kost-kita.my.idhttp')) {
+              qrisUrl = qrisUrl.substring('http://kost-kita.my.id'.length);
             }
 
             _fullQrisImageUrl = qrisUrl;

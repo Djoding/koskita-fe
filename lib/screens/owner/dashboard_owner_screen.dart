@@ -135,10 +135,11 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
     // Jika URL sudah berupa URL lengkap (dimulai dengan http/https), gunakan langsung
     if (url.startsWith('https://') || url.startsWith('http://')) {
       // Cek apakah ada duplikasi localhost
-      if (url.contains('localhost:3000') &&
-          url.indexOf('localhost:3000') != url.lastIndexOf('localhost:3000')) {
-        // Ambil bagian setelah localhost:3000 terakhir
-        final parts = url.split('localhost:3000');
+      if (url.contains('kost-kita.my.id') &&
+          url.indexOf('kost-kita.my.id') !=
+              url.lastIndexOf('kost-kita.my.id')) {
+        // Ambil bagian setelah kost-kita.my.id terakhir
+        final parts = url.split('kost-kita.my.id');
         if (parts.length > 1) {
           final cleanUrl = parts.last;
           print('Cleaned URL: $cleanUrl');
