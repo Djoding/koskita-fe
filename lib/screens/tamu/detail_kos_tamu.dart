@@ -237,8 +237,8 @@ class _DetailKosTamuState extends State<DetailKosTamu> {
     final List<String> imageUrls =
         fotoKostRaw.map((url) {
           String cleanUrl = url.toString();
-          if (cleanUrl.startsWith('http://localhost:3000http')) {
-            cleanUrl = cleanUrl.substring('http://localhost:3000'.length);
+          if (cleanUrl.startsWith('http://kost-kita.my.idhttp')) {
+            cleanUrl = cleanUrl.substring('http://kost-kita.my.id'.length);
           }
           return cleanUrl;
         }).toList();

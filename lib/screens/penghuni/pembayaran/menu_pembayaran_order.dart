@@ -102,11 +102,11 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
   String _cleanImageUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.isEmpty) return '';
     String cleaned = rawUrl;
-    if (cleaned.startsWith('http://localhost:3000http')) {
-      cleaned = cleaned.substring('http://localhost:3000'.length);
+    if (cleaned.startsWith('http://kost-kita.my.idhttp')) {
+      cleaned = cleaned.substring('http://kost-kita.my.id'.length);
     }
     if (!cleaned.startsWith('http')) {
-      cleaned = 'http://localhost:3000$cleaned'; // Sesuaikan host Anda
+      cleaned = 'http://kost-kita.my.id$cleaned'; // Sesuaikan host Anda
     }
     return cleaned;
   }

@@ -62,8 +62,8 @@ class _DashboardTamuScreenState extends State<DashboardTamuScreen>
               if (typedItem['foto_kost'] != null &&
                   typedItem['foto_kost'].isNotEmpty) {
                 String rawUrl = typedItem['foto_kost'][0].toString();
-                if (rawUrl.startsWith('http://localhost:3000http')) {
-                  imageUrl = rawUrl.substring('http://localhost:3000'.length);
+                if (rawUrl.startsWith('http://kost-kita.my.idhttp')) {
+                  imageUrl = rawUrl.substring('http://kost-kita.my.id'.length);
                 } else {
                   imageUrl = rawUrl;
                 }

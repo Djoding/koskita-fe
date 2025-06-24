@@ -29,7 +29,7 @@ class AuthService {
     clientId:
         Platform.isIOS
             ? '493320600420-86og9e4gofabhq4lrsoscgnt9s0de946.apps.googleusercontent.com'
-            : null,
+            : '493320600420-jr9elb910g9kh9kgn1rm87p2kb2ndu2e.apps.googleusercontent.com',
   );
 
   Future<Map<String, dynamic>> register(
@@ -157,7 +157,9 @@ class AuthService {
 
       if (idToken == null) throw Exception('Failed to get ID token');
 
-      final url = Uri.parse('https://kost-kita.my.id/api/v1/google/mobile');
+      final url = Uri.parse(
+        'https://kost-kita.my.id/api/v1/auth/google/mobile',
+      );
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

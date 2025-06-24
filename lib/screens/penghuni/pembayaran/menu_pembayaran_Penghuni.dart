@@ -90,11 +90,11 @@ class _MenuPembayaranPenghuniState extends State<MenuPembayaranPenghuni> {
   String _cleanImageUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.isEmpty) return '';
     String cleaned = rawUrl;
-    if (cleaned.startsWith('http://localhost:3000http')) {
-      cleaned = cleaned.substring('http://localhost:3000'.length);
+    if (cleaned.startsWith('http://kost-kita.my.idhttp')) {
+      cleaned = cleaned.substring('http://kost-kita.my.id'.length);
     }
     if (cleaned.startsWith('/uploads/')) {
-      cleaned = 'http://localhost:3000$cleaned';
+      cleaned = 'http://kost-kita.my.id$cleaned';
     }
     return cleaned;
   }
