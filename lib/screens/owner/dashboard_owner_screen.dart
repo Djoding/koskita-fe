@@ -89,12 +89,6 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
           for (var kostItem in response['data']) {
             print("  Kost Name: ${kostItem['nama_kost']}");
             print("  Total Kamar: ${kostItem['total_kamar']}");
-            print(
-              "  Available Rooms (from API): ${kostItem['available_rooms']}",
-            );
-            print(
-              "  Total Occupied Rooms (from API): ${kostItem['total_occupied_rooms']}",
-            );
           }
         }
       }
@@ -365,16 +359,7 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
   }
 
   Widget _buildKostCard(Map<String, dynamic> kost) {
-    // Determine available_rooms for display.
-    // Prioritize 'available_rooms' from API response.
-    // If not available, calculate it from 'total_kamar' and 'total_occupied_rooms'.
-    int displayedAvailableRooms = kost['available_rooms'] as int? ?? 0;
-    if (displayedAvailableRooms == 0 &&
-        kost['total_kamar'] != null &&
-        kost['total_occupied_rooms'] != null) {
-      displayedAvailableRooms =
-          (kost['total_kamar'] as int) - (kost['total_occupied_rooms'] as int);
-    }
+    
 
     return InkWell(
       onTap: () {
@@ -445,19 +430,8 @@ class _DashboardOwnerScreenState extends State<DashboardOwnerScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Icon(
-                          Icons.check_circle_outline,
-                          size: 16,
-                          color: Colors.white70,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Tersedia: $displayedAvailableRooms', // Use the calculated/fetched available rooms
-                          style: GoogleFonts.poppins(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
-                        ),
+                        
+                        
                       ],
                     ),
                     const SizedBox(height: 8),
