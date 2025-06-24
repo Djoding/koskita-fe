@@ -41,7 +41,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         setState(() {
           _fullName = userData['full_name'] ?? 'Nama Lengkap';
           _userRole = userData['role'] ?? 'Peran Pengguna';
-          String? rawAvatarPath = userData['avatar_url'] ?? userData['avatar'];
+          String? rawAvatarPath = userData['avatar'];
 
           if (rawAvatarPath != null && rawAvatarPath.isNotEmpty) {
             _avatarUrl =

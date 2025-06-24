@@ -2,9 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dart:io';
-import 'package:http_parser/http_parser.dart';
-
 class ReservationService {
   static const String _baseUrl = 'https://kost-kita.my.id/api/v1/reservasi';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
@@ -61,21 +58,6 @@ class ReservationService {
 
   Future<String?> _getAccessToken() async {
     return await _storage.read(key: _accessTokenKey);
-  }
-
-  MediaType _getMediaTypeForFile(File file) {
-    final String extension = file.path.split('.').last.toLowerCase();
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        return MediaType('image', 'jpeg');
-      case 'png':
-        return MediaType('image', 'png');
-      case 'gif':
-        return MediaType('image', 'gif');
-      default:
-        return MediaType('application', 'octet-stream');
-    }
   }
 
   static Map<String, dynamic> _handleResponse(http.Response response) {
@@ -167,10 +149,7 @@ class ReservationService {
 
   Future<Map<String, dynamic>> extendReservation({
     required String reservasiId,
-    required int durasiPerpanjanganBulan,
-    required String metodeBayar,
-    String? catatan,
-    required File buktiBayarFile,
+    required Map<String, dynamic> formData,
   }) async {
     final String? token = await _getAccessToken();
 
@@ -181,102 +160,55 @@ class ReservationService {
 
     final Uri requestUri = Uri.parse('$_baseUrl/$reservasiId/extend');
 
-    final http.MultipartRequest request = http.MultipartRequest(
-      'PUT',
-      requestUri,
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-
-    request.fields['durasi_perpanjangan_bulan'] =
-        durasiPerpanjanganBulan.toString();
-    request.fields['metode_bayar'] = metodeBayar;
-    if (catatan != null) {
-      request.fields['catatan'] = catatan;
-    }
-
-    final MediaType contentType = _getMediaTypeForFile(buktiBayarFile);
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'bukti_bayar',
-        buktiBayarFile.path,
-        filename: buktiBayarFile.path.split('/').last,
-        contentType: contentType,
-      ),
-    );
-
+    final http.Response response;
     try {
-      final http.StreamedResponse streamedResponse = await request.send();
-      final http.Response response = await http.Response.fromStream(
-        streamedResponse,
+      debugPrint('Calling PUT Extend Reservation: ${requestUri.toString()}');
+      debugPrint('Request Body (JSON): ${jsonEncode(formData)}');
+
+      response = await http.put(
+        requestUri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(formData),
       );
+
       return _handleResponse(response);
     } catch (e) {
       debugPrint("Error extending reservation: $e");
       throw Exception(
-        '$e',
+        'Failed to connect to the server or extend reservation: $e',
       );
     }
   }
 
-  Future<Map<String, dynamic>> createReservation({
-    required String kostId,
-    required String tanggalCheckIn,
-    required int durasiBulan,
-    required String metodeBayar,
-    String? catatan,
-    required File buktiBayarFile,
-  }) async {
-    final String? token = await _getAccessToken();
-
-    if (token == null) {
-      debugPrint('No access token found. User might not be logged in.');
-      throw Exception('Unauthorized. Please log in.');
-    }
-    final Uri requestUri = Uri.parse(_baseUrl);
-
-    final http.MultipartRequest request = http.MultipartRequest(
-      'POST',
-      requestUri,
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-
-    request.fields['kost_id'] = kostId;
-    request.fields['tanggal_check_in'] = tanggalCheckIn;
-    request.fields['durasi_bulan'] = durasiBulan.toString();
-    request.fields['metode_bayar'] = metodeBayar;
-    if (catatan != null) {
-      request.fields['catatan'] = catatan;
-    }
-
-    final MediaType contentType = _getMediaTypeForFile(buktiBayarFile);
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'bukti_bayar',
-        buktiBayarFile.path,
-        filename: buktiBayarFile.path.split('/').last,
-        contentType: contentType,
-      ),
-    );
-
-    debugPrint('Calling POST Create Reservation: ${requestUri.toString()}');
-    debugPrint('Request fields: ${request.fields}');
-    debugPrint(
-      'Request files: ${request.files.map((e) => e.filename).join(', ')}',
-    );
-    debugPrint('Content-Type sent for file: ${contentType.toString()}');
-
+  Future<Map<String, dynamic>> createReservation(
+    Map<String, dynamic> formData,
+  ) async {
     try {
-      final http.StreamedResponse streamedResponse = await request.send();
-      final http.Response response = await http.Response.fromStream(
-        streamedResponse,
+      final String? token = await _getAccessToken();
+
+      if (token == null) {
+        debugPrint('No access token found. User might not be logged in.');
+        throw Exception('Unauthorized. Please log in.');
+      }
+      debugPrint('Calling POST Create Reservation: $_baseUrl');
+      debugPrint('Request Body (JSON): ${jsonEncode(formData)}');
+
+      final response = await http.post(
+        Uri.parse(_baseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(formData),
       );
 
       return _handleResponse(response);
     } catch (e) {
-      debugPrint("Error creating reservation: $e");
-      throw Exception(
-        'Failed to connect to the server or create reservation: $e',
-      );
+      debugPrint('Error creating reservation: $e');
+      return {'status': false, 'message': 'Failed to create reservation: $e'};
     }
   }
 }

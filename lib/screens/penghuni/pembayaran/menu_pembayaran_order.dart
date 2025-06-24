@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
@@ -8,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
 import 'package:kosan_euy/services/order_catering_service.dart';
 import 'package:kosan_euy/services/order_laundry_service.dart';
+import 'package:uploadthing/uploadthing.dart';
 
 class OrderPaymentScreen extends StatefulWidget {
   final String reservasiId;
@@ -47,6 +47,10 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
   final List<String> _availablePaymentMethods = [];
   final TextEditingController _notesController = TextEditingController();
 
+  final UploadThing _uploadThing = UploadThing(
+    "sk_live_08e0250b1aab76a8067be159691359dfb45a15f5fb0906fbacf6859866f1e199",
+  );
+
   @override
   void initState() {
     super.initState();
@@ -60,11 +64,9 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
   }
 
   void _initializePaymentMethods() {
-    // Tentukan metode pembayaran yang tersedia berdasarkan data yang diterima
     if (widget.qrisImage != null && widget.qrisImage!.isNotEmpty) {
       _availablePaymentMethods.add('QRIS');
     }
-    // Asumsi widget.rekeningInfo sudah berisi {bank, nomor, atas_nama}
     if (_isBankInfoAvailable()) {
       _availablePaymentMethods.add('TRANSFER');
     }
@@ -85,10 +87,9 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
   bool _isBankInfoAvailable() {
     return widget.rekeningInfo != null &&
         widget.rekeningInfo!['bank'] != null &&
-        widget.rekeningInfo!['bank'] !=
-            'Tidak Tersedia' && // Opsional: cek string "Tidak Tersedia"
+        widget.rekeningInfo!['bank'] != 'Tidak Tersedia' &&
         widget.rekeningInfo!['nomor'] != null &&
-        widget.rekeningInfo!['nomor'] != 'Tidak Tersedia'; // Opsional
+        widget.rekeningInfo!['nomor'] != 'Tidak Tersedia';
   }
 
   String _formatPrice(double price) {
@@ -106,7 +107,7 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
       cleaned = cleaned.substring('http://kost-kita.my.id'.length);
     }
     if (!cleaned.startsWith('http')) {
-      cleaned = 'http://kost-kita.my.id$cleaned'; // Sesuaikan host Anda
+      cleaned = 'http://kost-kita.my.id$cleaned';
     }
     return cleaned;
   }
@@ -155,46 +156,56 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
       _isUploading = true;
     });
 
+    String? buktiBayarUrl; // Variabel untuk menyimpan URL bukti pembayaran
+
     try {
-      final List<Map<String, dynamic>> rawItemsForService =
-          widget.orderItems.map((item) {
-            final int quantity =
-                (item['jumlah'] is int)
-                    ? item['jumlah'] as int
-                    : (item['jumlah'] as num).toInt();
-            return {'menu_id': item['menu_id'], 'jumlah_porsi': quantity};
-          }).toList();
+      // --- Langkah Baru: Upload bukti pembayaran ke UploadThing ---
+      List<File> filesToUpload = [_pickedImageFile!];
+      var uploadSuccess = await _uploadThing.uploadFiles(filesToUpload);
 
-      final String itemsJsonString = jsonEncode(rawItemsForService);
+      if (uploadSuccess) {
+        var uploadedFilesData = _uploadThing.uploadedFilesData;
+        if (uploadedFilesData.isNotEmpty &&
+            uploadedFilesData.first["url"] != null) {
+          buktiBayarUrl = uploadedFilesData.first["url"];
+          debugPrint('Bukti bayar berhasil diunggah ke: $buktiBayarUrl');
+        } else {
+          throw Exception(
+            'Gagal mendapatkan URL bukti pembayaran dari UploadThing.',
+          );
+        }
+      } else {
+        throw Exception('Gagal mengunggah bukti pembayaran ke UploadThing.');
+      }
+      // --- Akhir Langkah Baru ---
 
-      final List<Map<String, dynamic>> rawItemsForLaundry =
-          widget.orderItems.map((item) {
-            final int quantity =
-                (item['jumlah'] is int)
-                    ? item['jumlah'] as int
-                    : (item['jumlah'] as num).toInt();
-            return {
-              'layanan_id': item['layanan_id'],
-              'jumlah_satuan': quantity,
-            };
-          }).toList();
+      // Pastikan `items` disiapkan dalam format yang benar untuk service
+      // yaiut List<Map<String, dynamic>>
+      final List<Map<String, dynamic>> itemsForService;
 
-      final String itemsJsonStringLaundry = jsonEncode(rawItemsForLaundry);
-      debugPrint(
-        'DEBUG OrderPaymentScreen: Final items JSON string to service: $itemsJsonString',
-      );
       if (widget.cateringId != null) {
+        itemsForService =
+            widget.orderItems.map((item) {
+              final int quantity =
+                  (item['jumlah'] is int)
+                      ? item['jumlah'] as int
+                      : (item['jumlah'] as num).toInt();
+              return {'menu_id': item['menu_id'], 'jumlah_porsi': quantity};
+            }).toList();
+
         final result = await _orderCateringService
             .createCateringOrderWithPayment(
-              reservasiId: widget.reservasiId,
-              cateringId: widget.cateringId!,
-              metodeBayar: _selectedPaymentMethod!,
-              catatan:
-                  _notesController.text.isEmpty
-                      ? 'Pesanan makanan'
-                      : _notesController.text,
-              itemsJson: itemsJsonString,
-              buktiBayarFile: _pickedImageFile!,
+              formData: {
+                'reservasi_id': widget.reservasiId,
+                'catering_id': widget.cateringId!,
+                'metode_bayar': _selectedPaymentMethod!,
+                'catatan':
+                    _notesController.text.isEmpty
+                        ? 'Pesanan makanan'
+                        : _notesController.text,
+                'items': itemsForService,
+                'bukti_bayar': buktiBayarUrl,
+              },
             );
 
         if (result['status'] == true) {
@@ -221,16 +232,30 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
           );
         }
       } else if (widget.laundryId != null) {
-        final result = await _orderLaundryService.createOrderLaundryWithPayment(
-          reservasiId: widget.reservasiId,
-          laundryId: widget.laundryId!,
-          metodeBayar: _selectedPaymentMethod!,
-          catatan:
-              _notesController.text.isEmpty
-                  ? 'Pesanan laundry'
-                  : _notesController.text,
-          itemsJson: itemsJsonStringLaundry,
-          buktiBayarFile: _pickedImageFile!,
+        itemsForService =
+            widget.orderItems.map((item) {
+              final int quantity =
+                  (item['jumlah'] is int)
+                      ? item['jumlah'] as int
+                      : (item['jumlah'] as num).toInt();
+              return {
+                'layanan_id': item['layanan_id'],
+                'jumlah_satuan': quantity,
+              };
+            }).toList();
+
+        final result = await _orderLaundryService.createLaundryOrderWithPayment(
+          laundryData: {
+            'reservasi_id': widget.reservasiId,
+            'laundry_id': widget.laundryId!,
+            'metode_bayar': _selectedPaymentMethod!,
+            'catatan':
+                _notesController.text.isEmpty
+                    ? 'Pesanan laundry'
+                    : _notesController.text,
+            'items': itemsForService,
+            'bukti_bayar': buktiBayarUrl,
+          },
         );
 
         if (result['status'] == true) {
@@ -302,9 +327,7 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
           SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
-              Get.offAll(
-                () => const KosScreen(),
-              ); // Sesuaikan navigasi setelah pembayaran sukses
+              Get.offAll(() => const KosScreen());
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF119DB1),
@@ -598,9 +621,7 @@ class _OrderPaymentScreenState extends State<OrderPaymentScreen> {
                   ),
                 ),
                 Text(
-                  _formatPrice(
-                    widget.totalAmount,
-                  ), // Gunakan totalAmount dari widget
+                  _formatPrice(widget.totalAmount),
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,

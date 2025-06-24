@@ -320,16 +320,6 @@ class _OrderHistoryCard extends StatelessWidget {
     ).format(p.round());
   }
 
-  String _formatDate(String? dateString) {
-    if (dateString == null) return 'N/A';
-    try {
-      final DateTime date = DateTime.parse(dateString);
-      return DateFormat('dd MMMM y', 'id_ID').format(date);
-    } catch (e) {
-      return dateString; 
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Status dari API adalah PENDING, PROSES, DITERIMA
@@ -376,15 +366,6 @@ class _OrderHistoryCard extends StatelessWidget {
                     color: Colors.black87,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                  ),
-                ),
-                Text(
-                  _formatDate(
-                    order['created_at'] as String?,
-                  ),
-                  style: GoogleFonts.poppins(
-                    color: Colors.grey[600],
-                    fontSize: 14,
                   ),
                 ),
               ],
