@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kosan_euy/screens/owner/makanan/layanan_makanan/makanan_screen.dart';
 import 'package:kosan_euy/screens/owner/makanan/cek_pesanan/owner_cek_pesanan.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
+import 'package:kosan_euy/routes/app_pages.dart'; // Import app_pages.dart
 
 class LayananMakananScreen extends StatelessWidget {
   const LayananMakananScreen({super.key});
@@ -111,7 +112,6 @@ class LayananMakananScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
                 ],
               ),
             ),
@@ -128,16 +128,14 @@ class LayananMakananScreen extends StatelessWidget {
                   childAspectRatio: 1.1,
                   children: [
                     _buildMenuCard(
-                      'Daftar Menu',
-                      'Kelola menu makanan dan minuman',
+                      'Daftar Catering', // Ubah teks
+                      'Kelola penyedia layanan catering', // Ubah subtitle
                       'assets/icon_makanan.png',
                       Colors.orange,
                       () {
                         if (kostData != null) {
-                          Get.to(
-                            () => const FoodListScreen(),
-                            arguments: kostData,
-                          );
+                          // Navigasi ke CateringListScreen yang baru
+                          Get.toNamed(Routes.cateringList, arguments: kostData);
                         } else {
                           Get.snackbar(
                             'Error',

@@ -1012,14 +1012,18 @@ class _DaftarKosScreenState extends State<DaftarKosScreen> {
       });
 
       if (response['status']) {
+        Get.back(
+          result: true,
+        ); // Signal successful creation to DashboardOwnerScreen
         // Navigate to SuccessScreen, and pass a result back to previous screen
-        Get.to(
-          () => const SuccessScreen(
-            title: 'Kost Berhasil Didaftarkan',
-            subtitle: 'Data kost Anda berhasil ditambahkan dan menunggu validasi.',
-          ),
+        Get.snackbar(
+          'Berhasil',
+          'Kost berhasil didaftarkan',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
         );
-        Get.back(result: true); // Signal successful creation to DashboardOwnerScreen
+        
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

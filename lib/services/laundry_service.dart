@@ -25,6 +25,33 @@ class LaundryService {
     return {if (token != null) 'Authorization': 'Bearer $token'};
   }
 
+  // Common response handler
+  static Map<String, dynamic> _handleResponse(http.Response response) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      return {
+        'status': true,
+        'data': responseBody['data'] ?? {},
+        'message': responseBody['message'] ?? 'Success',
+      };
+    } else if (response.statusCode == 401) {
+      throw Exception('Unauthorized. Please log in again.');
+    } else {
+      final errorBody = jsonDecode(response.body);
+      debugPrint('Backend Error Response Body: ${jsonEncode(errorBody)}');
+      if (errorBody['status'] == 'fail' || errorBody['status'] == 'error') {
+        throw Exception(
+          errorBody['message'] ??
+              'API call failed with status: ${response.statusCode}',
+        );
+      }
+      throw Exception(
+        errorBody['message'] ??
+            'API call failed with status: ${response.statusCode}',
+      );
+    }
+  }
+
   // Get laundries by kost ID
   static Future<Map<String, dynamic>> getLaundriesByKost(String kostId) async {
     try {
@@ -33,17 +60,7 @@ class LaundryService {
         headers: await _headers,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'message': data['message'],
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch laundries');
-      }
+      return _handleResponse(response);
     } catch (e) {
       debugPrint('Error fetching laundries: $e');
       return {'status': false, 'message': 'Network error: $e', 'data': []};
@@ -160,16 +177,7 @@ class LaundryService {
         headers: await _headers,
       );
 
-      if (getResponse.statusCode == 200) {
-        final data = jsonDecode(getResponse.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'message': 'Laundry updated successfully',
-        };
-      } else {
-        return {'status': true, 'message': 'Laundry updated successfully'};
-      }
+      return _handleResponse(getResponse);
     } catch (e) {
       debugPrint('Error updating laundry: $e');
       return {'status': false, 'message': 'Network error: $e'};
@@ -186,17 +194,7 @@ class LaundryService {
         headers: await _headers,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'message': data['message'],
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch services');
-      }
+      return _handleResponse(response);
     } catch (e) {
       debugPrint('Error fetching services: $e');
       return {'status': false, 'message': 'Network error: $e'};
@@ -215,17 +213,7 @@ class LaundryService {
         body: jsonEncode(serviceData),
       );
 
-      if (response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'message': data['message'],
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to create service');
-      }
+      return _handleResponse(response);
     } catch (e) {
       debugPrint('Error creating service: $e');
       return {'status': false, 'message': 'Network error: $e'};
@@ -245,17 +233,7 @@ class LaundryService {
         body: jsonEncode(serviceData),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'message': data['message'],
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to update service');
-      }
+      return _handleResponse(response);
     } catch (e) {
       debugPrint('Error updating service: $e');
       return {'status': false, 'message': 'Network error: $e'};
@@ -273,13 +251,7 @@ class LaundryService {
         headers: await _headers,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {'status': true, 'message': data['message']};
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to delete service');
-      }
+      return _handleResponse(response);
     } catch (e) {
       debugPrint('Error deleting service: $e');
       return {'status': false, 'message': 'Network error: $e'};
@@ -324,20 +296,7 @@ class LaundryService {
         },
       );
 
-      final data = json.decode(response.body);
-
-      if (response.statusCode == 200) {
-        return {
-          'status': true,
-          'data': data['data'] ?? [],
-          'message': data['message'] ?? 'Success',
-        };
-      } else {
-        return {
-          'status': false,
-          'message': data['message'] ?? 'Failed to fetch orders',
-        };
-      }
+      return _handleResponse(response);
     } catch (e) {
       return {'status': false, 'message': 'Error: $e'};
     }
@@ -358,43 +317,12 @@ class LaundryService {
       debugPrint('Status Code: ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
-      if (response.body.isEmpty) {
-        return {'success': false, 'message': 'Response kosong dari server'};
-      }
-
-      final responseData = json.decode(response.body) as Map<String, dynamic>;
-
-      bool isSuccess = false;
-      String message = '';
-      dynamic data;
-
-      if (response.statusCode == 200) {
-        if (responseData.containsKey('status')) {
-          isSuccess =
-              responseData['status'] == true ||
-              responseData['status'] == 'true' ||
-              responseData['status'] == 'success';
-        } else if (responseData.containsKey('success')) {
-          isSuccess =
-              responseData['success'] == true ||
-              responseData['success'] == 'true';
-        } else {
-          isSuccess = true;
-        }
-
-        message = responseData['message']?.toString() ?? 'Data berhasil dimuat';
-        data = responseData['data'] ?? responseData;
-      } else {
-        isSuccess = false;
-        message = responseData['message']?.toString() ?? 'Gagal memuat data';
-      }
-
-      return {'success': isSuccess, 'message': message, 'data': data};
+      return _handleResponse(response);
     } catch (e) {
       debugPrint('=== ERROR IN GET ORDER DETAIL ===');
       debugPrint('Error: $e');
 
-      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+      return {'status': false, 'message': 'Gagal terhubung ke server: $e'};
     }
   }
 
@@ -415,54 +343,12 @@ class LaundryService {
       debugPrint('Status Code: ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
-      if (response.body.isEmpty) {
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          return {'success': true, 'message': 'Status berhasil diperbarui'};
-        } else {
-          return {
-            'success': false,
-            'message': 'Gagal memperbarui status (${response.statusCode})',
-          };
-        }
-      }
-
-      final responseData = json.decode(response.body) as Map<String, dynamic>;
-
-      bool isSuccess = false;
-      String message = '';
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        if (responseData.containsKey('status')) {
-          isSuccess =
-              responseData['status'] == true ||
-              responseData['status'] == 'true' ||
-              responseData['status'] == 'success';
-        } else if (responseData.containsKey('success')) {
-          isSuccess =
-              responseData['success'] == true ||
-              responseData['success'] == 'true';
-        } else {
-          isSuccess = true;
-        }
-
-        message =
-            responseData['message']?.toString() ?? 'Status berhasil diperbarui';
-      } else {
-        isSuccess = false;
-        message =
-            responseData['message']?.toString() ?? 'Gagal memperbarui status';
-      }
-
-      return {
-        'success': isSuccess,
-        'message': message,
-        'data': responseData['data'],
-      };
+      return _handleResponse(response);
     } catch (e) {
       debugPrint('=== ERROR IN UPDATE STATUS ===');
       debugPrint('Error: $e');
 
-      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+      return {'status': false, 'message': 'Gagal terhubung ke server: $e'};
     }
   }
 
@@ -474,17 +360,7 @@ class LaundryService {
         headers: await _headers,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {
-          'status': true,
-          'data': data['data'],
-          'message': data['message'],
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch layanan');
-      }
+      return _handleResponse(response);
     } catch (e) {
       debugPrint('Error fetching layanan: $e');
       return {'status': false, 'message': 'Network error: $e', 'data': []};

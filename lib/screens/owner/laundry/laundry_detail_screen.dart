@@ -6,6 +6,7 @@ import 'package:kosan_euy/screens/owner/laundry/services/laundry_services_screen
 import 'package:kosan_euy/screens/owner/laundry/orders/laundry_orders_screen.dart';
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/laundry_service.dart';
+import 'package:kosan_euy/routes/app_pages.dart'; // Import Routes for navigation
 
 class LaundryDetailScreen extends StatefulWidget {
   const LaundryDetailScreen({super.key});
@@ -45,7 +46,9 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
     });
 
     try {
-      final response = await LaundryService.getLaundryServices(laundryData!['laundry_id']);
+      final response = await LaundryService.getLaundryServices(
+        laundryData!['laundry_id'],
+      );
 
       if (response['status']) {
         setState(() {
@@ -145,6 +148,7 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
             // Content
             Expanded(
               child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -160,9 +164,7 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
 
   Widget _buildContent() {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (errorMessage.isNotEmpty) {
@@ -170,11 +172,7 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.error_outline, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
               errorMessage,
@@ -212,9 +210,17 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white, // Changed to white for consistency
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          // Added shadow for consistency
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,19 +260,23 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: laundryData!['is_partner'] == true
-                            ? Colors.blue.withOpacity(0.2)
-                            : Colors.orange.withOpacity(0.2),
+                        color:
+                            laundryData!['is_partner'] == true
+                                ? Colors.blue.withOpacity(0.2)
+                                : Colors.orange.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        laundryData!['is_partner'] == true ? 'Partner' : 'Non-Partner',
+                        laundryData!['is_partner'] == true
+                            ? 'Partner'
+                            : 'Non-Partner',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: laundryData!['is_partner'] == true
-                              ? Colors.blue
-                              : Colors.orange,
+                          color:
+                              laundryData!['is_partner'] == true
+                                  ? Colors.blue
+                                  : Colors.orange,
                         ),
                       ),
                     ),
@@ -276,13 +286,13 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           _buildInfoRow(
             Icons.location_on,
             'Alamat',
             laundryData!['alamat'] ?? 'Tidak ada alamat',
           ),
-          
+
           if (laundryData!['whatsapp_number'] != null &&
               laundryData!['whatsapp_number'].isNotEmpty)
             _buildInfoRow(
@@ -290,11 +300,34 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
               'WhatsApp',
               laundryData!['whatsapp_number'],
             ),
-          
+
           _buildInfoRow(
             Icons.access_time,
             'Dibuat',
             _formatDateTime(laundryData!['created_at']),
+          ),
+          const SizedBox(height: 16), // Added space for consistency
+          Row(
+            // Added total menu count for consistency
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Total Layanan:',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              Text(
+                '${laundryData!['services_count'] ?? 0} layanan',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -305,9 +338,17 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white, // Changed to white for consistency
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          // Added shadow for consistency
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,7 +362,7 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // QRIS
           if (laundryData!['qris_image_url'] != null &&
               laundryData!['qris_image_url'].isNotEmpty) ...[
@@ -329,25 +370,26 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
               children: [
                 const Icon(Icons.qr_code, color: Colors.blue),
                 const SizedBox(width: 12),
-                Text(
-                  'QRIS tersedia',
-                  style: GoogleFonts.poppins(fontSize: 14),
-                ),
+                Text('QRIS tersedia', style: GoogleFonts.poppins(fontSize: 14)),
               ],
             ),
             const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                laundryData!['qris_image_url'],
-                height: 150,
-                width: 150,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+            Center(
+              // Center QRIS image
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  laundryData!['qris_image_url'],
                   height: 150,
                   width: 150,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.qr_code, size: 50),
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (context, error, stackTrace) => Container(
+                        height: 150,
+                        width: 150,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.qr_code, size: 50),
+                      ),
                 ),
               ),
             ),
@@ -366,30 +408,34 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
               ],
             ),
           ],
-          
+
           // Rekening Info
           if (laundryData!['rekening_info'] != null) ...[
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 16),
             ...() {
-              final rekeningInfo = laundryData!['rekening_info'] as Map<String, dynamic>;
+              final rekeningInfo =
+                  laundryData!['rekening_info'] as Map<String, dynamic>;
               return [
-                if (rekeningInfo['bank'] != null && rekeningInfo['bank'].isNotEmpty)
+                if (rekeningInfo['bank'] != null &&
+                    rekeningInfo['bank'].isNotEmpty)
                   _buildInfoRow(
                     Icons.account_balance,
                     'Bank',
                     rekeningInfo['bank'],
                   ),
-                
-                if (rekeningInfo['nomor'] != null && rekeningInfo['nomor'].isNotEmpty)
+
+                if (rekeningInfo['nomor'] != null &&
+                    rekeningInfo['nomor'].isNotEmpty)
                   _buildInfoRow(
                     Icons.credit_card,
                     'Nomor Rekening',
                     rekeningInfo['nomor'],
                   ),
-                
-                if (rekeningInfo['atas_nama'] != null && rekeningInfo['atas_nama'].isNotEmpty)
+
+                if (rekeningInfo['atas_nama'] != null &&
+                    rekeningInfo['atas_nama'].isNotEmpty)
                   _buildInfoRow(
                     Icons.person,
                     'Atas Nama',
@@ -405,13 +451,21 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
 
   Widget _buildServicesInfo() {
     final services = servicesData?['services'] as List? ?? [];
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white, // Changed to white for consistency
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          // Added shadow for consistency
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,7 +492,7 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           if (services.isEmpty) ...[
             Container(
               padding: const EdgeInsets.all(16),
@@ -472,7 +526,7 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
 
   Widget _buildServiceItem(Map<String, dynamic> service) {
     final layanan = service['layanan'] as Map<String, dynamic>;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -480,6 +534,14 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          // Added shadow for consistency
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02), // Lighter shadow
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -532,9 +594,10 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: service['is_available'] == true
-                      ? Colors.green.withOpacity(0.2)
-                      : Colors.red.withOpacity(0.2),
+                  color:
+                      service['is_available'] == true
+                          ? Colors.green.withOpacity(0.2)
+                          : Colors.red.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -542,9 +605,10 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
-                    color: service['is_available'] == true
-                        ? Colors.green[700]
-                        : Colors.red[700],
+                    color:
+                        service['is_available'] == true
+                            ? Colors.green[700]
+                            : Colors.red[700],
                   ),
                 ),
               ),
@@ -562,13 +626,14 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
           width: double.infinity,
           height: 50,
           child: ElevatedButton.icon(
-            onPressed: () => Get.to(
-              () => const LaundryServicesScreen(),
-              arguments: {
-                'laundry_data': laundryData,
-                'services_data': servicesData,
-              },
-            ),
+            onPressed:
+                () => Get.to(
+                  () => const LaundryServicesScreen(),
+                  arguments: {
+                    'laundry_data': laundryData,
+                    'services_data': servicesData,
+                  },
+                ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF9EBFED),
               shape: RoundedRectangleBorder(
@@ -591,13 +656,14 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
           width: double.infinity,
           height: 50,
           child: ElevatedButton.icon(
-            onPressed: () => Get.to(
-              () => const LaundryOrdersScreen(),
-              arguments: {
-                'kost_data': kostData,
-                'laundry_filter': laundryData!['laundry_id'],
-              },
-            ),
+            onPressed:
+                () => Get.to(
+                  () => const LaundryOrdersScreen(),
+                  arguments: {
+                    'kost_data': kostData,
+                    'laundry_filter': laundryData!['laundry_id'],
+                  },
+                ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               shape: RoundedRectangleBorder(
@@ -666,7 +732,7 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
 
   String _formatCurrency(dynamic amount) {
     if (amount == null) return '0';
-    
+
     double value;
     if (amount is String) {
       value = double.tryParse(amount) ?? 0;

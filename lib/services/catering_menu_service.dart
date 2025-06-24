@@ -10,8 +10,7 @@ import 'package:uploadthing/uploadthing.dart';
 import 'package:kosan_euy/models/catering_order_model.dart';
 
 class CateringMenuService {
-  static const String _baseUrl =
-      ApiService.baseUrl;
+  static const String _baseUrl = ApiService.baseUrl;
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   static Future<Map<String, String>> get _headers async {
@@ -138,6 +137,87 @@ class CateringMenuService {
     }
   }
 
+  // --- NEW: Placeholder for updateCatering method ---
+  static Future<Map<String, dynamic>> updateCatering({
+    required String cateringId,
+    required String kostId,
+    required String namaCatering,
+    required String alamat,
+    String? whatsappNumber,
+    File? qrisImage,
+    Map<String, dynamic>? rekeningInfo,
+    bool? isPartner,
+    String?
+    existingQrisImageUrl, // Added to handle existing image without re-upload
+  }) async {
+    debugPrint('Attempting to update catering (frontend call)');
+    debugPrint('Catering ID: $cateringId');
+    debugPrint('Nama Catering: $namaCatering');
+    debugPrint('Existing QRIS URL: $existingQrisImageUrl');
+    debugPrint('New QRIS File: ${qrisImage?.path}');
+
+    try {
+      String? finalQrisImageUrl = existingQrisImageUrl;
+      if (qrisImage != null) {
+        // Only upload if a new file is provided
+        final uploadThing = UploadThing(
+          "sk_live_08e0250b1aab76a8067be159691359dfb45a15f5fb0906fbacf6859866f1e199",
+        );
+        var uploadSuccess = await uploadThing.uploadFiles([qrisImage]);
+        if (uploadSuccess && uploadThing.uploadedFilesData.isNotEmpty) {
+          finalQrisImageUrl = uploadThing.uploadedFilesData.first["url"];
+        } else {
+          throw Exception('Failed to upload new QRIS image to UploadThing');
+        }
+      }
+
+      final Map<String, dynamic> body = {
+        'kost_id':
+            kostId, // Include kost_id, though typically not changed for update
+        'nama_catering': namaCatering,
+        'alamat': alamat,
+        'whatsapp_number': whatsappNumber,
+        'qris_image': finalQrisImageUrl, // Send the final URL
+        'rekening_info': rekeningInfo,
+        'is_partner': isPartner,
+      };
+
+      // NOTE: There is no backend PUT/PATCH endpoint for `/catering/:id` in the provided backend code.
+      // This call will likely fail until that endpoint is implemented on the backend.
+      final response = await http.put(
+        // Using PUT as an assumption for update
+        Uri.parse(
+          '${_baseUrl}catering/$cateringId',
+        ), // Assuming this endpoint for update
+        headers: await _headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'status': true,
+          'data': Catering.fromJson(data['data']),
+          'message': data['message'],
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(
+          'Backend Error: ${errorData['message'] ?? 'Failed to update catering'}',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error updating catering: $e');
+      // Explicitly state that backend endpoint might be missing
+      return {
+        'status': false,
+        'message':
+            'Failed to update catering. Ensure backend endpoint for updating catering exists and is correctly implemented. Error: $e',
+      };
+    }
+  }
+  // --- END: Placeholder for updateCatering method ---
+
   static Future<Map<String, dynamic>> addCateringMenuItem({
     required String cateringId,
     required String namaMenu,
@@ -167,8 +247,7 @@ class CateringMenuService {
           'nama_menu': namaMenu,
           'kategori': kategori,
           'harga': harga,
-          'foto_menu':
-              uploadedImageUrl, 
+          'foto_menu': uploadedImageUrl,
           'is_available': isAvailable,
         }),
       );
@@ -328,7 +407,7 @@ class CateringMenuService {
     }
   }
 
-   static Future<Map<String, dynamic>> getCateringOrderDetail(
+  static Future<Map<String, dynamic>> getCateringOrderDetail(
     String orderId,
   ) async {
     try {

@@ -357,6 +357,7 @@ class _LaundryServicesScreenState extends State<LaundryServicesScreen> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -370,7 +371,9 @@ class _LaundryServicesScreenState extends State<LaundryServicesScreen> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(
+          0,
+        ), // Removed padding here, added to column elements below
         child: Column(
           children: [
             Row(
