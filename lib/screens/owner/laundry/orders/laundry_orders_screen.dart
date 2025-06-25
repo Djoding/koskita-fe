@@ -7,7 +7,7 @@ import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/laundry_service.dart';
 
 class LaundryOrdersScreen extends StatefulWidget {
-  final bool showAll;
+  final bool showAll; // Kept for potential future use or old navigation
 
   const LaundryOrdersScreen({super.key, this.showAll = false});
 
@@ -20,16 +20,18 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
   late TabController _tabController;
 
   Map<String, dynamic>? kostData;
-  bool showAll = false;
-  String? laundryFilter;
+  String? initialLaundryFilterId; // Stores the laundryId passed in arguments
+
+  Map<String, dynamic>?
+  _selectedLaundryForOrders; // The actual laundry object selected
+  List<dynamic> _availableLaundries = []; // List of laundries for selection
+
   List<dynamic> orders = [];
   bool isLoading = true;
   String errorMessage = '';
 
   // Status filters berdasarkan backend schema
-  // MODIFIED: Filter status hanya PENDING, PROSES, DITERIMA
   final List<String> statusTabs = ['Pending', 'Proses', 'Diterima'];
-  // MODIFIED: Sesuaikan mapping dengan statusTabs
   final Map<String, String> statusMapping = {
     'Pending': 'PENDING',
     'Proses': 'PROSES',
@@ -42,25 +44,131 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
     _tabController = TabController(length: statusTabs.length, vsync: this);
     _tabController.addListener(_onTabChanged);
 
-    // Parse arguments
     final arguments = Get.arguments as Map<String, dynamic>? ?? {};
     kostData = arguments['kost_data'];
-    showAll = arguments['show_all'] ?? widget.showAll;
-    laundryFilter = arguments['laundry_filter']?.toString();
+    initialLaundryFilterId = arguments['laundry_filter']?.toString();
 
-    _loadOrders();
+    _initializeScreenData();
+  }
+
+  Future<void> _initializeScreenData() async {
+    if (kostData == null) {
+      setState(() {
+        errorMessage = 'Data kost tidak ditemukan.';
+        isLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
+    if (initialLaundryFilterId != null) {
+      // If a specific laundryId is passed, try to load its full data
+      await _loadAndSetSpecificLaundry(initialLaundryFilterId!);
+      if (_selectedLaundryForOrders != null) {
+        await _loadOrders(); // Load orders for this specific laundry
+      }
+    } else {
+      // If no specific laundryId is passed, load all laundries for the kost
+      // and allow selection or set default if only one exists.
+      await _loadAvailableLaundriesAndSetDefault();
+    }
+  }
+
+  Future<void> _loadAndSetSpecificLaundry(String laundryId) async {
+    try {
+      final allLaundriesResponse = await LaundryService.getLaundriesByKost(
+        kostData!['kost_id'],
+      );
+
+      if (allLaundriesResponse['status'] &&
+          allLaundriesResponse['data'] is List) {
+        final List<dynamic> laundries = allLaundriesResponse['data'];
+        final foundLaundry = laundries.firstWhereOrNull(
+          (l) => l['laundry_id'] == laundryId,
+        );
+        if (foundLaundry != null) {
+          setState(() {
+            _selectedLaundryForOrders = foundLaundry;
+            _availableLaundries =
+                laundries; // Keep available laundries populated
+          });
+        } else {
+          setState(() {
+            errorMessage = 'Laundry dengan ID $laundryId tidak ditemukan.';
+          });
+        }
+      } else {
+        setState(() {
+          errorMessage =
+              allLaundriesResponse['message'] ?? 'Gagal memuat data laundry.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Terjadi kesalahan saat memuat data laundry: $e';
+      });
+    } finally {
+      setState(() {
+        isLoading = false; // Always set false after attempting load
+      });
+    }
+  }
+
+  Future<void> _loadAvailableLaundriesAndSetDefault() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+    try {
+      final response = await LaundryService.getLaundriesByKost(
+        kostData!['kost_id'],
+      );
+      if (response['status']) {
+        setState(() {
+          _availableLaundries = response['data'] ?? [];
+          if (_availableLaundries.isNotEmpty) {
+            _selectedLaundryForOrders =
+                _availableLaundries.first; // Automatically select the first
+            _loadOrders(); // Load orders for the default selected laundry
+          } else {
+            errorMessage =
+                'Tidak ada layanan laundry yang terdaftar untuk kost ini.';
+          }
+        });
+      } else {
+        setState(() {
+          errorMessage = response['message'] ?? 'Gagal memuat daftar laundry.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Terjadi kesalahan saat memuat daftar laundry: $e';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   void _onTabChanged() {
-    if (_tabController.indexIsChanging) {
+    if (_tabController.indexIsChanging && _selectedLaundryForOrders != null) {
       _loadOrders();
     }
   }
 
   Future<void> _loadOrders() async {
-    if (kostData == null) {
+    if (_selectedLaundryForOrders == null ||
+        _selectedLaundryForOrders!['laundry_id'] == null) {
+      // This state should ideally not be reached if _selectedLaundryForOrders is managed correctly.
+      // If it is, it means no laundry is selected to view orders for.
       setState(() {
-        errorMessage = 'Data kost tidak ditemukan';
+        errorMessage = 'Pilih laundry terlebih dahulu untuk melihat pesanan.';
+        orders = []; // Clear previous orders
         isLoading = false;
       });
       return;
@@ -78,7 +186,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
       final response = await LaundryService.getLaundryOrdersByKost(
         kostId: kostData!['kost_id'].toString(),
         status: selectedStatus.isNotEmpty ? selectedStatus : null,
-        laundryId: laundryFilter,
+        laundryId: _selectedLaundryForOrders!['laundry_id'].toString(),
       );
 
       if (response['status']) {
@@ -88,7 +196,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
         });
       } else {
         setState(() {
-          errorMessage = response['message'] ?? 'Gagal memuat pesanan';
+          errorMessage = response['message'] ?? 'Gagal memuat pesanan.';
           isLoading = false;
         });
       }
@@ -101,7 +209,6 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
   }
 
   Future<void> _updateOrderStatus(String orderId, String newStatus) async {
-    // Show loading
     Get.dialog(
       const Center(child: CircularProgressIndicator()),
       barrierDismissible: false,
@@ -112,10 +219,8 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
         'status': newStatus,
       });
 
-      // Close loading dialog
       Get.back();
 
-      // Cek response dengan lebih safe
       final bool isSuccess = response['status'] == true;
       final String message =
           response['message']?.toString() ??
@@ -132,8 +237,6 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
           snackPosition: SnackPosition.TOP,
           duration: const Duration(seconds: 3),
         );
-
-        // Refresh data
         await _loadOrders();
       } else {
         Get.snackbar(
@@ -233,7 +336,6 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
         'order_data': order, // Pass cached data
       },
     )?.then((result) {
-      // Refresh jika ada perubahan dari detail screen
       if (result == true) {
         _loadOrders();
       }
@@ -272,14 +374,22 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
                   Column(
                     children: [
                       Text(
-                        showAll ? 'Riwayat Pesanan' : 'Pesanan Masuk',
+                        'Pesanan Laundry', // Changed title
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                           fontSize: 18,
                         ),
                       ),
-                      if (kostData != null && !showAll)
+                      if (kostData != null && _selectedLaundryForOrders != null)
+                        Text(
+                          _selectedLaundryForOrders!['nama_laundry'] ?? '',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        )
+                      else if (kostData != null)
                         Text(
                           kostData!['nama_kost'] ?? '',
                           style: GoogleFonts.poppins(
@@ -303,7 +413,10 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
                         color: Colors.black,
                         size: 20,
                       ),
-                      onPressed: _loadOrders,
+                      onPressed:
+                          _selectedLaundryForOrders == null
+                              ? _loadAvailableLaundriesAndSetDefault
+                              : _loadOrders,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -328,28 +441,29 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
             ),
 
             const SizedBox(height: 24), // Spacer after summary cards
-            // Tab Bar
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: Colors.white,
+            // Tab Bar (only visible when a laundry is selected)
+            if (_selectedLaundryForOrders != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                labelColor: const Color(0xFF9EBFED),
-                unselectedLabelColor: Colors.white,
-                labelStyle: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  labelColor: const Color(0xFF9EBFED),
+                  unselectedLabelColor: Colors.white,
+                  labelStyle: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  tabs: statusTabs.map((status) => Tab(text: status)).toList(),
                 ),
-                tabs: statusTabs.map((status) => Tab(text: status)).toList(),
               ),
-            ),
 
             const SizedBox(height: 16),
 
@@ -423,7 +537,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _loadOrders,
+              onPressed: _loadOrders, // Attempt to reload orders
               child: const Text('Coba Lagi'),
             ),
           ],
@@ -431,50 +545,156 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
       );
     }
 
-    List<dynamic> currentOrders;
-    final selectedTabName = statusTabs[_tabController.index];
-    // MODIFIED: Filter langsung berdasarkan statusMapping
-    currentOrders =
-        orders
-            .where((order) => order['status'] == statusMapping[selectedTabName])
-            .toList();
+    if (_selectedLaundryForOrders == null) {
+      // If no laundry is selected, show the selection list
+      return _buildLaundrySelectionList();
+    } else {
+      // If a laundry is selected, show the orders for that laundry
+      List<dynamic> currentOrders;
+      final selectedTabName = statusTabs[_tabController.index];
+      currentOrders =
+          orders
+              .where(
+                (order) => order['status'] == statusMapping[selectedTabName],
+              )
+              .toList();
 
-    if (currentOrders.isEmpty) {
+      if (currentOrders.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.inbox_outlined, size: 80, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(
+                'Belum ada pesanan',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Pesanan akan muncul di sini ketika ada customer yang memesan',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        onRefresh: _loadOrders,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(24),
+          itemCount: currentOrders.length,
+          itemBuilder: (context, index) {
+            final order = currentOrders[index];
+            return _buildOrderCard(order);
+          },
+        ),
+      );
+    }
+  }
+
+  Widget _buildLaundrySelectionList() {
+    if (_availableLaundries.isEmpty && !isLoading) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.inbox_outlined, size: 80, color: Colors.grey),
+            const Icon(
+              Icons.local_laundry_service,
+              size: 80,
+              color: Colors.grey,
+            ),
             const SizedBox(height: 16),
             Text(
-              'Belum ada pesanan',
+              'Tidak ada layanan laundry yang terdaftar untuk kost ini.',
+              textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
                 color: Colors.grey[700],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Pesanan akan muncul di sini ketika ada customer yang memesan',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadAvailableLaundriesAndSetDefault,
+              child: const Text('Coba Lagi'),
             ),
           ],
         ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadOrders,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(24),
-        itemCount: currentOrders.length,
-        itemBuilder: (context, index) {
-          final order = currentOrders[index];
-          return _buildOrderCard(order);
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(24),
+      itemCount: _availableLaundries.length,
+      itemBuilder: (context, index) {
+        final laundry = _availableLaundries[index];
+        return InkWell(
+          onTap: () {
+            setState(() {
+              _selectedLaundryForOrders = laundry;
+              isLoading = true; // Set loading true before fetching orders
+            });
+            _loadOrders(); // Fetch orders for the newly selected laundry
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.local_laundry_service,
+                  size: 40,
+                  color: Colors.blue,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        laundry['nama_laundry'] ?? 'Nama Laundry',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        laundry['alamat'] ?? 'Alamat tidak tersedia',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios, color: Colors.grey),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -488,7 +708,6 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -538,7 +757,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
                     ),
                     decoration: BoxDecoration(
                       color: _getStatusColor(order['status']).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -821,8 +1040,8 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
 
   Widget _buildOrderItem(Map<String, dynamic> item) {
     final layanan = item['layanan'] as Map<String, dynamic>? ?? {};
-    final jumlahSatuan = _parseToDouble(item['jumlah_satuan']).toInt();
-    final hargaPerSatuan = _parseToDouble(item['harga_per_satuan']);
+    final jumlahSatuan = _parseDouble(item['jumlah_satuan']).toInt();
+    final hargaPerSatuan = _parseDouble(item['harga_per_satuan']);
     final subtotal = jumlahSatuan * hargaPerSatuan;
 
     return Padding(
@@ -899,7 +1118,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
     return status == 'PENDING' || status == 'PROSES';
   }
 
-  double _parseToDouble(dynamic value) {
+  double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
     if (value is int) return value.toDouble();
@@ -922,7 +1141,7 @@ class _LaundryOrdersScreenState extends State<LaundryOrdersScreen>
   String _formatCurrency(dynamic amount) {
     if (amount == null) return '0';
 
-    double value = _parseToDouble(amount);
+    double value = _parseDouble(amount);
 
     return value
         .toStringAsFixed(0)

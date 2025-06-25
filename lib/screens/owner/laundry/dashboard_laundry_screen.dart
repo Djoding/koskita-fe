@@ -206,7 +206,6 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
                 ),
               )
             else ...[
-
               // Menu Grid
               Expanded(
                 child: Padding(
@@ -234,7 +233,9 @@ class _DashboardLaundryScreenState extends State<DashboardLaundryScreen> {
                         Colors.orange,
                         () => Get.to(
                           () => const LaundryOrdersScreen(),
-                          arguments: {'kost_data': kostData, 'show_all': true},
+                          arguments: {
+                            'kost_data': kostData,
+                          }, // Removed 'show_all': true
                         ),
                       ),
                     ],
