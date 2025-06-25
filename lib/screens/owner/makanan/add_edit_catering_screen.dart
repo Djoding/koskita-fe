@@ -149,12 +149,12 @@ class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
           Get.back(result: true);
           Get.snackbar(
             'Success',
-            response['message'] ?? 'Katering berhasil diperbarui',
+            response['message'] ?? 'Catering berhasil diperbarui',
             backgroundColor: Colors.green,
             colorText: Colors.white,
           );
         } else {
-          throw Exception(response['message'] ?? 'Gagal memperbarui katering');
+          throw Exception(response['message'] ?? 'Gagal memperbarui catering');
         }
       } else {
         // Create new catering
@@ -175,12 +175,12 @@ class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
           Get.back(result: true);
           Get.snackbar(
             'Success',
-            response['message'] ?? 'Katering berhasil ditambahkan',
+            response['message'] ?? 'Catering berhasil ditambahkan',
             backgroundColor: Colors.green,
             colorText: Colors.white,
           );
         } else {
-          throw Exception(response['message'] ?? 'Gagal menambahkan katering');
+          throw Exception(response['message'] ?? 'Gagal menambahkan catering');
         }
       }
     } catch (e) {
@@ -227,7 +227,7 @@ class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    isEdit ? 'Edit Katering' : 'Tambah Katering',
+                    isEdit ? 'Edit Catering' : 'Tambah Catering',
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -270,7 +270,7 @@ class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
                     padding: const EdgeInsets.all(24),
                     children: [
                       Text(
-                        'Informasi Katering',
+                        'Informasi Catering',
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -279,12 +279,12 @@ class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Nama Katering
+                      // Nama Catering
                       TextFormField(
                         controller: _namaCateringController,
                         decoration: InputDecoration(
-                          labelText: 'Nama Katering *',
-                          hintText: 'Masukkan nama katering',
+                          labelText: 'Nama Catering *',
+                          hintText: 'Masukkan nama catering',
                           prefixIcon: const Icon(Icons.restaurant),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -292,10 +292,10 @@ class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Nama katering tidak boleh kosong';
+                            return 'Nama catering tidak boleh kosong';
                           }
                           if (value.trim().length < 3) {
-                            return 'Nama katering minimal 3 karakter';
+                            return 'Nama catering minimal 3 karakter';
                           }
                           return null;
                         },
@@ -307,7 +307,7 @@ class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
                         controller: _alamatController,
                         decoration: InputDecoration(
                           labelText: 'Alamat *',
-                          hintText: 'Masukkan alamat katering',
+                          hintText: 'Masukkan alamat catering',
                           prefixIcon: const Icon(Icons.location_on),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -375,7 +375,7 @@ class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
                                     ),
                                   ),
                                   Text(
-                                    'Katering partner mendapat prioritas',
+                                    'Catering partner mendapat prioritas',
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
                                       color: Colors.grey[600],
@@ -543,8 +543,8 @@ class _AddEditCateringScreenState extends State<AddEditCateringScreen> {
                                   )
                                   : Text(
                                     isEdit
-                                        ? 'Perbarui Katering'
-                                        : 'Tambah Katering',
+                                        ? 'Perbarui Catering'
+                                        : 'Tambah Catering',
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,

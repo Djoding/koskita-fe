@@ -449,20 +449,7 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                     },
                     itemBuilder:
                         (BuildContext context) => <PopupMenuEntry<String>>[
-                          PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.edit,
-                                  size: 18,
-                                  color: Colors.blue,
-                                ),
-                                const SizedBox(width: 12),
-                                Text('Edit', style: GoogleFonts.poppins()),
-                              ],
-                            ),
-                          ),
+                          
                           PopupMenuItem<String>(
                             value: 'delete',
                             child: Row(

@@ -53,9 +53,9 @@ abstract class Routes {
       '/add-catering-payment-method'; // Tambah Metode Pembayaran
   static const editCateringPaymentMethod =
       '/edit-catering-payment-method'; // Edit Metode Pembayaran
-  static const cateringList = '/catering-list'; // Daftar Katering
-  static const addEditCatering = '/add-edit-catering'; // Tambah/Edit Katering
-  static const cateringDetail = '/catering-detail'; // Detail Katering
+  static const cateringList = '/catering-list'; // Daftar Catering
+  static const addEditCatering = '/add-edit-catering'; // Tambah/Edit Catering
+  static const cateringDetail = '/catering-detail'; // Detail Catering
 
   // Laundry Specific Routes
   static const dashboardLaundry = '/dashboard-laundry';

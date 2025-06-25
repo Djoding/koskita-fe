@@ -54,7 +54,7 @@ class _CateringListScreenState extends State<CateringListScreen> {
         });
       } else {
         setState(() {
-          errorMessage = response['message'] ?? 'Gagal memuat data katering.';
+          errorMessage = response['message'] ?? 'Gagal memuat data catering.';
           isLoading = false;
         });
       }
@@ -71,11 +71,11 @@ class _CateringListScreenState extends State<CateringListScreen> {
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Hapus Katering',
+          'Hapus Catering',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         content: Text(
-          'Apakah Anda yakin ingin menghapus ${catering.namaCatering}?',
+          'Apakah Anda yakin ingin menghapus ${catering.namaCatering}? Ini akan menonaktifkan catering dan semua menu terkait.',
           style: GoogleFonts.poppins(),
         ),
         actions: [
@@ -89,14 +89,7 @@ class _CateringListScreenState extends State<CateringListScreen> {
           TextButton(
             onPressed: () {
               Get.back();
-              // No delete API for catering, just show info
-              Get.snackbar(
-                'Info',
-                'Fitur hapus katering belum tersedia',
-                backgroundColor: Colors.orange,
-                colorText: Colors.white,
-              );
-              // _deleteCatering(catering); // Uncomment if delete API exists
+              _deleteCatering(catering);
             },
             child: Text(
               'Hapus',
@@ -109,6 +102,53 @@ class _CateringListScreenState extends State<CateringListScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _deleteCatering(Catering catering) async {
+    // Show loading
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    try {
+      final response = await CateringMenuService.deleteCatering(
+        catering.cateringId,
+      );
+
+      // Close loading dialog
+      Get.back();
+
+      if (response['status']) {
+        Get.snackbar(
+          'Berhasil',
+          response['message'] ?? 'Catering berhasil dihapus (dinonaktifkan)',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 3),
+        );
+        _loadCaterings(); // Refresh the list
+      } else {
+        Get.snackbar(
+          'Error',
+          response['message'] ?? 'Gagal menghapus Catering',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Terjadi kesalahan: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 
   @override
@@ -265,7 +305,7 @@ class _CateringListScreenState extends State<CateringListScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Belum ada katering yang terdaftar',
+              'Belum ada catering yang terdaftar',
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 color: Colors.white,
@@ -274,7 +314,7 @@ class _CateringListScreenState extends State<CateringListScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tambahkan katering pertama untuk mulai menerima pesanan makanan',
+              'Tambahkan catering pertama untuk mulai menerima pesanan makanan',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
             ),
@@ -298,7 +338,7 @@ class _CateringListScreenState extends State<CateringListScreen> {
                 ),
               ),
               icon: const Icon(Icons.add),
-              label: const Text('Tambah Katering'),
+              label: const Text('Tambah Catering'),
             ),
           ],
         ),
@@ -397,6 +437,43 @@ class _CateringListScreenState extends State<CateringListScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        final result = await Get.toNamed(
+                          Routes.addEditCatering,
+                          arguments: {
+                            'kost_data': kostData,
+                            'catering_data': catering,
+                            'is_edit': true,
+                          },
+                        );
+                        if (result == true) {
+                          _loadCaterings(); // Refresh after edit
+                        }
+                      } else if (value == 'delete') {
+                        _showDeleteConfirmation(catering);
+                      }
+                    },
+                    itemBuilder:
+                        (BuildContext context) => <PopupMenuEntry<String>>[
+                          
+                          PopupMenuItem<String>(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.delete,
+                                  size: 18,
+                                  color: Colors.red,
+                                ),
+                                const SizedBox(width: 12),
+                                Text('Hapus', style: GoogleFonts.poppins()),
+                              ],
+                            ),
+                          ),
+                        ],
                   ),
                 ],
               ),

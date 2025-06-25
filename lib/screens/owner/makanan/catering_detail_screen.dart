@@ -31,7 +31,7 @@ class _CateringDetailScreenState extends State<CateringDetailScreen> {
       kostData = arguments['kost_data'] as Map<String, dynamic>?;
       _loadCateringDetail();
     } else {
-      Get.snackbar('Error', 'Data katering tidak ditemukan.');
+      Get.snackbar('Error', 'Data catering tidak ditemukan.');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Get.back();
       });
@@ -41,7 +41,7 @@ class _CateringDetailScreenState extends State<CateringDetailScreen> {
   Future<void> _loadCateringDetail() async {
     if (cateringData == null || cateringData!.cateringId.isEmpty) {
       setState(() {
-        errorMessage = 'ID Katering tidak ditemukan.';
+        errorMessage = 'ID Catering tidak ditemukan.';
         isLoading = false;
       });
       return;
@@ -77,7 +77,7 @@ class _CateringDetailScreenState extends State<CateringDetailScreen> {
           });
         } else {
           setState(() {
-            errorMessage = 'Katering tidak ditemukan setelah refresh.';
+            errorMessage = 'Catering tidak ditemukan setelah refresh.';
             isLoading = false;
           });
         }
