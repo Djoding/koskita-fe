@@ -7,6 +7,7 @@ import 'package:kosan_euy/screens/owner/laundry/orders/laundry_orders_screen.dar
 import 'package:kosan_euy/screens/settings/setting_screen.dart';
 import 'package:kosan_euy/services/laundry_service.dart';
 import 'package:kosan_euy/routes/app_pages.dart'; // Import Routes for navigation
+import 'package:kosan_euy/screens/owner/laundry/add_edit_laundry_screen.dart'; // Import AddEditLaundryScreen
 
 class LaundryDetailScreen extends StatefulWidget {
   const LaundryDetailScreen({super.key});
@@ -32,7 +33,7 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
   }
 
   Future<void> _loadLaundryServices() async {
-    if (laundryData == null) {
+    if (laundryData == null || laundryData!['laundry_id'] == null) {
       setState(() {
         errorMessage = 'Data laundry tidak ditemukan';
         isLoading = false;
@@ -46,18 +47,56 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
     });
 
     try {
-      final response = await LaundryService.getLaundryServices(
+      // Fetch the full laundry data first to ensure it's up-to-date
+      // The current getLaundrysByKost endpoint doesn't return single laundry by ID
+      // so we fetch all and filter. A dedicated getLaundryById would be better.
+      final allLaundriesResponse = await LaundryService.getLaundriesByKost(
+        kostData!['kost_id'],
+      );
+
+      if (allLaundriesResponse['status'] &&
+          allLaundriesResponse['data'] is List) {
+        final List<dynamic> updatedLaundries = allLaundriesResponse['data'];
+        final foundLaundry = updatedLaundries.firstWhereOrNull(
+          (l) => l['laundry_id'] == laundryData!['laundry_id'],
+        );
+
+        if (foundLaundry != null) {
+          setState(() {
+            laundryData =
+                foundLaundry; // Update local laundryData with fresh data
+          });
+        } else {
+          // If laundry is not found after refresh, it might have been deleted or deactivated
+          setState(() {
+            errorMessage = 'Laundry tidak ditemukan atau tidak aktif.';
+            isLoading = false;
+          });
+          return;
+        }
+      } else {
+        setState(() {
+          errorMessage =
+              allLaundriesResponse['message'] ?? 'Gagal memuat data laundry.';
+          isLoading = false;
+          return;
+        });
+      }
+
+      // Now fetch services for the updated laundryData
+      final servicesResponse = await LaundryService.getLaundryServices(
         laundryData!['laundry_id'],
       );
 
-      if (response['status']) {
+      if (servicesResponse['status']) {
         setState(() {
-          servicesData = response['data'];
+          servicesData = servicesResponse['data'];
           isLoading = false;
         });
       } else {
         setState(() {
-          errorMessage = response['message'] ?? 'Gagal memuat data layanan';
+          errorMessage =
+              servicesResponse['message'] ?? 'Gagal memuat data layanan';
           isLoading = false;
         });
       }
@@ -144,7 +183,6 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
             // Content
             Expanded(
               child: Container(
@@ -166,7 +204,6 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-
     if (errorMessage.isNotEmpty) {
       return Center(
         child: Column(
@@ -188,7 +225,6 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
         ),
       );
     }
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -286,13 +322,11 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
             ],
           ),
           const SizedBox(height: 16),
-
           _buildInfoRow(
             Icons.location_on,
             'Alamat',
             laundryData!['alamat'] ?? 'Tidak ada alamat',
           ),
-
           if (laundryData!['whatsapp_number'] != null &&
               laundryData!['whatsapp_number'].isNotEmpty)
             _buildInfoRow(
@@ -300,7 +334,6 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
               'WhatsApp',
               laundryData!['whatsapp_number'],
             ),
-
           _buildInfoRow(
             Icons.access_time,
             'Dibuat',
@@ -626,6 +659,42 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
           width: double.infinity,
           height: 50,
           child: ElevatedButton.icon(
+            onPressed: () async {
+              // Navigate to AddEditLaundryScreen for editing
+              final result = await Get.to(
+                () => const AddEditLaundryScreen(),
+                arguments: {
+                  'kost_data': kostData,
+                  'laundry_data': laundryData,
+                  'is_edit': true,
+                },
+              );
+              if (result == true) {
+                _loadLaundryServices(); // Refresh data after edit
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF9EBFED),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+            icon: const Icon(Icons.edit, color: Colors.white),
+            label: Text(
+              'Edit Informasi Laundry',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton.icon(
             onPressed:
                 () => Get.to(
                   () => const LaundryServicesScreen(),
@@ -745,7 +814,7 @@ class _LaundryDetailScreenState extends State<LaundryDetailScreen> {
     return value
         .toStringAsFixed(0)
         .replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          RegExp(r'(d{1,3})(?=(d{3})+(?!d))'),
           (Match m) => '${m[1]}.',
         );
   }
