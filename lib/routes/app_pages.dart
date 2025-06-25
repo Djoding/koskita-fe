@@ -121,15 +121,15 @@ class AppPages {
       page: () => EditStatusPesananMakananScreen(),
     ),
      GetPage(
-      name: Routes.cateringList, // Rute baru untuk daftar katering
+      name: Routes.cateringList, // Rute baru untuk daftar catering
       page: () => CateringListScreen(),
     ),
     GetPage(
-      name: Routes.addEditCatering, // Rute baru untuk tambah/edit katering
+      name: Routes.addEditCatering, // Rute baru untuk tambah/edit catering
       page: () => AddEditCateringScreen(),
     ),
     GetPage(
-      name: Routes.cateringDetail, // Rute baru untuk detail katering
+      name: Routes.cateringDetail, // Rute baru untuk detail catering
       page: () => CateringDetailScreen(),
     ),
 

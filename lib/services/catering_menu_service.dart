@@ -218,6 +218,32 @@ class CateringMenuService {
   }
   // --- END: Placeholder for updateCatering method ---
 
+  static Future<Map<String, dynamic>> deleteCatering(String cateringId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${_baseUrl}catering/$cateringId'),
+        headers: await _headers,
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'status': true,
+          'message': data['message'] ?? 'Catering deleted successfully',
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'status': false,
+          'message': errorData['message'] ?? 'Failed to delete catering',
+        };
+      }
+    } catch (e) {
+      debugPrint('Error deleting catering: $e');
+      return {'status': false, 'message': 'Network error: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> addCateringMenuItem({
     required String cateringId,
     required String namaMenu,
