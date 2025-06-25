@@ -155,7 +155,9 @@ class LayananMakananScreen extends StatelessWidget {
                         if (kostData != null) {
                           Get.to(
                             () => const OwnerCekPesanan(),
-                            arguments: kostData,
+                            arguments: {
+                              'kost_data': kostData,
+                            }, // Removed catering_filter
                           );
                         } else {
                           Get.snackbar(
