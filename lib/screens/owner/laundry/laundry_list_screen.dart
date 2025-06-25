@@ -88,14 +88,7 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
           TextButton(
             onPressed: () {
               Get.back();
-              // Since there's no delete endpoint in the backend for laundry,
-              // we'll show a message that it's not supported yet
-              Get.snackbar(
-                'Info',
-                'Fitur hapus laundry belum tersedia di backend.',
-                backgroundColor: Colors.orange,
-                colorText: Colors.white,
-              );
+              _deleteLaundry(laundry);
             },
             child: Text(
               'Hapus',
@@ -108,6 +101,53 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _deleteLaundry(dynamic laundry) async {
+    // Show loading
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    try {
+      final response = await LaundryService.deleteLaundry(
+        laundry['laundry_id'],
+      );
+
+      // Close loading dialog
+      Get.back();
+
+      if (response['status']) {
+        Get.snackbar(
+          'Berhasil',
+          response['message'] ?? 'Laundry berhasil dihapus',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 3),
+        );
+        _loadLaundries(); // Refresh the list
+      } else {
+        Get.snackbar(
+          'Error',
+          response['message'] ?? 'Gagal menghapus laundry',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Terjadi kesalahan: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 
   @override
@@ -203,7 +243,6 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                 ],
               ),
             ),
-
             // Content
             Expanded(
               child: RefreshIndicator(
@@ -223,7 +262,6 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
         child: CircularProgressIndicator(color: Colors.white),
       );
     }
-
     if (errorMessage.isNotEmpty) {
       return Center(
         child: Column(
@@ -249,7 +287,6 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
         ),
       );
     }
-
     if (laundries.isEmpty) {
       return Center(
         child: Column(
@@ -301,7 +338,6 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
         ),
       );
     }
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: laundries.length,
@@ -446,7 +482,6 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
               // Info cards
               Row(
                 children: [
@@ -472,7 +507,6 @@ class _LaundryListScreenState extends State<LaundryListScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-
               // Services count
               Container(
                 padding: const EdgeInsets.symmetric(

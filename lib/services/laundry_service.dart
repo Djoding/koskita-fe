@@ -67,34 +67,90 @@ class LaundryService {
     }
   }
 
-  // PERBAIKAN: Create laundry dengan dua langkah - JSON request dulu, lalu upload gambar
   static Future<Map<String, dynamic>> createLaundry(
     Map<String, dynamic> laundryData,
     File? qrisImageFile,
   ) async {
     try {
-      // LANGKAH 1: Buat laundry tanpa gambar menggunakan JSON request
-      debugPrint('=== SENDING JSON DATA ===');
-      debugPrint('Data: $laundryData');
-
       final response = await http.post(
         Uri.parse('$_baseUrl/laundry'),
         headers: await _headers,
         body: jsonEncode(laundryData),
       );
 
-      debugPrint('Response status: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
+      final result = _handleResponse(response);
 
-      if (response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        final laundryId = data['data']['laundry_id'];
-
-        // LANGKAH 2: Upload gambar QRIS jika ada
-        if (qrisImageFile != null && laundryId != null) {
+      if (result['status'] && qrisImageFile != null) {
+        final laundryId = result['data']['laundry_id'];
+        if (laundryId != null) {
           await _uploadQrisImage(laundryId, qrisImageFile);
         }
+      }
 
+      return result;
+    } catch (e) {
+      debugPrint('Error creating laundry: $e');
+      return {'status': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Update laundry - Gunakan pendekatan yang sama
+  static Future<Map<String, dynamic>> updateLaundry({
+    required String laundryId,
+    required String kostId,
+    required String namalaundry,
+    required String alamat,
+    String? whatsappNumber,
+    File? qrisImage,
+    Map<String, dynamic>? rekeningInfo,
+    bool? isPartner,
+    String?
+    existingQrisImageUrl, // Added to handle existing image without re-upload
+  }) async {
+    debugPrint('Attempting to update laundry (frontend call)');
+    debugPrint('laundry ID: $laundryId');
+    debugPrint('Nama laundry: $namalaundry');
+    debugPrint('Existing QRIS URL: $existingQrisImageUrl');
+    debugPrint('New QRIS File: ${qrisImage?.path}');
+
+    try {
+      String? finalQrisImageUrl = existingQrisImageUrl;
+      if (qrisImage != null) {
+        // Only upload if a new file is provided
+        try {
+          // Upload the QRIS image first and get the URL
+          await _uploadQrisImage(laundryId, qrisImage);
+          // After successful upload, we'll use the existing URL in the response
+          // The backend should handle storing and returning the image URL
+        } catch (e) {
+          throw Exception('Failed to upload QRIS image: $e');
+        }
+      }
+
+      final Map<String, dynamic> body = {
+        'kost_id':
+            kostId, // Include kost_id, though typically not changed for update
+        'nama_laundry': namalaundry,
+        'alamat': alamat,
+        'whatsapp_number': whatsappNumber,
+        'qris_image': finalQrisImageUrl, // Send the final URL
+        'rekening_info': rekeningInfo,
+        'is_partner': isPartner,
+      };
+
+      // NOTE: There is no backend PUT/PATCH endpoint for `/laundry/:id` in the provided backend code.
+      // This call will likely fail until that endpoint is implemented on the backend.
+      final response = await http.put(
+        // Using PUT as an assumption for update
+        Uri.parse(
+          '$_baseUrl/laundry/$laundryId',
+        ), // Assuming this endpoint for update
+        headers: await _headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
         return {
           'status': true,
           'data': data['data'],
@@ -102,35 +158,47 @@ class LaundryService {
         };
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to create laundry');
+        throw Exception(
+          'Backend Error: ${errorData['message'] ?? 'Failed to update laundry'}',
+        );
       }
     } catch (e) {
-      debugPrint('Error creating laundry: $e');
-      return {'status': false, 'message': 'Network error: $e'};
+      debugPrint('Error updating laundry: $e');
+      // Explicitly state that backend endpoint might be missing
+      return {
+        'status': false,
+        'message':
+            'Failed to update laundry. Ensure backend endpoint for updating laundry exists and is correctly implemented. Error: $e',
+      };
     }
   }
 
-  // Helper method untuk upload QRIS image
+  // Helper method to upload/update QRIS image
   static Future<void> _uploadQrisImage(
     String laundryId,
     File qrisImageFile,
   ) async {
     try {
       final request = http.MultipartRequest(
-        'PATCH',
-        Uri.parse('$_baseUrl/laundry/$laundryId'),
+        'PUT', // Use PUT for updating an existing resource
+        Uri.parse(
+          '$_baseUrl/laundry/$laundryId',
+        ), // Endpoint to update specific laundry
       );
 
       // Add headers
       final headers = await _multipartHeaders;
       request.headers.addAll(headers);
 
-      // Tambahkan gambar QRIS
+      // Add QRIS image file
       request.files.add(
         await http.MultipartFile.fromPath(
-          'qris_image',
+          'qris_image', // Field name for the image in the backend
           qrisImageFile.path,
-          contentType: MediaType('image', 'jpeg'),
+          contentType: MediaType(
+            'image',
+            'jpeg',
+          ), // Adjust content type if needed
         ),
       );
 
@@ -138,48 +206,25 @@ class LaundryService {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode != 200) {
-        debugPrint('Failed to upload QRIS image: ${response.body}');
+        debugPrint('Failed to upload/update QRIS image: ${response.body}');
+        throw Exception('Failed to upload/update QRIS image: ${response.body}');
       }
     } catch (e) {
-      debugPrint('Error uploading QRIS image: $e');
+      debugPrint('Error uploading/updating QRIS image: $e');
+      throw e; // Re-throw to be caught by the calling function
     }
   }
 
-  // Update laundry - Gunakan pendekatan yang sama
-  static Future<Map<String, dynamic>> updateLaundry(
-    String laundryId,
-    Map<String, dynamic> laundryData,
-    File? qrisImageFile,
-  ) async {
+  // Delete laundry (soft delete)
+  static Future<Map<String, dynamic>> deleteLaundry(String laundryId) async {
     try {
-      // LANGKAH 1: Update data laundry menggunakan JSON request
-      if (laundryData.isNotEmpty) {
-        final response = await http.put(
-          Uri.parse('$_baseUrl/laundry/$laundryId'),
-          headers: await _headers,
-          body: jsonEncode(laundryData),
-        );
-
-        if (response.statusCode != 200) {
-          final errorData = jsonDecode(response.body);
-          throw Exception(errorData['message'] ?? 'Failed to update laundry');
-        }
-      }
-
-      // LANGKAH 2: Upload gambar QRIS jika ada
-      if (qrisImageFile != null) {
-        await _uploadQrisImage(laundryId, qrisImageFile);
-      }
-
-      // Get updated data
-      final getResponse = await http.get(
+      final response = await http.delete(
         Uri.parse('$_baseUrl/laundry/$laundryId'),
         headers: await _headers,
       );
-
-      return _handleResponse(getResponse);
+      return _handleResponse(response);
     } catch (e) {
-      debugPrint('Error updating laundry: $e');
+      debugPrint('Error deleting laundry: $e');
       return {'status': false, 'message': 'Network error: $e'};
     }
   }

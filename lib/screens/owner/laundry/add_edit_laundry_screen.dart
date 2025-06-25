@@ -110,6 +110,8 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
 
       if (_whatsappController.text.trim().isNotEmpty) {
         formData['whatsapp_number'] = _whatsappController.text.trim();
+      } else {
+        formData['whatsapp_number'] = null; // Send null if empty
       }
 
       // Add rekening info if provided
@@ -121,6 +123,8 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
           'nomor': _rekeningController.text.trim(),
           'atas_nama': _atasNamaController.text.trim(),
         };
+      } else {
+        formData['rekening_info'] = null; // Send null if empty
       }
 
       // Debug print untuk melihat data yang akan dikirim
@@ -134,9 +138,14 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
       final response =
           isEdit && laundryData != null
               ? await LaundryService.updateLaundry(
-                laundryData!['laundry_id'],
-                formData,
-                qrisImageFile,
+                laundryId: laundryData!['laundry_id'],
+                kostId: formData['kost_id'],
+                namalaundry: formData['nama_laundry'],
+                alamat: formData['alamat'],
+                whatsappNumber: formData['whatsapp_number'],
+                isPartner: formData['is_partner'],
+                rekeningInfo: formData['rekening_info'],
+                qrisImage: qrisImageFile,
               )
               : await LaundryService.createLaundry(formData, qrisImageFile);
 
@@ -300,6 +309,7 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                         keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (value != null && value.trim().isNotEmpty) {
+                            // FIX: Escape '+' in regex for literal match
                             if (!RegExp(
                               r'^(\+62|0)[0-9]{8,13}$',
                             ).hasMatch(value.trim())) {
@@ -400,6 +410,23 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                                         : 'Upload',
                                   ),
                                 ),
+                                if (qrisImageFile != null ||
+                                    (existingQrisImageUrl != null &&
+                                        existingQrisImageUrl!
+                                            .isNotEmpty)) // Add clear button if image exists
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        qrisImageFile = null;
+                                        existingQrisImageUrl =
+                                            ''; // Explicitly set to empty string to signal deletion to backend
+                                      });
+                                    },
+                                    child: const Text(
+                                      'Hapus',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
                               ],
                             ),
                             if (qrisImageFile != null) ...[
@@ -415,7 +442,8 @@ class _AddEditLaundryScreenState extends State<AddEditLaundryScreen> {
                                   ),
                                 ),
                               ),
-                            ] else if (existingQrisImageUrl != null) ...[
+                            ] else if (existingQrisImageUrl != null &&
+                                existingQrisImageUrl!.isNotEmpty) ...[
                               const SizedBox(height: 12),
                               Center(
                                 child: ClipRRect(
