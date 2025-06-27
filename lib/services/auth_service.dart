@@ -32,6 +32,20 @@ class AuthService {
             : '493320600420-jr9elb910g9kh9kgn1rm87p2kb2ndu2e.apps.googleusercontent.com',
   );
 
+  Future<void> saveAuthData(Map<String, dynamic> data) async {
+    final String? accessToken = data['accessToken'];
+    final String? refreshToken = data['refreshToken'];
+    final Map<String, dynamic>? user = data['user'] as Map<String, dynamic>?;
+
+    if (accessToken != null && refreshToken != null && user != null) {
+      await _storage.write(key: _accessTokenKey, value: accessToken);
+      await _storage.write(key: _refreshTokenKey, value: refreshToken);
+      await _storage.write(key: _userDataKey, value: jsonEncode(user));
+    } else {
+      throw Exception('Data autentikasi dari server tidak lengkap.');
+    }
+  }
+
   Future<Map<String, dynamic>> register(
     String username,
     String fullName,
@@ -42,7 +56,6 @@ class AuthService {
     String? whatsappNumber,
   }) async {
     final url = Uri.parse('$_baseUrl/register');
-
     try {
       final Map<String, dynamic> body = {
         'username': username,
@@ -50,7 +63,6 @@ class AuthService {
         'email': email,
         'password': password,
       };
-
       if (role != null) body['role'] = role;
       if (phone != null) body['phone'] = phone;
       if (whatsappNumber != null) body['whatsapp_number'] = whatsappNumber;
@@ -60,102 +72,52 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+      final responseBody = jsonDecode(response.body);
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-        if (responseBody['success'] == true && responseBody['data'] != null) {
-          final data = responseBody['data'] as Map<String, dynamic>;
-          final String? accessToken = data['accessToken'];
-          final String? refreshToken = data['refreshToken'];
-          final Map<String, dynamic>? user =
-              data['user'] as Map<String, dynamic>?;
-
-          if (accessToken != null && refreshToken != null) {
-            await _saveTokens(accessToken, refreshToken);
-            if (user != null) {
-              await _storage.write(key: _userDataKey, value: jsonEncode(user));
-            }
-            return user ?? {};
-          } else {
-            throw Exception(
-              'Failed to retrieve tokens from registration response.',
-            );
-          }
-        } else {
-          throw Exception(
-            responseBody['message'] ??
-                'Registration failed due to unexpected response.',
-          );
-        }
+      if (response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          responseBody['success'] == true) {
+        await saveAuthData(responseBody['data']);
+        return responseBody['data']['user'];
       } else {
-        final errorBody = jsonDecode(response.body);
-        throw Exception(
-          errorBody['message'] ??
-              'Registration failed with status: ${response.statusCode}',
-        );
+        throw Exception(responseBody['message'] ?? 'Registrasi gagal.');
       }
     } catch (e) {
-      throw Exception('Failed to connect to the server for registration: $e');
+      throw Exception('Gagal terhubung ke server untuk registrasi: $e');
     }
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final url = Uri.parse('$_baseUrl/login');
-
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
+      final responseBody = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-        if (responseBody['success'] == true && responseBody['data'] != null) {
-          final data = responseBody['data'] as Map<String, dynamic>;
-
-          final String? accessToken = data['accessToken'];
-          final String? refreshToken = data['refreshToken'];
-          final Map<String, dynamic>? user =
-              data['user'] as Map<String, dynamic>?;
-
-          if (accessToken != null && refreshToken != null) {
-            await _saveTokens(accessToken, refreshToken);
-            if (user != null) {
-              await _storage.write(key: _userDataKey, value: jsonEncode(user));
-            }
-            return user ?? {};
-          } else {
-            throw Exception('Failed to retrieve tokens from login response.');
-          }
-        } else {
-          throw Exception(
-            responseBody['message'] ??
-                'Login failed due to unexpected response.',
-          );
-        }
+      if (response.statusCode == 200 && responseBody['success'] == true) {
+        await saveAuthData(responseBody['data']);
+        return responseBody['data']['user'];
       } else {
-        final errorBody = jsonDecode(response.body);
-        throw Exception(
-          errorBody['message'] ?? 'Login failed: ${response.statusCode}',
-        );
+        throw Exception(responseBody['message'] ?? 'Login gagal.');
       }
     } catch (e) {
-      throw Exception('Failed to connect to the server: $e');
+      throw Exception('Gagal terhubung ke server: $e');
     }
   }
 
   Future<Map<String, dynamic>> signInWithGoogle() async {
     try {
       final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) throw Exception('Sign-in cancelled by user');
+      if (googleUser == null)
+        throw Exception('Sign-in dibatalkan oleh pengguna');
 
       final googleAuth = await googleUser.authentication;
       final idToken = googleAuth.idToken;
 
-      if (idToken == null) throw Exception('Failed to get ID token');
+      if (idToken == null) throw Exception('Gagal mendapatkan ID token');
 
       final url = Uri.parse(
         'https://kost-kita.my.id/api/v1/auth/google/mobile',
@@ -168,7 +130,13 @@ class AuthService {
 
       final body = jsonDecode(response.body);
       if (response.statusCode == 200 && body['success'] == true) {
-        return body['data']['user'];
+        final data = body['data'];
+        final bool hasPassword = data['user']['has_manual_password'] ?? true;
+
+        if (hasPassword) {
+          await saveAuthData(data);
+        }
+        return data['user'];
       } else {
         throw Exception(body['message'] ?? 'Login backend gagal');
       }
@@ -178,13 +146,12 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> setPassword(
+  Future<Map<String, dynamic>> setupPasswordAndLogin(
     String email,
     String newPassword,
     String confirmPassword,
   ) async {
     final url = Uri.parse('$_baseUrl/setup-password');
-
     try {
       final response = await http.post(
         url,
@@ -195,30 +162,18 @@ class AuthService {
           'confirmPassword': confirmPassword,
         }),
       );
+      final responseBody = jsonDecode(response.body);
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        return {
-          'success': responseBody['success'] ?? true,
-          'message': responseBody['message'] ?? 'Password berhasil diatur.',
-        };
+      if (response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          responseBody['success'] == true) {
+        await saveAuthData(responseBody['data']);
+        return responseBody['data']['user'];
       } else {
-        final errorBody = jsonDecode(response.body);
-        throw Exception(
-          errorBody['message'] ??
-              'Gagal mengatur password: ${response.statusCode}',
-        );
+        throw Exception(responseBody['message'] ?? 'Gagal mengatur password.');
       }
-    } on SocketException {
-      throw Exception(
-        'Tidak ada koneksi internet. Mohon periksa jaringan Anda.',
-      );
-    } on http.ClientException catch (e) {
-      throw Exception('Kesalahan jaringan: ${e.message}');
     } catch (e) {
-      throw Exception(
-        'Terjadi kesalahan tidak terduga saat mengatur password: $e',
-      );
+      throw Exception('Terjadi kesalahan tidak terduga: $e');
     }
   }
 
@@ -411,9 +366,7 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    await _storage.delete(key: _accessTokenKey);
-    await _storage.delete(key: _refreshTokenKey);
-    await _storage.delete(key: _userDataKey);
+    await _storage.deleteAll();
     await _googleSignIn.signOut();
   }
 

@@ -1,12 +1,15 @@
+// create_password_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
+import 'package:kosan_euy/screens/admin/dashboard_admin.dart';
+import 'package:kosan_euy/screens/owner/dashboard_owner_screen.dart';
 import 'package:kosan_euy/screens/penghuni/dashboard_kos_screen.dart';
 import 'package:kosan_euy/services/auth_service.dart';
 
 class CreatePasswordScreen extends StatefulWidget {
   final String userEmail;
-
   const CreatePasswordScreen({super.key, required this.userEmail});
 
   @override
@@ -14,12 +17,9 @@ class CreatePasswordScreen extends StatefulWidget {
 }
 
 class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
-  final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-
-  // === Tambahkan GlobalKey untuk Form di sini ===
   final _formKey = GlobalKey<FormState>();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
@@ -35,62 +35,64 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
   }
 
   Future<void> _submitPassword() async {
-    // === Panggil validasi FORM di sini ===
-    // Ini akan memicu validator di setiap TextFormField yang ada di dalam Form
-    final isValidForm = _formKey.currentState?.validate() ?? false;
-
-    // Jika form tidak valid, hentikan proses
-    if (!isValidForm) {
-      debugPrint('Validasi formulir gagal.');
+    if (!_formKey.currentState!.validate()) {
       return;
     }
-
-    // Ambil nilai password setelah validasi FE berhasil
-    final newPassword = _newPasswordController.text.trim();
-    final confirmPassword =
-        _confirmPasswordController.text
-            .trim(); // Sebenarnya tidak perlu lagi di sini karena sudah divalidasi oleh validator
 
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      final result = await _authService.setPassword(
+      final userData = await _authService.setupPasswordAndLogin(
         widget.userEmail,
-        newPassword,
-        confirmPassword, // Pastikan backend Anda memvalidasi ini juga
+        _newPasswordController.text,
+        _confirmPasswordController.text,
       );
 
-      if (result['success'] == true) {
-        Get.snackbar(
-          'Sukses',
-          result['message'] ?? 'Password berhasil diatur!',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-        Get.offAll(() => const KosScreen());
-      } else {
-        Get.snackbar(
-          'Gagal',
-          result['message'] ?? 'Gagal mengatur password. Mohon coba lagi.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      }
+      if (!mounted) return;
+
+      _handleLoginSuccess(userData);
     } catch (e) {
-      debugPrint('Error setting password: $e');
+      if (!mounted) return;
       Get.snackbar(
         'Error',
-        'Terjadi kesalahan: ${e.toString()}',
+        e.toString().replaceAll('Exception: ', ''),
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
     } finally {
-      setState(() {
-        _isSubmitting = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
+  }
+
+  void _handleLoginSuccess(Map<String, dynamic> userData) {
+    Widget targetScreen;
+    final String? role = userData['role'];
+
+    if (role == "ADMIN") {
+      targetScreen = const DashboardAdminScreen();
+    } else if (role == "PENGELOLA") {
+      targetScreen = const DashboardOwnerScreen();
+    } else if (role == "PENGHUNI") {
+      targetScreen = const KosScreen();
+    } else {
+      Get.snackbar('Error', 'Peran pengguna tidak dikenali.');
+      return;
+    }
+
+    Get.offAll(() => targetScreen);
+
+    Get.snackbar(
+      'Sukses',
+      'Password berhasil dibuat. Selamat datang!',
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
   }
 
   @override
@@ -101,9 +103,8 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
-            // === Bungkus Column dengan Form widget ===
             child: Form(
-              key: _formKey, // Pasang GlobalKey di sini
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -137,60 +138,46 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
-
                   _buildPasswordField(
                     controller: _newPasswordController,
                     labelText: 'Password Baru',
                     obscureText: _obscureNewPassword,
-                    onToggleVisibility: () {
-                      setState(() {
-                        _obscureNewPassword = !_obscureNewPassword;
-                      });
-                    },
-                    // === Tambahkan validator untuk password baru ===
+                    onToggleVisibility:
+                        () => setState(
+                          () => _obscureNewPassword = !_obscureNewPassword,
+                        ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.isEmpty)
                         return 'Password baru tidak boleh kosong';
-                      }
-                      if (value.length < 8) {
+                      if (value.length < 8)
                         return 'Password minimal 8 karakter';
-                      }
-                      if (!value.contains(RegExp(r'[a-z]'))) {
+                      if (!value.contains(RegExp(r'[a-z]')))
                         return 'Harus mengandung setidaknya satu huruf kecil';
-                      }
-                      if (!value.contains(RegExp(r'[A-Z]'))) {
+                      if (!value.contains(RegExp(r'[A-Z]')))
                         return 'Harus mengandung setidaknya satu huruf besar';
-                      }
-                      if (!value.contains(RegExp(r'\d'))) {
+                      if (!value.contains(RegExp(r'\d')))
                         return 'Harus mengandung setidaknya satu angka';
-                      }
                       return null;
                     },
                   ),
                   const SizedBox(height: 20),
-
                   _buildPasswordField(
                     controller: _confirmPasswordController,
                     labelText: 'Konfirmasi Password',
                     obscureText: _obscureConfirmPassword,
-                    onToggleVisibility: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
-                    },
-                    // === Tambahkan validator untuk konfirmasi password ===
+                    onToggleVisibility:
+                        () => setState(
+                          () =>
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword,
+                        ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Konfirmasi password tidak boleh kosong';
-                      }
-                      if (value != _newPasswordController.text) {
+                      if (value != _newPasswordController.text)
                         return 'Password tidak cocok';
-                      }
                       return null;
                     },
                   ),
                   const SizedBox(height: 40),
-
                   ElevatedButton(
                     onPressed: _isSubmitting ? null : _submitPassword,
                     style: ElevatedButton.styleFrom(
@@ -211,7 +198,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                               ),
                             )
                             : Text(
-                              'Buat Password',
+                              'Buat Password & Masuk',
                               style: GoogleFonts.poppins(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
@@ -227,77 +214,58 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
     );
   }
 
-  // === Modifikasi _buildPasswordField untuk menjadi TextFormField ===
   Widget _buildPasswordField({
     required TextEditingController controller,
     required String labelText,
     required bool obscureText,
     required VoidCallback onToggleVisibility,
-    String? Function(String?)? validator, // Tambahkan parameter validator
+    String? Function(String?)? validator,
   }) {
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: TextFormField(
-          // <--- UBAH DARI TextField KE TextFormField
-          controller: controller,
-          obscureText: obscureText,
-          style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
-          // Tambahkan onChanged agar UI bisa di-rebuild (misal, visibility icon)
-          onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(
-            labelText: labelText,
-            labelStyle: GoogleFonts.poppins(color: Colors.grey[600]),
-            border: InputBorder.none,
-            suffixIcon: IconButton(
-              icon: Icon(
-                obscureText
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-                color: Colors.grey,
-              ),
-              onPressed: onToggleVisibility,
-            ),
-            // === Tambahkan properti styling error yang sama ===
-            errorBorder: OutlineInputBorder(
-              // Border saat ada error tapi tidak fokus
-              borderRadius: BorderRadius.circular(
-                12,
-              ), // Sesuaikan dengan Card shape
-              borderSide: const BorderSide(
-                color: Colors.redAccent, // Warna border merah untuk error
-                width:
-                    2.0, // Sedikit lebih tipis dari 2.5 agar tidak terlalu tebal di Card
-              ),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              // Border saat ada error dan sedang fokus
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color:
-                    Colors
-                        .red, // Warna border merah lebih gelap saat error & fokus
-                width: 2.5,
-              ),
-            ),
-            errorStyle: GoogleFonts.poppins(
-              // Gaya teks untuk pesan error
-              color: Colors.redAccent,
-              fontSize:
-                  12, // Ukuran font yang sedikit lebih kecil agar tidak mudah terpotong
-              height:
-                  1.2, // Atur line height untuk spacing antar baris jika pesan panjang
-            ),
-            errorMaxLines:
-                2, // Izinkan pesan error hingga 2 baris (opsional, sesuaikan)
-            // ======================================================
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+      validator: validator,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white,
+        labelText: labelText,
+        labelStyle: GoogleFonts.poppins(color: Colors.grey[600]),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF4D9DAB), width: 2.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 2.0),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2.5),
+        ),
+        errorStyle: GoogleFonts.poppins(
+          color: Colors.redAccent,
+          fontSize: 12,
+          height: 1.2,
+        ),
+        errorMaxLines: 2,
+        suffixIcon: IconButton(
+          icon: Icon(
+            obscureText
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            color: Colors.grey,
           ),
-          validator:
-              validator, // <--- Pasangkan parameter validator ke properti TextFormField
+          onPressed: onToggleVisibility,
         ),
       ),
     );
