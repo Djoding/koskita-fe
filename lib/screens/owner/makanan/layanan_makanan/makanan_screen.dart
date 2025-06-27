@@ -9,6 +9,7 @@ import 'package:kosan_euy/models/catering_model.dart';
 import 'package:kosan_euy/routes/app_pages.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async'; // Import untuk Timer
 
 class FoodListScreen extends StatefulWidget {
   const FoodListScreen({super.key});
@@ -22,12 +23,17 @@ class _FoodListScreenState extends State<FoodListScreen>
   late TabController _tabController;
   int _currentTabIndex = 0;
   List<CateringMenuItem> _menuItems = [];
+  List<CateringMenuItem> _filteredMenuItems = []; // List untuk hasil filter
   bool _isLoadingMenus = true;
   String _errorMessage = '';
 
   String? _cateringId;
   String? _pengelolaId;
-  // Removed _kostData from here as it's now used to get cateringId in CateringListScreen
+
+  // Search related variables
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -37,7 +43,11 @@ class _FoodListScreenState extends State<FoodListScreen>
       setState(() {
         _currentTabIndex = _tabController.index;
       });
+      _filterMenuItems(); // Filter ulang ketika tab berubah
     });
+
+    // Setup search listener dengan debounce
+    _searchController.addListener(_onSearchChanged);
 
     // Get cateringId directly from arguments
     _cateringId = Get.arguments['cateringId'] as String?;
@@ -52,7 +62,53 @@ class _FoodListScreenState extends State<FoodListScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    // Cancel timer sebelumnya jika ada
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+
+    // Buat timer baru dengan delay 300ms
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase().trim();
+      });
+      _filterMenuItems();
+    });
+  }
+
+  void _filterMenuItems() {
+    setState(() {
+      if (_searchQuery.isEmpty) {
+        // Jika tidak ada query search, tampilkan semua menu sesuai kategori
+        _filteredMenuItems = _getMenusByCategory(_currentTabIndex);
+      } else {
+        // Filter berdasarkan search query dan kategori
+        final categoryMenus = _getMenusByCategory(_currentTabIndex);
+        _filteredMenuItems =
+            categoryMenus.where((item) {
+              return item.namaMenu.toLowerCase().contains(_searchQuery);
+            }).toList();
+      }
+    });
+  }
+
+  List<CateringMenuItem> _getMenusByCategory(int tabIndex) {
+    switch (tabIndex) {
+      case 0:
+        return _menuItems
+            .where((item) => item.kategori == 'MAKANAN_BERAT')
+            .toList();
+      case 1:
+        return _menuItems.where((item) => item.kategori == 'SNACK').toList();
+      case 2:
+        return _menuItems.where((item) => item.kategori == 'MINUMAN').toList();
+      default:
+        return [];
+    }
   }
 
   Future<void> _fetchCateringMenus() async {
@@ -81,6 +137,8 @@ class _FoodListScreenState extends State<FoodListScreen>
           _menuItems = response['data'];
           _isLoadingMenus = false;
         });
+        // Filter menu items setelah data dimuat
+        _filterMenuItems();
       } else {
         setState(() {
           _errorMessage = response['message'] ?? 'Failed to load menu items.';
@@ -107,6 +165,14 @@ class _FoodListScreenState extends State<FoodListScreen>
       default:
         return 'Daftar Menu';
     }
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+    });
+    _filterMenuItems();
   }
 
   @override
@@ -138,7 +204,6 @@ class _FoodListScreenState extends State<FoodListScreen>
                     ),
                   ),
                   Row(
-                    // Group refresh and add buttons
                     children: [
                       Container(
                         decoration: BoxDecoration(
@@ -147,12 +212,10 @@ class _FoodListScreenState extends State<FoodListScreen>
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.refresh, color: Colors.black),
-                          onPressed: _fetchCateringMenus, // Call refresh logic
+                          onPressed: _fetchCateringMenus,
                         ),
                       ),
-                      const SizedBox(
-                        width: 8,
-                      ), // Spacer between refresh and add
+                      const SizedBox(width: 8),
                       Container(
                         width: 44,
                         height: 44,
@@ -164,14 +227,12 @@ class _FoodListScreenState extends State<FoodListScreen>
                           icon: const Icon(
                             Icons.settings,
                             color: Colors.black,
-                            size: 20, // Ubah dari 28 ke 20 untuk konsistensi
+                            size: 20,
                           ),
                           onPressed: () => Get.to(() => SettingScreen()),
                         ),
                       ),
-                      const SizedBox(
-                        width: 8,
-                      ), // Spacer between settings and add
+                      const SizedBox(width: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -180,15 +241,12 @@ class _FoodListScreenState extends State<FoodListScreen>
                         child: IconButton(
                           icon: const Icon(Icons.add, color: Colors.black),
                           onPressed: () async {
-                            // Added async
                             if (_cateringId != null) {
                               final result = await Get.toNamed(
-                                // Await result
                                 Routes.addCateringMenu,
                                 arguments: {'cateringId': _cateringId},
                               );
                               if (result == true) {
-                                // Check if result is true for refresh
                                 _fetchCateringMenus();
                               }
                             } else {
@@ -215,6 +273,8 @@ class _FoodListScreenState extends State<FoodListScreen>
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
+
+              // Search Bar - Updated dengan functionality
               Container(
                 height: 50,
                 decoration: BoxDecoration(
@@ -226,11 +286,34 @@ class _FoodListScreenState extends State<FoodListScreen>
                   child: Row(
                     children: [
                       const Icon(Icons.search, color: Colors.grey),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Cari Menu...',
-                        style: TextStyle(color: Colors.grey[400]),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Cari Menu...',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
+                            border: InputBorder.none,
+                          ),
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
+                      // Clear button - tampil jika ada text
+                      if (_searchController.text.isNotEmpty)
+                        GestureDetector(
+                          onTap: _clearSearch,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            child: const Icon(
+                              Icons.clear,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -306,34 +389,46 @@ class _FoodListScreenState extends State<FoodListScreen>
                         // Tab Makanan Berat
                         MenuGridView(
                           menuItems:
-                              _menuItems
-                                  .where(
-                                    (item) => item.kategori == 'MAKANAN_BERAT',
-                                  )
-                                  .toList(),
+                              _searchQuery.isEmpty
+                                  ? _menuItems
+                                      .where(
+                                        (item) =>
+                                            item.kategori == 'MAKANAN_BERAT',
+                                      )
+                                      .toList()
+                                  : _filteredMenuItems,
                           cateringId: _cateringId ?? '',
                           onRefresh: _fetchCateringMenus,
                           kategori: 'Makanan Berat',
+                          searchQuery: _searchQuery,
                         ),
                         // Tab Snack
                         MenuGridView(
                           menuItems:
-                              _menuItems
-                                  .where((item) => item.kategori == 'SNACK')
-                                  .toList(),
+                              _searchQuery.isEmpty
+                                  ? _menuItems
+                                      .where((item) => item.kategori == 'SNACK')
+                                      .toList()
+                                  : _filteredMenuItems,
                           cateringId: _cateringId ?? '',
                           onRefresh: _fetchCateringMenus,
                           kategori: 'Snack',
+                          searchQuery: _searchQuery,
                         ),
                         // Tab Minuman
                         MenuGridView(
                           menuItems:
-                              _menuItems
-                                  .where((item) => item.kategori == 'MINUMAN')
-                                  .toList(),
+                              _searchQuery.isEmpty
+                                  ? _menuItems
+                                      .where(
+                                        (item) => item.kategori == 'MINUMAN',
+                                      )
+                                      .toList()
+                                  : _filteredMenuItems,
                           cateringId: _cateringId ?? '',
                           onRefresh: _fetchCateringMenus,
                           kategori: 'Minuman',
+                          searchQuery: _searchQuery,
                         ),
                       ],
                     ),
@@ -351,6 +446,7 @@ class MenuGridView extends StatelessWidget {
   final String cateringId;
   final VoidCallback onRefresh;
   final String kategori;
+  final String searchQuery; // Tambahan parameter untuk search query
 
   const MenuGridView({
     super.key,
@@ -358,6 +454,7 @@ class MenuGridView extends StatelessWidget {
     required this.cateringId,
     required this.onRefresh,
     required this.kategori,
+    this.searchQuery = '', // Default empty string
   });
 
   @override
@@ -374,30 +471,33 @@ class MenuGridView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Belum ada menu $kategori.',
+              searchQuery.isNotEmpty
+                  ? 'Tidak ada menu $kategori yang cocok dengan "${searchQuery}"'
+                  : 'Belum ada menu $kategori.',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            Text(
-              'Tambahkan menu $kategori pertama Anda!',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 14,
+            if (searchQuery.isEmpty)
+              Text(
+                'Tambahkan menu $kategori pertama Anda!',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 14,
+                ),
               ),
-            ),
           ],
         ),
       );
     }
 
     return RefreshIndicator(
-      // Added RefreshIndicator
       onRefresh: () async {
-        onRefresh(); // Trigger refresh from parent
+        onRefresh();
       },
       child: GridView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -414,6 +514,7 @@ class MenuGridView extends StatelessWidget {
             menuItem: item,
             cateringId: cateringId,
             onRefresh: onRefresh,
+            searchQuery: searchQuery, // Pass search query untuk highlighting
           );
         },
       ),
@@ -425,12 +526,14 @@ class FoodItemCard extends StatelessWidget {
   final CateringMenuItem menuItem;
   final String cateringId;
   final VoidCallback onRefresh;
+  final String searchQuery; // Tambahan parameter
 
   const FoodItemCard({
     super.key,
     required this.menuItem,
     required this.cateringId,
     required this.onRefresh,
+    this.searchQuery = '',
   });
 
   String _formatCurrency(double amount) {
@@ -512,21 +615,82 @@ class FoodItemCard extends StatelessWidget {
     }
   }
 
+  // Widget untuk highlight text yang cocok dengan search
+  Widget _buildHighlightedText(String text, String query) {
+    if (query.isEmpty) {
+      return Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+
+    if (!lowerText.contains(lowerQuery)) {
+      return Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    final startIndex = lowerText.indexOf(lowerQuery);
+    final endIndex = startIndex + query.length;
+
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: text.substring(0, startIndex),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          TextSpan(
+            text: text.substring(startIndex, endIndex),
+            style: const TextStyle(
+              color: Colors.yellow,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              backgroundColor: Colors.black26,
+            ),
+          ),
+          TextSpan(
+            text: text.substring(endIndex),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          menuItem.namaMenu,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        // Menggunakan highlighted text untuk nama menu
+        _buildHighlightedText(menuItem.namaMenu, searchQuery),
         const SizedBox(height: 2),
         Row(
           children: [
